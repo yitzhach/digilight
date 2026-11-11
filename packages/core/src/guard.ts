@@ -10,32 +10,29 @@ import { shade } from './tone.ts';
 export const GUARD_SIZE = 512, BLOWN = 250, MAX_NEW_BLOWN = 0.005;
 
 /** Share of pixels whose display luma (luma of the 8-bit values) is >= 250. */
-export function blownShare(img: Image): number {
+export function blownShare(img: Image, blown = BLOWN): number {
   const d = img.data, n = img.width * img.height;
   let k = 0;
-  for (let p = 0; p < d.length; p += 4) if (0.2126 * d[p]! + 0.7152 * d[p + 1]! + 0.0722 * d[p + 2]! >= BLOWN) k++;
+  for (let p = 0; p < d.length; p += 4) if (0.2126 * d[p]! + 0.7152 * d[p + 1]! + 0.0722 * d[p + 2]! >= blown) k++;
   return k / n;
 }
 
-const thumbs = new WeakMap<Uint8ClampedArray, { thumb: Image; blown: number }>();
-/** The photo's guard thumbnail and its blown share (kept per photo). */
-export function guardThumb(photo: Image): { thumb: Image; blown: number } {
-  let t = thumbs.get(photo.data);
-  if (!t) {
-    const thumb = thumbnail(photo, GUARD_SIZE);
-    t = { thumb, blown: blownShare(thumb) };
-    thumbs.set(photo.data, t);
-  }
-  return t;
+const thumbs = new WeakMap<Uint8ClampedArray, Image>();
+/** The photo's guard thumbnail (kept per photo) and its blown share. */
+export function guardThumb(photo: Image, at = BLOWN): { thumb: Image; blown: number } {
+  let thumb = thumbs.get(photo.data);
+  if (!thumb) { thumb = thumbnail(photo, GUARD_SIZE); thumbs.set(photo.data, thumb); }
+  return { thumb, blown: blownShare(thumb, at) };
 }
 
-/** kappa for this photo and document (1 when protectWhites is off). */
-export function guardKappa(photo: Image, doc: Doc): number {
+/** kappa for this photo and document (1 when protectWhites is off). `at`: the blown level
+ *  (§5.7 says 250; other values only to compare, e.g. in a review round). */
+export function guardKappa(photo: Image, doc: Doc, at = BLOWN): number {
   if (!doc.tone.protectWhites) return 1;
-  const { thumb, blown } = guardThumb(photo);
+  const { thumb, blown } = guardThumb(photo, at);
   const a = thumb.height / thumb.width;
   const pass = (k: number) =>
-    blownShare(shade(thumb, thumb.width, 0, 0, prepareLighting(doc, a, k), doc.tone.highlightProtect)) - blown <= MAX_NEW_BLOWN;
+    blownShare(shade(thumb, thumb.width, 0, 0, prepareLighting(doc, a, k), doc.tone.highlightProtect), at) - blown <= MAX_NEW_BLOWN;
   if (pass(1)) return 1;
   let lo = 0.25, hi = 1;
   for (let i = 0; i < 12; i++) {

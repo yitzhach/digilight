@@ -307,18 +307,18 @@ These numbers were rendered on Isaac's door and lintel photos with this section'
 keeps the photo's median brightness within 6%. They are a starting point; Phase 3's gate tunes
 them with him.
 
-| id | ambient (level, kelvin) | light: pos (u, v, z), aim, intensity, kelvin, cone, edge, falloff, size |
+| id | ambient (level, kelvin) | light: pos (u, v, z), aim, intensity, kelvin, cone, edge, falloff, size (retuned with Isaac, D-020) |
 |---|---|---|
 | original | 1, 6500 | none |
-| gallery | 0.45, 4500 | (0.5, −0.35, 0.9), (0.5, 0.45), 0.8, 3200, 38, 0.8, 0.5, 0.05 |
-| spotlight | 0.2, 4000 | (0.5, −0.25, 1.1), (0.5, 0.5), 1.1, 3000, 22, 0.8, 1, 0.05 |
-| soft-window | 0.4, 6500 | (−1.2, 0.35, 0.9), (0.5, 0.5), 0.8, 6000, 90, 0.6, 0.75, 0.4 |
-| warm-evening | 0.35, 4500 | (−1.5, 0.2, 0.6), (0.5, 0.5), 0.8, 2700, 90, 0.6, 0.5, 0.15 |
-| cool-daylight | 0.6, 7500 | (0.5, −0.6, 1.2), (0.5, 0.5), 0.5, 7000, 90, 0.6, 0.5, 0.3 |
+| gallery | 0.6, 5000 | (0.5, −0.35, 0.9), (0.5, 0.45), 0.45, 3800, 45, 0.9, 0.5, 0.05 |
+| spotlight | 0.35, 5000 | (0.5, −0.25, 1.1), (0.5, 0.5), 0.6, 3600, 32, 1, 0.6, 0.05 |
+| soft-window | 0.35, 6500 | (−0.8, 0.35, 0.8), (0.5, 0.5), 0.7, 6000, 90, 0.6, 1, 0.4 |
+| warm-evening | 0.5, 5000 | (−1.5, 0.2, 0.6), (0.5, 0.5), 0.5, 3300, 90, 0.6, 0.5, 0.15 |
+| cool-daylight | 0.5, 9000 | (0.5, −0.6, 1.2), (0.5, 0.5), 0.5, 8500, 90, 0.6, 0.5, 0.3 |
 | raking-left | 0.35, 6500 | (−2.0, 0.5, 0.35), (0.5, 0.5), 0.8, 4500, 90, 0.6, 0.5, 0.02 |
 | raking-top | 0.35, 6500 | (0.5, −2.0, 0.35), (0.5, 0.5), 0.8, 4500, 90, 0.6, 0.5, 0.02 |
-| dramatic | 0.12, 4000 | (−0.3, −0.2, 0.5), (0.45, 0.45), 1.0, 3200, 30, 0.8, 1, 0.05 (D-010) |
-| candlelight | 0.22, 4500 | (0.5, 1.2, 0.5), (0.5, 0.65), 0.9, 2300, 90, 0.6, 0.8, 0.03 |
+| dramatic | 0.2, 5000 | (−0.3, −0.2, 0.5), (0.45, 0.45), 0.65, 3800, 35, 0.9, 1, 0.05 |
+| candlelight | 0.3, 4500 | (0.5, 1.2, 0.5), (0.5, 0.65), 0.65, 2300, 90, 0.6, 0.8, 0.03 |
 
 Why these shapes: a lamp close to the picture's edge is many times brighter on that edge than
 at the centre, so raking and side lights stand far off (`u` or `v` of −2 to −1.2). The two raking

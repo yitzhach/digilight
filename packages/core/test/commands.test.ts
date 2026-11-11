@@ -54,7 +54,7 @@ test('undo, redo, reset; each command is one step', () => {
   c.applyLook('gallery');
   c.set({ 'ambient.level': 0.3, 'lights.0.intensity': 1.5 });
   c.undo();
-  expect(c.getDoc().ambient.level).toBe(0.45);
+  expect(c.getDoc().ambient.level).toBe(0.6);
   c.undo();
   expect(c.getDoc().lights).toEqual([]);
   c.redo();
@@ -63,7 +63,7 @@ test('undo, redo, reset; each command is one step', () => {
   expect(c.getDoc().lights).toEqual([]);
   c.undo();
   expect(c.getDoc().lights).toHaveLength(1);
-  c.set('ambient.level', 0.45); // no change: not a step
+  c.set('ambient.level', 0.6); // no change: not a step
   c.undo();
   expect(c.getDoc().lights).toEqual([]);
 });
