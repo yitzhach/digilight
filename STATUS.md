@@ -9,7 +9,6 @@
   (`describe()`), `light`, `tone`, `guard`, `looks`, `resample` (v1 arithmetic), `render`, `commands`
   (undo/redo), `metrics`. Relief, sheen and finish not rendered yet (D-011).
 - 31 tests in about 4 s. Gallery on the door at full size: 200 ms (400 ms under the test runner).
-- Dramatic look's lamp 1.1 to 1.0 so `kappa` >= 0.7 on the lintel (D-010).
 
 ## Waiting on Isaac
 - Phase 1 gate: mark each look and type or speak notes on the **Looks review** page
