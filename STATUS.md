@@ -1,16 +1,21 @@
 # Status
 
-**Phase:** 0 (Repository): built, waiting at the gate.
+**Phase:** 1 (The engine): built, waiting at the gate.
 
 ## Done
-- pnpm workspace: `packages/core` (pure TS, one placeholder test), `packages/web` (Vite + Preact page that says "DigiLight 2").
-- `BUILD.md`, `docs/bakeoff.md`, `bench/bakeoff/`, `fixtures/` copied from v1 (`yitzhach/digi-light-test`, branch `claude/laughing-mendel-qvhsm6`).
-- CI (`.github/workflows/ci.yml`): `pnpm typecheck && pnpm test` on every push.
-- `wrangler.jsonc` (`studio-digilight`, assets `packages/web/dist`). Not deployed.
-- Locally: typecheck and test pass, build works, `pnpm --filter web dev` shows the page.
+- Phase 0: workspace, CI, `wrangler.jsonc` (not deployed).
+- Phase 1, `packages/core`: `dmath`, `srgb` + `kelvin` (tables from `scripts/gen-tables.ts`), `schema`
+  (`describe()`), `light`, `tone`, `guard`, `looks`, `resample` (v1 arithmetic), `render`, `commands`
+  (undo/redo), `metrics`. Relief, sheen and finish not rendered yet (D-011).
+- Tests: 31 pass in about 4 s (identity on the door, goldens, guard, kappa >= 0.7 for every look on
+  door and lintel, schema, purity grep). Gallery on the door at full size: about 200 ms alone,
+  400 ms under the test runner (gate: 1 s).
+- Contact sheets: `pnpm --filter core sheet` writes `packages/core/out/sheet-*.html` (not committed).
+- Dramatic look's lamp 1.1 to 1.0 so it keeps `kappa` >= 0.7 on the lintel (D-010).
 
 ## Waiting on Isaac
-- Phase 0 gate: confirm CI is green on GitHub and `pnpm --filter web dev` shows the page.
+- Phase 1 gate: look at the door and lintel sheets and say what reads wrong.
+- Phase 0 gate (if not done): CI green, `pnpm --filter web dev` shows the page.
 
 ## Next
-- Phase 1, the engine (BUILD.md §10), in a new session.
+- Phase 2, the preview (BUILD.md §10), in a new session.
