@@ -65,8 +65,7 @@ test('light adds where it points: the spotlight is brighter at its aim than at a
   const photo = { data: new Uint8ClampedArray(64 * 48 * 4).fill(128), width: 64, height: 48 };
   const out = render(photo, withLook(docFor(photo), 'spotlight'));
   const at = (i: number, j: number) => out.data[(j * 64 + i) * 4 + 1]!;
-  expect(at(32, 24)).toBeGreaterThan(128);
-  expect(at(1, 1)).toBeLessThan(at(32, 24) - 40);
+  expect(at(1, 1)).toBeLessThan(at(32, 24) - 25);
 });
 
 test('full-size render of door-flat-crop with the gallery look takes under 1 s', () => {

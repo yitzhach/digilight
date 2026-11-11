@@ -11,10 +11,9 @@
 - 31 tests in about 4 s. Gallery on the door at full size: 200 ms (400 ms under the test runner).
 
 ## Waiting on Isaac
-- Phase 1 gate: mark each look and type or speak notes on the **Looks review** page
-  (https://claude.ai/artifact/SEDbAFn98fYp5G5WkgSRyr). Claude reads them with ArtifactData
-  `list`, collection `notes` (fields piece, look, verdict good/change/wrong, note); fold them into
-  `looks.ts` (and goldens) or DECISIONS.md.
+- Looks review round 2 (https://claude.ai/artifact/SEDbAFn98fYp5G5WkgSRyr): looks retuned from
+  round 1 (D-020); "stricter whites" pictures ask whether the guard should count from 240 not 250
+  (a §5.7 change). Read: ArtifactData `list`, collection `notes`, `round` == `phase1-looks-2`.
 
 ## Review rounds (any gate with pictures)
 - `pnpm --filter core review` writes `packages/core/out/review/` (page + img/). Publish
@@ -34,7 +33,7 @@
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do
 Phase 2 (BUILD.md section 10, plus the sections it names). Port from yitzhach/digi-light-test
-only the files the phase lists. Answers to "Waiting on Isaac": my notes are on the Looks review
-page; read them first and apply them.
+only the files the phase lists. Answers to "Waiting on Isaac": my round 2 notes are on the Looks
+review page; read them first and apply them (looks, and the whites guard if I chose it).
 Keep replies brief. Stop at the phase's gate and tell me what to check.
 ```
