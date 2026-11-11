@@ -17,13 +17,13 @@ export const LOOKS: readonly Look[] = [
   { id: 'original', label: 'Original', ambient: { level: 1, kelvin: 6500 }, lights: [] },
   { id: 'gallery', label: 'Gallery', ambient: { level: 0.6, kelvin: 5000 }, lights: [lamp([0.5, -0.35, 0.9], [0.5, 0.45], 0.45, 3800, 45, 0.9, 0.5, 0.05)] },
   { id: 'spotlight', label: 'Spotlight', ambient: { level: 0.35, kelvin: 5000 }, lights: [lamp([0.5, -0.25, 1.1], [0.5, 0.5], 0.6, 3600, 32, 1, 0.6, 0.05)] },
-  { id: 'soft-window', label: 'Soft window', ambient: { level: 0.35, kelvin: 6500 }, lights: [lamp([-0.8, 0.35, 0.8], [0.5, 0.5], 0.7, 6000, 90, 0.6, 1, 0.4)] },
-  { id: 'warm-evening', label: 'Warm evening', ambient: { level: 0.5, kelvin: 5000 }, lights: [lamp([-1.5, 0.2, 0.6], [0.5, 0.5], 0.5, 3300, 90, 0.6, 0.5, 0.15)] },
+  { id: 'soft-window', label: 'Soft window', ambient: { level: 0.35, kelvin: 6000 }, lights: [lamp([-0.8, 0.35, 0.8], [0.5, 0.5], 0.7, 5200, 90, 0.6, 1, 0.4)] },
+  { id: 'warm-evening', label: 'Warm evening', ambient: { level: 0.55, kelvin: 5500 }, lights: [lamp([-1.5, 0.2, 0.6], [0.5, 0.5], 0.4, 3800, 90, 0.6, 0.5, 0.15)] },
   { id: 'cool-daylight', label: 'Cool daylight', ambient: { level: 0.5, kelvin: 9000 }, lights: [lamp([0.5, -0.6, 1.2], [0.5, 0.5], 0.5, 8500, 90, 0.6, 0.5, 0.3)] },
   { id: 'raking-left', label: 'Raking from the left', ambient: { level: 0.35, kelvin: 6500 }, lights: [lamp([-2.0, 0.5, 0.35], [0.5, 0.5], 0.8, 4500, 90, 0.6, 0.5, 0.02)] },
-  { id: 'raking-top', label: 'Raking from the top', ambient: { level: 0.35, kelvin: 6500 }, lights: [lamp([0.5, -2.0, 0.35], [0.5, 0.5], 0.8, 4500, 90, 0.6, 0.5, 0.02)] },
-  { id: 'dramatic', label: 'Dramatic', ambient: { level: 0.2, kelvin: 5000 }, lights: [lamp([-0.3, -0.2, 0.5], [0.45, 0.45], 0.65, 3800, 35, 0.9, 1, 0.05)] },
-  { id: 'candlelight', label: 'Candlelight', ambient: { level: 0.3, kelvin: 4500 }, lights: [lamp([0.5, 1.2, 0.5], [0.5, 0.65], 0.65, 2300, 90, 0.6, 0.8, 0.03)] },
+  { id: 'raking-top', label: 'Raking from the top', ambient: { level: 0.4, kelvin: 6500 }, lights: [lamp([0.5, -2.0, 0.35], [0.5, 0.5], 0.6, 4500, 90, 0.6, 0.25, 0.02)] },
+  { id: 'dramatic', label: 'Dramatic', ambient: { level: 0.25, kelvin: 5000 }, lights: [lamp([-0.5, -0.45, 1.0], [0.45, 0.45], 0.55, 3800, 30, 1, 0.6, 0.05)] },
+  { id: 'candlelight', label: 'Candlelight', ambient: { level: 0.4, kelvin: 4500 }, lights: [lamp([0.5, 1.2, 0.5], [0.5, 0.65], 0.5, 2600, 90, 0.6, 0.8, 0.03)] },
 ];
 
 export interface LookOptions { strength?: number; flip?: boolean }
