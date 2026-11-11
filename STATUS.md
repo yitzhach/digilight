@@ -1,12 +1,10 @@
 # Status
 
 **Phase:** 3 (The app, Light layer only): merged and live; gate half done.
-**Live:** https://studio-digilight.bobdylan2000.workers.dev (Workers Builds deploys `main`).
-**Bench:** add `?bench` to that address.
+**Live:** https://studio-digilight.bobdylan2000.workers.dev (from `main`; `?bench` for the bench).
 
 ## Done
-- Phase 0: workspace, CI, `wrangler.jsonc`.
-- Phase 1, `packages/core`: the engine for the Light layer (D-007 to D-021). 31 tests.
+- Phase 0: workspace, CI, `wrangler.jsonc`. Phase 1, `packages/core`: the engine for the Light layer (D-007 to D-021). 31 tests.
 - Phase 2, `packages/gl`: the WebGL2 preview; parity within 1 level, neutral exact (D-023, D-024).
 - Phase 3, `packages/web`: the app (§8 sections 1, 2, 5 and Expert), workers for thumbnails,
   export and the guard, `window.digilight`, autosave, `?bench` (D-025 to D-029). Smoke test:
