@@ -23,6 +23,8 @@ export interface Preview {
   draw(): void;
   /** Draws, then returns the canvas pixels top row first. */
   readPixels(): Image;
+  /** Waits until the GPU has finished what was drawn (reads one pixel); for timing. */
+  sync(): void;
   readonly kappa: number;
 }
 
@@ -133,6 +135,10 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
       gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, raw);
       for (let j = 0; j < H; j++) data.set(raw.subarray((H - 1 - j) * row, (H - j) * row), j * row);
       return { data, width: W, height: H };
+    },
+    sync() {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
     },
     get kappa() { return kappa; },
   };

@@ -11,3 +11,7 @@
 ## Phase 2: The preview
 - `gl`: `createPreview(canvas)` (`setPhoto`, `setDoc`, `setView`, `setScale`, `draw`, `readPixels`), one WebGL2 pass for §5.3 to §5.5 with up to 8 lights, Display P3 output, photo with mipmaps (down-scaled past `min(MAX_TEXTURE_SIZE, 8192)`).
 - `e2e/parity.spec.ts`: six documents against the reference at 1024 px, all within 1 level, neutral exact (D-023, D-024). Round 3 notes logged (D-022).
+
+## Phase 3: The app, Light layer only
+- `web`: open by drop, picker or paste (JPEG, PNG, WebP, HEIC with libheif when needed; Display P3 kept), the picture with zoom, pan, light and aim handles, Before, the adaptive scale, panel sections Looks (live thumbnails from a worker), Lights and Export, Expert controls from `describe()`, export through a worker pool with a `.json` record, `window.digilight`, autosave in IndexedDB, `?bench` page (D-025 to D-029).
+- `gl`: `sync()` for timing. `e2e/smoke.spec.ts`: open, every look, drag, export equals the reference's SHA-256.

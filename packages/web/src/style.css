@@ -1,0 +1,69 @@
+:root {
+  --bg: #1b1b1d; --panel: #242427; --line: #3a3a3f; --text: #ececef; --dim: #a3a3ab;
+  --accent: #f0b453; --error: #ff8a80;
+  color-scheme: dark;
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); }
+#app, .app { height: 100%; }
+.app { display: flex; flex-direction: column; }
+button { font: inherit; color: var(--text); background: #333338; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+button:disabled { opacity: 0.45; cursor: default; }
+button.current, button.primary { background: var(--accent); color: #1b1b1d; border-color: var(--accent); }
+
+.bar { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.bar .brand { margin-right: 8px; }
+.bar .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dim); padding: 0 8px; }
+.bar .error { color: var(--error); cursor: pointer; }
+.bar .note { cursor: pointer; }
+
+main { flex: 1; display: flex; min-height: 0; }
+.stage { position: relative; flex: 1; min-width: 0; overflow: hidden; background: #111113; touch-action: none; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.stage .handles { position: absolute; inset: 0; }
+.empty { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; color: var(--dim); padding: 24px; }
+.handle { cursor: grab; }
+.handle circle { fill: rgba(255, 244, 220, 0.9); stroke: #1b1b1d; stroke-width: 2; }
+.handle.selected circle { stroke: var(--accent); stroke-width: 3; }
+.handle.off circle { fill: rgba(120, 120, 120, 0.7); stroke-dasharray: 3 2; }
+.handle text { font-size: 11px; font-weight: 600; fill: #1b1b1d; pointer-events: none; user-select: none; }
+.aim line { stroke: rgba(240, 180, 83, 0.6); stroke-dasharray: 4 3; }
+.aim path { stroke: var(--accent); stroke-width: 2; }
+.aim .hit { fill: transparent; cursor: crosshair; }
+
+.panel { width: 320px; flex: none; overflow-y: auto; background: var(--panel); border-left: 1px solid var(--line); padding: 4px 14px 20px; }
+.panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dim); margin: 16px 0 8px; }
+.tabs { display: none; }
+.looks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+.look { padding: 3px; display: flex; flex-direction: column; gap: 2px; font-size: 11px; line-height: 1.2; }
+.look canvas { width: 100%; aspect-ratio: 4 / 3; object-fit: contain; background: #111; border-radius: 3px; }
+.look canvas.loading { opacity: 0.3; }
+.look.current { outline: 2px solid var(--accent); background: #333338; color: var(--text); }
+.control { display: block; margin: 8px 0; }
+.control label, .control > span { display: flex; justify-content: space-between; color: var(--text); }
+.control output { color: var(--dim); font-variant-numeric: tabular-nums; }
+.control input[type=range] { width: 100%; accent-color: var(--accent); }
+.control.switch { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.control.select { display: flex; justify-content: space-between; align-items: center; }
+.control select { font: inherit; background: #333338; color: var(--text); border: 1px solid var(--line); border-radius: 4px; }
+.chips, .row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.chip.off { text-decoration: line-through; }
+.chip.add { border-style: dashed; }
+.light { border-left: 2px solid var(--line); padding-left: 10px; margin: 8px 0 14px; }
+.expert { border-top: 1px dashed var(--line); margin-top: 8px; padding-top: 4px; }
+.expert-switch { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
+.primary { width: 100%; margin-top: 8px; padding: 8px; font-weight: 600; }
+
+.bench { position: fixed; left: 10px; bottom: 10px; z-index: 10; max-width: min(760px, 90vw); background: #000c; border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.bench pre { white-space: pre-wrap; user-select: text; margin: 8px 0 0; font-size: 12px; }
+
+@media (max-width: 700px) {
+  main { flex-direction: column; }
+  .panel { width: auto; height: 45%; border-left: 0; border-top: 1px solid var(--line); }
+  .tabs { display: flex; gap: 4px; position: sticky; top: 0; background: var(--panel); padding: 6px 0; z-index: 1; }
+  .tabs button { flex: 1; }
+  .tab { display: none; }
+  .tab.current { display: block; }
+  .bar .brand { display: none; }
+}
