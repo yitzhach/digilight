@@ -28,10 +28,10 @@
 - Looks tuning can continue at Phase 3's gate with sliders in the app.
 - Phase 4: review raking with Texture at several Shadows values (D-022).
 
-## Next: new chat, Opus 5.5 (BUILD.md §13)
+## Next: new chat, Opus 5.5, medium effort (BUILD.md §13)
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do
 Phase 3 (BUILD.md section 10, plus the sections it names). Port from yitzhach/digi-light-test
-only the files the phase lists. Answers to "Waiting on Isaac": [...]
+only the files the phase lists. Answers to "Waiting on Isaac": Phase 2's gate passed (CI green).
 Keep replies brief. Stop at the phase's gate and tell me what to check.
 ```

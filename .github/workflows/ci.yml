@@ -14,6 +14,7 @@ jobs:
       - run: pnpm typecheck && pnpm test
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -22,5 +23,5 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter e2e exec playwright install --with-deps chromium
+      - run: pnpm --filter e2e exec playwright install chromium
       - run: pnpm e2e
