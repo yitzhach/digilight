@@ -2,6 +2,8 @@
 export * from './commands.ts';
 export { colour, type RGB, type Space } from './kelvin.ts';
 export { guardKappa } from './guard.ts';
+export { prepareLighting, type Lighting } from './light.ts';
+export { thumbnail } from './resample.ts';
 export { LOOKS, withLook, type Look, type LookOptions } from './looks.ts';
 export { metrics, pictureStats, type Metrics, type PictureStats } from './metrics.ts';
 export { isNeutral, outputSize, render, type Image, type Region, type RenderOptions } from './render.ts';
