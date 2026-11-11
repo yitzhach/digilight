@@ -1,7 +1,7 @@
 # Status
 
 **Phase:** 1 (The engine): built, CI green, waiting at the gate.
-**Branch:** Phases 0 to 1 are on `claude/blissful-dirac-6nyfaz`; `main` has Phase 0 only. Start Phase 2 from that branch.
+**Branch:** everything is on `main`.
 
 ## Done
 - Phase 0: workspace, CI, `wrangler.jsonc` (not deployed).
@@ -9,11 +9,18 @@
   (`describe()`), `light`, `tone`, `guard`, `looks`, `resample` (v1 arithmetic), `render`, `commands`
   (undo/redo), `metrics`. Relief, sheen and finish not rendered yet (D-011).
 - 31 tests in about 4 s. Gallery on the door at full size: 200 ms (400 ms under the test runner).
-- Dramatic look's lamp 1.1 to 1.0 so `kappa` >= 0.7 on the lintel (D-010).
 
 ## Waiting on Isaac
-- Phase 1 gate: look at the door and lintel sheets (`pnpm --filter core sheet` writes
-  `packages/core/out/sheet-*.html`) and say what reads wrong.
+- Phase 1 gate: mark each look and type or speak notes on the **Looks review** page
+  (https://claude.ai/artifact/SEDbAFn98fYp5G5WkgSRyr). Claude reads them with ArtifactData
+  `list`, collection `notes` (fields piece, look, verdict good/change/wrong, note); fold them into
+  `looks.ts` (and goldens) or DECISIONS.md.
+
+## Review rounds (any gate with pictures)
+- `pnpm --filter core review` writes `packages/core/out/review/` (page + img/). Publish
+  `index.html` with the Artifact tool, `root` out/review, `files` img/*, capabilities
+  `{db: {}, dictation: {}}`; republish to the same URL for a new round (change `ROUND.id` in
+  `scripts/review.ts` so old notes stay apart).
 
 ## Handoff to Phase 2 (the preview)
 - Mirror these in GLSL: `light.ts` `prepareLighting` (per-document E factors, lamps as uniforms;
@@ -26,8 +33,8 @@
 ## Next: new chat, Opus 5.5, high effort (BUILD.md §13)
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do
-Phase 2 (BUILD.md section 10, plus the sections it names). Work from branch
-claude/blissful-dirac-6nyfaz (Phase 1 is not on main yet). Port from yitzhach/digi-light-test
-only the files the phase lists. Answers to "Waiting on Isaac": [your notes on the sheets, or none].
+Phase 2 (BUILD.md section 10, plus the sections it names). Port from yitzhach/digi-light-test
+only the files the phase lists. Answers to "Waiting on Isaac": my notes are on the Looks review
+page; read them first and apply them.
 Keep replies brief. Stop at the phase's gate and tell me what to check.
 ```
