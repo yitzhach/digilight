@@ -5,7 +5,7 @@ import { render } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { installApi } from './api.ts';
 import { Stage } from './canvas/Stage.tsx';
-import { exportNow } from './panel/ExportPanel.tsx';
+import { exportNow, ShareButton } from './panel/ExportPanel.tsx';
 import { Panel } from './panel/Panel.tsx';
 import { before, busy, cmd, notice, openFile, photo, restore, run, selected } from './state.ts';
 import './style.css';
@@ -49,6 +49,7 @@ function App() {
         <button disabled={!has} onClick={() => run(() => cmd.redo())} title="Redo (Shift+Z)">Redo</button>
         <button disabled={!has} class={before.value ? 'current' : ''} title="Press and hold to see the photo as it was (B)"
           onPointerDown={() => (before.value = true)} onPointerUp={() => (before.value = false)} onPointerLeave={() => (before.value = false)}>Before</button>
+        <ShareButton />
         <span class="grow">{busy.value ?? (n && <span class={n.error ? 'error' : 'note'} onClick={() => (notice.value = null)}>{n.text}</span>)}</span>
         <button disabled={!has || busy.value !== null} onClick={() => void exportNow()} title="Save the picture with the Export choices">Export</button>
       </header>

@@ -15,3 +15,4 @@
 ## Phase 3: The app, Light layer only
 - `web`: open by drop, picker or paste (JPEG, PNG, WebP, HEIC with libheif when needed; Display P3 kept), the picture with zoom, pan, light and aim handles, Before, the adaptive scale, panel sections Looks (live thumbnails from a worker), Lights and Export, Expert controls from `describe()`, export through a worker pool with a `.json` record, `window.digilight`, autosave in IndexedDB, `?bench` page (D-025 to D-029).
 - `gl`: `sync()` for timing. `e2e/smoke.spec.ts`: open, every look, drag, export equals the reference's SHA-256.
+- Deployed as `studio-digilight` (Workers Builds from `main`). On a phone, export offers Save or share, so the picture goes straight to Photos (D-030).

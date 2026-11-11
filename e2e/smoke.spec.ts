@@ -75,3 +75,23 @@ test('smoke: open, looks, drag, export', async ({ page }) => {
   expect(decoded).toBe(sha(ref.data));
   expect(errors).toEqual([]);
 });
+
+test('on a phone, export offers Save or share (the share sheet gets the picture)', async ({ page }) => {
+  // Chromium here has no share sheet: stand one in, as Safari on an iPhone has.
+  await page.addInitScript(() => {
+    const nav = navigator as any;
+    nav.canShare = (d: { files?: File[] }) => !!d.files?.length;
+    nav.share = async (d: { files: File[] }) => { (window as any).shared = d.files.map((f) => [f.name, f.type, f.size]); };
+  });
+  await page.goto(APP);
+  await page.locator('input[type=file]').setInputFiles({ name: 'door.png', mimeType: 'image/png', buffer: png });
+  await page.locator('[data-look="gallery"]').click();
+  let downloaded = false;
+  page.on('download', () => { downloaded = true; });
+  await page.locator('[data-action="download"]').click();
+  await page.getByRole('button', { name: 'Save or share' }).click();
+  const shared = await page.waitForFunction(() => (window as any).shared).then((h) => h.jsonValue());
+  expect(shared).toEqual([['door-digilight.jpg', 'image/jpeg', expect.any(Number)]]);
+  await expect(page.getByRole('button', { name: 'Save or share' })).toHaveCount(0);
+  expect(downloaded).toBe(false);
+});

@@ -53,3 +53,23 @@ export function download(e: Exported): void {
   save(e.blob, e.name);
   save(new Blob([JSON.stringify(e.record, null, 2)], { type: 'application/json' }), e.name.replace(/\.\w+$/, '.json'));
 }
+
+/** The picture as a file the phone's share sheet takes ("Save Image" puts it in Photos). */
+const asFile = (e: Exported) => new File([e.blob], e.name, { type: e.blob.type });
+
+/** True where the browser can hand files to the system share sheet (phones, Safari). */
+export function canShare(e: Exported): boolean {
+  try { return typeof navigator.share === 'function' && navigator.canShare?.({ files: [asFile(e)] }) === true; } catch { return false; }
+}
+
+/** Opens the share sheet with the picture. Must run in a tap: the export itself takes too long
+ *  for the browser to still count it as one, so the app shows a button once it is ready. */
+export async function share(e: Exported): Promise<'shared' | 'cancelled'> {
+  try {
+    await navigator.share({ files: [asFile(e)] });
+    return 'shared';
+  } catch (err) {
+    if ((err as Error).name === 'AbortError') return 'cancelled';
+    throw err;
+  }
+}
