@@ -13,11 +13,11 @@
   offers Save or share, to put the picture in Photos (D-030).
 
 ## Waiting on Isaac (rest of Phase 3's gate)
-- Bench on the iMac (Chrome 138, 17.9 MP photo): open 1.16 s, thumbnails 0.87 s, drag 60 fps at
-  scale 1, release 14 ms, export 2.2 s: all within §9. Open would be about 1.5 s at 24 MP, so
-  the guard thumbnail and the file hash moved off the main thread's path (D-031); a re-run on a
-  24 MP photo would confirm.
-- Which looks don't read as real light (tune §6, `core/src/looks.ts`, goldens together).
+- Bench on the iMac passed (17.9 MP: open 1.16 s, drag 60 fps, release 14 ms, export 2.2 s);
+  opening sped up for 24 MP (D-031), a re-run would confirm.
+- Looks (Isaac, 11-12): Gallery, Spotlight and Dramatic too warm; Candlelight too blown out.
+  Phase 4 starts by tuning these (§6, `core/src/looks.ts`, goldens together; D-032), then a
+  review round (D-019) for him to confirm. Zoom buttons and a Settings window: Phase 6.
 
 ## How to run
 - `pnpm typecheck && pnpm test` (unit), `pnpm e2e` (parity and smoke, headless Chromium,
@@ -25,8 +25,7 @@
 - Review rounds: `pnpm --filter core review` (D-019).
 
 ## Handoff to Phase 4 (Texture)
-- Start by reading Isaac's bench table and look notes from the session prompt; fix anything over
-  budget in the texture-off rows first.
+- First: tune the looks from Isaac's notes above, then a review round.
 - Panel section 3 slots into `panel/Panel.tsx` (TABS); expert relief settings appear by adding
   `'relief.'` to an `ExpertFields` prefix list. Bench rows "texture on" are placeholders in
   `web/src/bench.ts`. Review raking with Texture at several Shadows values (D-022).
@@ -35,6 +34,7 @@
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do
 Phase 4 (BUILD.md section 10, plus the sections it names). Port from yitzhach/digi-light-test
-only the files the phase lists. Answers to "Waiting on Isaac": [paste the iMac bench table and
-your notes on the looks]. Keep replies brief. Stop at the phase's gate and tell me what to check.
+only the files the phase lists. Answers to "Waiting on Isaac": Phase 3 bench passed; look
+notes are in STATUS.md, tune them first. Keep replies brief. Stop at the phase's gate and tell
+me what to check.
 ```
