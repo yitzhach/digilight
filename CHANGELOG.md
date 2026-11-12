@@ -22,3 +22,4 @@
 - `core/relief/`: estimated relief from one photo (labelled approximate), the horizon table (§5.6) with a max pyramid and exact pruning, map sampling; `rel`, `sh`, `occl` and sheen in the reference (D-034 to D-037). `setRelief` command.
 - `gl`: the table on the GPU two directions a frame (`horizon-gpu.ts`), Texture in the preview shader. Within 1 byte of the CPU table; parity within 1 level.
 - `web`: panel section 3 (Texture, Depth, Shadows, expert relief settings), maps made across the workers for exports, bench rows with texture (D-038). Review round 4.
+- Texture on faster: Tmax on the GPU, the estimate split across the workers (D-039); the bench counts each script once.

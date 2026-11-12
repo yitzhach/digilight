@@ -23,7 +23,9 @@ test('GPU horizon table against the CPU table: 99% of entries within 2 bytes', a
   console.log(`table ${r.width} x ${r.height}: ${r.frames} frames, ${Math.round(r.ms)} ms (software GL); within 1: ${(100 * r.table.within1).toFixed(3)}%, within 2: ${(100 * r.table.within2).toFixed(3)}%, max ${r.table.max}; ao within 1: ${(100 * r.ao.within1).toFixed(3)}%, max ${r.ao.max}`);
   expect(r.table.within2).toBeGreaterThanOrEqual(0.99);
   expect(r.ao.within2).toBeGreaterThanOrEqual(0.99);
-  expect(r.frames).toBeGreaterThanOrEqual(15); // two directions a frame
+  console.log(`Tmax: GPU ${r.tmax[0]}, CPU ${r.tmax[1]}`);
+  expect(Math.abs(r.tmax[0] / r.tmax[1] - 1)).toBeLessThan(1e-5); // found on the GPU (D-039)
+  expect(r.frames).toBeGreaterThanOrEqual(31); // two directions a frame: Tmax, then the table
 });
 
 test('parity with Texture on: 99% of channel values within 2 levels, none beyond 6', async ({ page }) => {

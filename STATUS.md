@@ -1,6 +1,6 @@
 # Status
 
-**Phase:** 4 (Texture and shadows): built, tests pass; gate waits on Isaac.
+**Phase:** 4 (Texture and shadows): merged and live; Texture-on sped up (D-039); gate waits on Isaac.
 **Live:** https://studio-digilight.bobdylan2000.workers.dev (from `main`; `?bench` for the bench).
 
 ## Done
@@ -12,9 +12,9 @@
   the CPU's within 1 byte, Texture parity within 1 level, Texture export equals the reference.
 
 ## Waiting on Isaac (Phase 4's gate)
-- Merge Phase 4 (branch `claude/wonderful-pasteur-4kyydu`) into `main` so it deploys; on the iMac open a 24 MP photo with
-  `?bench`, Run, paste the table back. New rows: texture switched on to maps ready (3 s, no frame
-  over 100 ms), dragging with texture (20 fps), export with texture (20 s).
+- Bench (11-12, iMac): all rows in budget but texture switched on to maps ready, 3.55 s at
+  3.8 MP and 3.9 s at 17.9 MP (budget 3 s). D-039 moves Tmax to the GPU and splits the estimate
+  across the workers: once merged, re-run `?bench` (new row: the estimate's share).
 - Review round 4 (https://claude.ai/artifact/SEDbAFn98fYp5G5WkgSRyr, notes saved there, round
   `phase4-1`): the four retuned looks, and Texture on door, lintel and close-up at Shadows
   30/60/100 and two Depths. If Texture is worse than none: it ships off by default and labelled

@@ -96,3 +96,22 @@ test('texture on: raking light varies across the grain, a region equals the whol
   for (let p = 0; p < on.data.length; p += 4) up += shiny.data[p + 1]! - on.data[p + 1]!;
   expect(up).toBeGreaterThan(0);
 });
+
+test('the estimate in stages (row bands, blurs apart, as the app splits it) gives the same bits', async () => {
+  const { BLURS, channelRows, gauss, normalise, rawRows, reliefPhoto, reliefSize, resampleRegion } = await import('../src/index.ts');
+  const { loadFixture } = await import('../scripts/jpeg.ts');
+  const photo = loadFixture('door-flat.jpg');
+  const whole = estimateHeight(photo), { width: w, height: h, same } = reliefSize(photo), n = w * h;
+  expect(same).toBe(true); // 2016 px: its own relief size; check the banded resize on a smaller target too
+  const t = reliefPhoto(photo);
+  const band = resampleRegion(photo, 600, 800, 0, 300, 600, 200), full = resampleRegion(photo, 600, 800, 0, 0, 600, 800);
+  expect(Buffer.compare(Buffer.from(band.data), Buffer.from(full.data.subarray(300 * 600 * 4, 500 * 600 * 4)))).toBe(0);
+  const ch = { L: new Float32Array(n), cr: new Float32Array(n), cg: new Float32Array(n), cb: new Float32Array(n) };
+  for (const [y0, y1] of [[0, 700], [700, 1400], [1400, h]] as const) channelRows(t, ch, y0, y1);
+  const bl = Object.fromEntries(BLURS.map(([k, c, s]) => [k, gauss(ch[c], w, h, s * w)])) as never;
+  const raw = new Float32Array(n);
+  for (const [y0, y1] of [[0, 1000], [1000, h]] as const) rawRows(ch, bl, w, raw, y0, y1);
+  const staged = normalise(raw, w, h);
+  expect(Buffer.compare(Buffer.from(staged.h.buffer), Buffer.from(whole.h.buffer))).toBe(0);
+  expect(Buffer.compare(Buffer.from(staged.p.buffer), Buffer.from(whole.p.buffer))).toBe(0);
+});

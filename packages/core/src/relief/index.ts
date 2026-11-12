@@ -6,7 +6,8 @@ import { estimateHeight } from './estimate.ts';
 import { buildHorizon, horizonInput } from './horizon.ts';
 import type { ReliefMaps } from './sample.ts';
 
-export { estimateHeight, normalise, reliefPhoto, slopes, RELIEF_SIZE, type Height } from './estimate.ts';
+export { BLURS, channelRows, estimateHeight, normalise, rawRows, reliefPhoto, reliefSize, slopes, RELIEF_SIZE, type Blurred, type Channels, type Height } from './estimate.ts';
+export { gauss } from './blur.ts';
 export { aoFromTable, buildHorizon, horizonInput, horizonLayer, horizonRise, horizonTmax, K, makeTaps, maxPyramid, type Horizon, type HorizonInput, type Level, type Taps } from './horizon.ts';
 export { layerOf, ReliefSampler, type ReliefMaps } from './sample.ts';
 
