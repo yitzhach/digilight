@@ -103,7 +103,7 @@ test('Texture: switched on from the panel, shown, and exported equal to the refe
   await page.goto(APP);
   await page.locator('input[type=file]').setInputFiles({ name: 'door.png', mimeType: 'image/png', buffer: png });
   await page.locator('[data-look="raking-left"]').click();
-  await page.getByText('Texture (estimated)').click();
+  await page.getByRole('checkbox', { name: 'Texture', exact: true }).check();
   const d0 = await page.evaluate(() => (window as any).digilight.getDoc());
   expect(d0.relief).toMatchObject({ mode: 'estimated', depth: 0.003, shadows: 0.4 });
   await expect(page.getByText('Preparing the texture…')).toHaveCount(0, { timeout: 120_000 });

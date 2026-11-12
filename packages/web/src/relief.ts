@@ -2,9 +2,10 @@
 // input from the workers, then the table twice at once: on the GPU for the picture (Stage: Tmax,
 // then two directions a frame) and in the workers for exports (Tmax, then the layers). Started when Texture
 // is first switched on for a photo; the picture shows the Light layer until the maps are ready.
+// The height is the estimate, or True Relief's measured height (Phase 5): a new source starts over.
 
 import { signal } from '@preact/signals';
-import type { Height, HorizonInput } from 'core';
+import type { Height, HorizonInput, MeasuredHeight } from 'core';
 import { reliefHeight, reliefTable, reliefTmax } from './workers/pool.ts';
 
 export interface ReliefInput { height: Height; inp: HorizonInput; tmax: Promise<number> }
@@ -17,21 +18,24 @@ export const reliefShown = signal(false);
 export const reliefTiming = signal<{ height?: number; gpu?: number; cpu?: number } | null>(null);
 
 let gen = 0, t0 = 0, cpu: Promise<void> | null = null, failed: Error | null = null;
+/** The height the maps are made from: null for the estimate, else the measured one. */
+let source: MeasuredHeight | null = null;
 
 /** Forgets the maps (a new photo). */
 export function resetRelief(): void {
-  gen++; cpu = null; failed = null;
+  gen++; cpu = null; failed = null; source = null;
   reliefInput.value = null; reliefShown.value = false; reliefTiming.value = null;
 }
 
-/** Starts making the maps for the open photo, once. */
-export function startRelief(onError: (e: Error) => void): void {
+/** Starts making the maps for the open photo from `from` (null: estimated), once per height. */
+export function startRelief(from: MeasuredHeight | null, onError: (e: Error) => void): void {
+  if (from !== source) { resetRelief(); source = from; }
   if (cpu) return;
   const me = gen;
   t0 = performance.now();
   const alive = () => me === gen;
   cpu = (async () => {
-    const { height, inp } = await reliefHeight(alive);
+    const { height, inp } = await reliefHeight(alive, from);
     if (me !== gen) return;
     reliefTiming.value = { ...reliefTiming.value, height: performance.now() - t0 };
     // The GPU finds Tmax itself where it can (D-039); the workers find their own for exports.
@@ -52,6 +56,6 @@ export function gpuReady(): void {
 /** Resolves when the workers can render with Texture (exports wait for it). */
 export async function reliefForExport(onError: (e: Error) => void): Promise<void> {
   if (failed) throw failed;
-  startRelief(onError);
+  startRelief(source, onError);
   await cpu;
 }

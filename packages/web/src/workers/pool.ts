@@ -1,7 +1,7 @@
 // pool.ts — a few render workers. The photo goes to each once per photo: as shared memory when
 // the page is cross-origin isolated (all workers read one copy), else as one copy to one worker.
 
-import type { Blurred, Channels, Doc, Height, HorizonInput, Image } from 'core';
+import type { Blurred, Channels, Doc, Height, HorizonInput, Image, MeasuredHeight } from 'core';
 import { BLURS, K, outputSize, reliefSize, thumbnail } from 'core';
 import type { Reply, Request } from './protocol.ts';
 
@@ -126,14 +126,14 @@ async function rawHeight(ws: Worker[], p: Image): Promise<{ data: Float32Array; 
   return { data: raw, width: w, height: h };
 }
 
-/** Estimated height and the table's input (worker 0), then given to every worker. */
-export async function reliefHeight(alive: () => boolean): Promise<{ height: Height; inp: HorizonInput }> {
+/** The height (estimated, or `measured`) and the table's input (worker 0), then given to every worker. */
+export async function reliefHeight(alive: () => boolean, measured: MeasuredHeight | null = null): Promise<{ height: Height; inp: HorizonInput }> {
   const ws = start();
   for (const k of Object.keys(reliefStages)) delete reliefStages[k];
-  const raw = shared && ws.length > 1 && poolPhoto ? await rawHeight(ws, poolPhoto) : undefined;
+  const raw = !measured && shared && ws.length > 1 && poolPhoto ? await rawHeight(ws, poolPhoto) : undefined;
   const lap = stopwatch();
   if (!alive()) throw new Error('a new photo was opened');
-  const r = await one(ws[0]!, { type: 'relief-height', shared, ...(raw ? { raw } : {}) });
+  const r = await one(ws[0]!, { type: 'relief-height', shared, ...(raw ? { raw } : {}), ...(measured ? { measured } : {}) });
   if (r.type !== 'height') throw new Error('relief: unexpected reply');
   lap('height and pyramid');
   if (!alive()) throw new Error('a new photo was opened');
