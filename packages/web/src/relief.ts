@@ -17,13 +17,13 @@ export const reliefShown = signal(false);
 /** Texture switched on to maps ready on screen, in ms (the bench reads it). */
 export const reliefTiming = signal<{ height?: number; gpu?: number; cpu?: number } | null>(null);
 
-let gen = 0, t0 = 0, cpu: Promise<void> | null = null, failed: Error | null = null;
+let gen = 0, t0 = 0, cpu: Promise<void> | null = null;
 /** The height the maps are made from: null for the estimate, else the measured one. */
 let source: MeasuredHeight | null = null;
 
 /** Forgets the maps (a new photo). */
 export function resetRelief(): void {
-  gen++; cpu = null; failed = null; source = null;
+  gen++; cpu = null; source = null;
   reliefInput.value = null; reliefShown.value = false; reliefTiming.value = null;
 }
 
@@ -44,7 +44,8 @@ export function startRelief(from: MeasuredHeight | null, onError: (e: Error) => 
     await reliefTable(height.width * height.height, await tmax, alive);
     if (me === gen) reliefTiming.value = { ...reliefTiming.value, cpu: performance.now() - t0 };
   })();
-  cpu.catch((e: Error) => { if (me === gen) { failed = e; cpu = null; onError(e); } });
+  // A failed build is forgotten, so the next start (or export) tries again.
+  cpu.catch((e: Error) => { if (me === gen) { cpu = null; onError(e); } });
 }
 
 /** Called by Stage when the GPU's maps are in use. */
@@ -53,9 +54,9 @@ export function gpuReady(): void {
   reliefTiming.value = { ...reliefTiming.value, gpu: performance.now() - t0 };
 }
 
-/** Resolves when the workers can render with Texture (exports wait for it). */
+/** Resolves when the workers can render with Texture (exports wait for it). After a failure it
+ *  builds again, so it reports this build's outcome, never an earlier one's. */
 export async function reliefForExport(onError: (e: Error) => void): Promise<void> {
-  if (failed) throw failed;
   startRelief(source, onError);
   await cpu;
 }

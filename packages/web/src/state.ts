@@ -1,8 +1,8 @@
 // state.ts — the app's state as signals. The document changes only through `cmd` (core's
 // commands, BUILD.md §3); `preview` shows a not-yet-committed document while a control is held.
 
-import { batch, signal } from '@preact/signals';
-import { createCommands, type Doc, type MeasuredHeight } from 'core';
+import { batch, computed, signal } from '@preact/signals';
+import { createCommands, lookOf, type Doc, type LookMatch, type MeasuredHeight } from 'core';
 import { decodePhoto, type Photo } from './io/open.ts';
 import { loadSaved, saveDoc, savePhoto } from './io/store.ts';
 import { resetRelief, startRelief } from './relief.ts';
@@ -24,8 +24,11 @@ export const expert = signal(false);
 export const before = signal(false);
 export const busy = signal<string | null>(null);
 export const notice = signal<{ text: string; error: boolean } | null>(null);
-/** The last look tapped, so Strength and Flip re-apply it. */
-export const look = signal<{ id: string; strength: number; flip: boolean }>({ id: 'original', strength: 1, flip: false });
+/** The last look tapped: only breaks ties where the document matches several (lookOf). */
+export const lastTap = signal<LookMatch>({ id: 'original', strength: 1, flip: false });
+/** The look the committed document matches, or null (lights changed by hand): read from the
+ *  document, never remembered, so Undo and a reload show the truth. */
+export const look = computed(() => (doc.value ? lookOf(doc.value, lastTap.value) : null));
 
 export function say(text: string, error = false): void { notice.value = { text, error }; }
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -67,16 +70,19 @@ export async function openFile(blob: Blob, name?: string, saved?: Doc | null, me
     const p = await decodePhoto(blob, name);
     cmd.open({ ...p.image, space: p.space, sha256: p.sha256 });
     resetRelief(); resetTrueRelief();
+    let lost: string | null = null;
     if (saved && saved.photo.sha256 === p.sha256) {
       try {
-        cmd.setDoc(saved);
-        // The height after the document, so it adds no undo step (the document already says measured).
-        if (measured) cmd.setMeasured(measured);
-        else if (saved.relief.mode === 'measured') cmd.setRelief({ mode: 'off' });
-      } catch { /* an older document: start neutral */ }
+        if (saved.relief.mode === 'measured' && !measured) {
+          cmd.load({ ...saved, relief: { ...saved.relief, mode: 'off' } });
+          lost = 'The measured texture could not be reopened, so Texture is off. Use a side-lit photo again to bring it back.';
+        } else cmd.load(saved, measured ?? null);
+      } catch (e) {
+        lost = `Your last settings for this photo could not be reopened (${errorText(e)}), so it starts as photographed.`;
+      }
     }
     setGuardPhoto(p.image, setPoolPhoto(p.image));
-    batch(() => { photo.value = p; kappa.value = 1; look.value = { id: 'original', strength: 1, flip: false }; notice.value = null; });
+    batch(() => { photo.value = p; kappa.value = 1; lastTap.value = { id: 'original', strength: 1, flip: false }; notice.value = lost ? { text: lost, error: true } : null; });
     sync();
     if (!saved) void savePhoto(blob, p.name).catch(() => {});
   } catch (e) {

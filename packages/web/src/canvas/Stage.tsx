@@ -42,18 +42,19 @@ export function Stage() {
 
   useEffect(() => {
     const c = canvas.current!, el = box.current!;
-    let p: Preview;
-    try { p = createPreview(c); } catch (e) { say((e as Error).message, true); return; }
-    stage.preview = p;
-    let pending = 0;
+    let p: Preview | null = null, pending = 0, lastPhoto: unknown = null, shownPhoto: unknown = null, lastInput: unknown = null, wasLive = false;
+    /** Bumped when a lost WebGL context comes back: the photo and maps go up again. */
+    const restored = signal(0);
+    try { p = stage.preview = createPreview(c); } catch (e) { say((e as Error).message, true); return; }
     const frame = (t0: number) => {
       pending = 0;
+      if (!p) return;
       const held = live.value || settling;
       apply(p, held ? stage.scale.q : 1);
       p.draw();
       if (live.value) requestAnimationFrame((t1) => stage.scale.record(t1 - t0));
     };
-    const request = () => { pending ||= requestAnimationFrame(frame); };
+    const request = () => { if (p) pending ||= requestAnimationFrame(frame); };
 
     const resize = () => {
       const r = el.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
@@ -64,13 +65,24 @@ export function Stage() {
     ro.observe(el);
     resize();
 
-    let lastPhoto: unknown = null, wasLive = false;
+    // A phone can take the GPU away from a sleeping tab: rebuild the preview when it comes back.
+    const lost = (e: Event) => { e.preventDefault(); p = stage.preview = null; cancelAnimationFrame(pending); pending = 0; };
+    const back = () => {
+      try { p = stage.preview = createPreview(c); } catch (e) { say(`The picture could not be redrawn: ${(e as Error).message}. Reload the page.`, true); return; }
+      lastPhoto = null; lastInput = null;
+      restored.value++;
+    };
+    c.addEventListener('webglcontextlost', lost);
+    c.addEventListener('webglcontextrestored', back);
+
     const stop = effect(() => {
+      void restored.value;
       const ph = photo.value;
-      if (ph && ph !== lastPhoto) {
-        lastPhoto = ph;
+      if (p && ph && ph !== lastPhoto) {
+        // A new photo starts fitted; the same photo after a lost context keeps its zoom.
+        if (ph !== shownPhoto) geo.value = { ...geo.peek(), aspect: ph.image.height / ph.image.width, zoom: 1, pan: [0.5, 0.5] };
+        lastPhoto = shownPhoto = ph;
         p.setPhoto(ph.image, ph.space);
-        geo.value = { ...geo.value, aspect: ph.image.height / ph.image.width, zoom: 1, pan: [0.5, 0.5] };
       }
       // Read every signal the picture depends on, so any change redraws it.
       void shown.value; void before.value; void kappa.value; void geo.value;
@@ -84,17 +96,20 @@ export function Stage() {
       if (ph) request();
     });
     // Texture's maps on the GPU, two directions a frame, then shown (§9: no frame over 100 ms).
-    let lastInput: unknown = null;
     const stopRelief = effect(() => {
-      const r = reliefInput.value;
-      if (r === lastInput) return;
+      void restored.value;
+      const r = reliefInput.value, q = p;
+      if (!q || r === lastInput) return;
       lastInput = r;
-      if (!r) { p.setRelief(null); return; }
-      void p.buildRelief(r.height, r.inp, () => new Promise((res) => requestAnimationFrame(res)), () => r.tmax)
-        .then((ok) => { if (ok) { gpuReady(); request(); } })
-        .catch((e: Error) => say(`Texture could not be shown: ${e.message}`, true));
+      if (!r) { q.setRelief(null); return; }
+      void q.buildRelief(r.height, r.inp, () => new Promise((res) => requestAnimationFrame(res)), () => r.tmax)
+        .then((ok) => { if (ok && q === p) { gpuReady(); request(); } })
+        .catch((e: Error) => { if (q === p) say(`Texture could not be shown: ${e.message}`, true); });
     });
-    return () => { stop(); stopRelief(); ro.disconnect(); cancelAnimationFrame(pending); };
+    return () => {
+      stop(); stopRelief(); ro.disconnect(); cancelAnimationFrame(pending);
+      c.removeEventListener('webglcontextlost', lost); c.removeEventListener('webglcontextrestored', back);
+    };
   }, []);
 
   return (

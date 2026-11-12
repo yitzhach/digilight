@@ -31,7 +31,10 @@ export async function decodePhoto(blob: Blob, name = (blob as File).name ?? 'pho
   g.drawImage(source, 0, 0);
   if ('close' in source) source.close();
   const data = g.getImageData(0, 0, width, height, { colorSpace: space }).data;
-  // Opaque: DigiLight lights artwork, and the renderer treats every pixel as opaque.
-  for (let p = 3; p < data.length; p += 4) data[p] = 255;
+  // Opaque: DigiLight lights artwork, and the renderer treats every pixel as opaque. A photo
+  // that decodes to nothing (every pixel black) was too big for this device's canvas.
+  let blank = true;
+  for (let p = 0; p < data.length; p += 4) { data[p + 3] = 255; if (blank && (data[p]! | data[p + 1]! | data[p + 2]!)) blank = false; }
+  if (blank) throw new Error(`"${name}" came out empty: this photo is too large for this phone. Export a smaller copy (under 16 megapixels) and open that.`);
   return { image: { data, width, height }, space, sha256: await digest, name, blob };
 }

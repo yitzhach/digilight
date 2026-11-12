@@ -4,8 +4,8 @@
 // functions as measureFromPhotos, so the height is the one Node measures from the same photos.
 
 import {
-  flipped, measuredRelief, measureRelief, neutralDoc, parseDoc, prepareSideLit, quantise, reliefFlat, render, resampleRegion, thumbnail,
-  type Image, type MeasuredHeight, type ShotLight, type SideLit,
+  defaultDoc, defaultLight, flipped, measuredRelief, measureRelief, prepareSideLit, quantise, reliefFlat, render, resampleRegion, thumbnail,
+  type Doc, type Image, type MeasuredHeight, type ShotLight, type SideLit,
 } from 'core';
 
 /** How a photo's light is taken: sunlight from a direction, or a lamp placed in cm (tripod shot). */
@@ -58,12 +58,12 @@ function preview(id: number, specs: ShotSpec[], widthCm: number | undefined, lig
   const m = measureRelief({ even: f.data, w: f.width, h: f.height, shots: small.lined.map((rgba, k) => ({ rgba, light: lightOf(specs[k]!) })), ...(widthCm ? { widthCm } : {}) });
   const q = quantise(m);
   // Both previews under the same light: the height as measured, and turned over (the other end).
-  const base = neutralDoc({ width: f.width, height: f.height, space: 'srgb', sha256: '0'.repeat(64) }); // a preview, not a photo file
-  const doc = parseDoc({
+  const base = defaultDoc({ width: f.width, height: f.height, space: 'srgb', sha256: '0'.repeat(64) }); // a preview, not a photo file
+  const doc: Doc = {
     ...base, ambient: { level: 0.15, kelvin: 6500 },
-    lights: [{ id: 'sun', kind: 'sun', azimuth: light, elevation: 25, intensity: 1, kelvin: 6500, size: 0.01 }],
+    lights: [defaultLight({ id: 'sun', kind: 'sun', azimuth: light, elevation: 25, intensity: 1, kelvin: 6500, size: 0.01 })],
     relief: { ...base.relief, mode: 'measured', depth: Math.min(0.03, q.depth), shadows: 1 },
-  });
+  };
   const a = render(f, doc, { relief: measuredRelief(q.height) }).data;
   // A lamp's place says which way the light came from: nothing to choose.
   const b = specs.every((s) => 'lamp' in s) ? null : render(f, doc, { relief: measuredRelief(flipped(q.height)) }).data;

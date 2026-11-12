@@ -20,6 +20,7 @@ export const RELIEF_START = { depth: 0.003, shadows: 0.4 } as const;
 /** "+ Add light" (§6): a lamp above centre, aimed at the centre. */
 export const NEW_LIGHT = { pos: [0.5, -0.2, 0.8], aim: [0.5, 0.5], intensity: 0.8, kelvin: 4000, cone: 90 } as const;
 const HISTORY = 200;
+const MEASURED_FIRST = 'measured texture needs a side-lit photo first (measureRelief)';
 
 type Json = unknown;
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
@@ -62,10 +63,15 @@ export function createCommands() {
     if (!doc) throw new Error('open a photo first');
     return doc;
   };
-  const commit = (next: Json): Doc => {
-    const d = parseDoc(next), cur = current();
-    if (d.photo.width !== cur.photo.width || d.photo.height !== cur.photo.height || d.photo.sha256 !== cur.photo.sha256 || d.photo.space !== cur.photo.space)
+  const check = (next: Json, against: Doc['photo'], height: MeasuredHeight | null): Doc => {
+    const d = parseDoc(next);
+    if (d.photo.width !== against.width || d.photo.height !== against.height || d.photo.sha256 !== against.sha256 || d.photo.space !== against.space)
       throw new Error('the document is for a different photo');
+    if (d.relief.mode === 'measured' && !height) throw new Error(MEASURED_FIRST);
+    return d;
+  };
+  const commit = (next: Json): Doc => {
+    const cur = current(), d = check(next, cur.photo, measured);
     if (same(d, cur)) return cur;
     past.push(cur);
     if (past.length > HISTORY) past.shift();
@@ -100,6 +106,17 @@ export function createCommands() {
       return { width: d.photo.width, height: d.photo.height, space: d.photo.space, sha256: d.photo.sha256, looks: LOOKS.map((l) => l.id) };
     },
     getDoc: (): Doc => clone(current()),
+    /** Puts back a saved document (autosave, a project) and its measured height, with no undo
+     *  step and a fresh history. Throws, changing nothing, if the schema refuses it, it is for
+     *  another photo, or it says measured with no height. */
+    load(d: Doc, height: MeasuredHeight | null = null): Doc {
+      const cur = current(), size = reliefSize(cur.photo);
+      if (height && (height.width !== size.width || height.height !== size.height || height.data.length !== size.width * size.height))
+        throw new Error(`the measured height must be ${size.width} x ${size.height} for this photo`);
+      const next = check(d, cur.photo, height);
+      doc = next; measured = height; past = []; future = [];
+      return clone(next);
+    },
     setDoc: (d: Doc): Doc => clone(commit(d)),
     get: (path: string): Json => clone(getIn(current(), path)),
     /** set('lights.0.kelvin', 3000) or set({ 'lights.0.kelvin': 3000, 'ambient.level': 0.5 }): one step. */
@@ -131,7 +148,6 @@ export function createCommands() {
         if (partial.depth === undefined) r.depth = RELIEF_START.depth;
         if (partial.shadows === undefined) r.shadows = RELIEF_START.shadows;
       }
-      if (r.mode === 'measured' && !measured) throw new Error('measured texture needs a side-lit photo first (measureRelief)');
       return clone(commit({ ...d, relief: r }));
     },
     /** True Relief (Phase 5): measures the surface from one to three side-lit photos and

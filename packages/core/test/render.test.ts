@@ -43,7 +43,7 @@ test('each look on the procedural photo matches its golden SHA-256', () => {
 
 test('a region has exactly the pixels of the whole render there, at any width', () => {
   const photo = procedural(), d = withLook(docFor(photo), 'dramatic');
-  for (const width of [256, 200, 400]) {
+  for (const width of [256, 200, 128]) {
     const whole = render(photo, d, { width });
     const region = { x: 17, y: 23, width: 61, height: 40 };
     const part = render(photo, d, { width, region });
@@ -53,6 +53,12 @@ test('a region has exactly the pixels of the whole render there, at any width', 
         .toEqual(Array.from(whole.data.subarray(a, a + region.width * 4)));
     }
   }
+});
+
+test('a width over the photo\'s is refused, never upscaled', () => {
+  const photo = procedural(), d = withLook(docFor(photo), 'gallery');
+  expect(() => render(photo, d, { width: photo.width + 1 })).toThrow(/photo's 256/);
+  expect(render(photo, d, { width: photo.width }).width).toBe(photo.width);
 });
 
 test('a look at strength 0 is neutral; flip mirrors the lamp', () => {

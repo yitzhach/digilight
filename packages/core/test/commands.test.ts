@@ -97,3 +97,28 @@ test('setRelief: first switched on, Texture starts at depth 0.003 and shadows 0.
   expect([d.relief.depth, d.relief.shadows]).toEqual([0.006, 0.4]);
   expect(() => c.setRelief({ mode: 'measured' })).toThrow(/side-lit/);
 });
+
+test('measured texture needs a height in every command, not only setRelief', () => {
+  const c = createCommands();
+  c.open(photo());
+  const d = c.getDoc();
+  expect(() => c.set('relief.mode', 'measured')).toThrow(/side-lit photo/);
+  expect(() => c.setDoc({ ...d, relief: { ...d.relief, mode: 'measured' } })).toThrow(/side-lit photo/);
+  expect(() => c.setRelief({ mode: 'measured' })).toThrow(/side-lit photo/);
+  expect(() => c.load({ ...d, relief: { ...d.relief, mode: 'measured' } })).toThrow(/side-lit photo/);
+  expect(c.getDoc()).toEqual(d);
+  expect(() => c.render({ width: 81 })).toThrow(/photo's 80/);
+});
+
+test('load puts back a saved document with no undo step, or refuses it and changes nothing', () => {
+  const c = createCommands();
+  c.open(photo());
+  const saved = c.applyLook('gallery');
+  c.open(photo());
+  c.load(saved);
+  expect(c.getDoc()).toEqual(saved);
+  expect(c.undo()).toEqual(saved); // nothing to undo
+  expect(() => c.load({ ...saved, ambient: { level: 7, kelvin: 6500 } })).toThrow(/ambient\.level/);
+  expect(() => c.load({ ...saved, photo: { ...saved.photo, sha256: 'e'.repeat(64) } })).toThrow(/different photo/);
+  expect(c.getDoc()).toEqual(saved);
+});

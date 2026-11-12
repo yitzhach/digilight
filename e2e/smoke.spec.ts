@@ -9,17 +9,19 @@ import { loadFixture } from '../packages/core/scripts/jpeg.ts';
 import { encodePng } from './png.ts';
 
 const APP = 'http://localhost:5180/';
+/** The dev server, and the built app (`vite preview` of dist: what is deployed). */
+const APPS = [['dev server', APP], ['built app', 'http://localhost:5181/']] as const;
 const src = loadFixture('door-flat-crop.jpg');
 // A lossless photo (PNG) at 1200 px so the app decodes exactly these pixels.
 const photo = render(src, neutralDoc({ width: src.width, height: src.height, space: 'srgb', sha256: src.sha256 }), { width: 1200 });
 const png = encodePng(photo);
 const sha = (b: Uint8Array | Uint8ClampedArray) => createHash('sha256').update(b).digest('hex');
 
-test('smoke: open, looks, drag, export', async ({ page }) => {
-  test.setTimeout(120_000);
+for (const [where, app] of APPS) test(`smoke: open, looks, drag, export (${where})`, async ({ page }) => {
+  test.setTimeout(180_000);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto(APP);
+  await page.goto(app);
   await page.locator('input[type=file]').setInputFiles({ name: 'door.png', mimeType: 'image/png', buffer: png });
   await expect(page.locator('.look canvas:not(.loading)')).toHaveCount(LOOKS.length, { timeout: 30_000 });
   const getDoc = () => page.evaluate(() => (window as any).digilight.getDoc());

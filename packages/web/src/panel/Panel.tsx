@@ -3,6 +3,7 @@
 // arrives in Phase 6.
 
 import { signal } from '@preact/signals';
+import { useEffect, useRef } from 'preact/hooks';
 import { expert, photo } from '../state.ts';
 import { ExportPanel } from './ExportPanel.tsx';
 import { Lights } from './Lights.tsx';
@@ -13,9 +14,12 @@ const TABS = [['looks', 'Looks', Looks], ['lights', 'Lights', Lights], ['texture
 const tab = signal<(typeof TABS)[number][0]>('looks');
 
 export function Panel() {
+  const el = useRef<HTMLElement>(null), t = tab.value;
+  // A new tab starts at its top (on a phone the sheet is one scroller for every tab).
+  useEffect(() => { if (el.current) el.current.scrollTop = 0; }, [t]);
   if (!photo.value) return <aside class="panel" />;
   return (
-    <aside class="panel">
+    <aside class="panel" ref={el}>
       <nav class="tabs">
         {TABS.map(([id, label]) => (
           <button key={id} class={tab.value === id ? 'current' : ''} onClick={() => (tab.value = id)}>{label}</button>

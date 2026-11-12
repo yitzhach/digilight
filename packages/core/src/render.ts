@@ -23,10 +23,11 @@ export interface RenderOptions {
   relief?: ReliefMaps;
 }
 
-/** Output size for a width (default the photo's own). */
+/** Output size for a width (default the photo's own). Never wider than the photo: the art is
+ *  never resampled up (promise 1). */
 export function outputSize(photo: { width: number; height: number }, width?: number): { width: number; height: number } {
   if (width === undefined || width === photo.width) return { width: photo.width, height: photo.height };
-  if (!Number.isInteger(width) || width < 1 || width > 16384) throw new Error(`width must be a whole number from 1 to 16384, not ${width}`);
+  if (!Number.isInteger(width) || width < 1 || width > photo.width) throw new Error(`width must be a whole number from 1 to the photo's ${photo.width}, not ${width}`);
   return { width, height: Math.max(1, Math.round((width * photo.height) / photo.width)) };
 }
 

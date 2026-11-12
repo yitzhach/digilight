@@ -62,3 +62,11 @@ test('describe lists every setting with tier, label, range and default', () => {
   expect(describe(neutralDoc(photo)).length).toBeLessThanOrEqual(40);
   for (const x of s.filter((x) => x.tier === 'simple')) expect(x.label).not.toMatch(/azimuth|kelvin|specular/i);
 });
+
+test('defaultDoc and defaultLight (no validation, for the workers) equal what the schema fills in', async () => {
+  const { defaultDoc, defaultLight, neutralDoc, parseDoc } = await import('../src/index.ts');
+  const photo = { width: 30, height: 20, space: 'srgb' as const, sha256: 'a'.repeat(64) };
+  expect(JSON.stringify(defaultDoc(photo))).toBe(JSON.stringify(neutralDoc(photo)));
+  const d = parseDoc({ version: 2, photo, lights: [{ id: 'sun', kind: 'sun', azimuth: 40 }] });
+  expect(JSON.stringify(defaultLight({ id: 'sun', kind: 'sun', azimuth: 40 }))).toBe(JSON.stringify(d.lights[0]));
+});

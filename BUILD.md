@@ -430,8 +430,8 @@ Cloud test machines have no GPU, so the budgets are checked on Isaac's iMac with
 bench page (`?bench`, Phase 3), which prints these numbers.
 
 Phones have no budget yet. Isaac's iPhone opens a full-size photo (11-12); Phase 5b adds its
-bench table here. JavaScript was about 245 KB on 11-12 with the True Relief worker; CI
-checks this row from Phase 5b.
+bench table here. JavaScript was about 245 KB on 11-12 with the True Relief worker, 161 KB after
+Phase 5b (D-052); CI checks this row (`pnpm --filter web size`).
 
 ---
 

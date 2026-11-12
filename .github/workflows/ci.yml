@@ -12,6 +12,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck && pnpm test
+      # JavaScript shipped, gzip, without the HEIC decoder: BUILD.md §9's 250 KB.
+      - run: pnpm build && pnpm --filter web size
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -37,3 +39,19 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm gate:relief
+  # Safari's engine (BUILD.md Phase 5b item 12): the smoke test in WebKit. Allowed to fail
+  # while it is being tried; what it shows is logged in DECISIONS.md.
+  webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter e2e exec playwright install --with-deps webkit
+      - run: pnpm --filter e2e exec playwright test --project webkit

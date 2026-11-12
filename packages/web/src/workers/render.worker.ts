@@ -3,7 +3,7 @@
 // maps (shared memory when the page is cross-origin isolated, a copy otherwise).
 
 import {
-  aoFromTable, channelRows, estimateHeight, gauss, guardKappa, measuredHHat, normalise, slopes, rawRows, resampleRegion, horizonInput, horizonLayer, horizonTmax, K, LOOKS, neutralDoc, render, withLook,
+  aoFromTable, channelRows, estimateHeight, gauss, guardKappa, measuredHHat, normalise, slopes, rawRows, resampleRegion, horizonInput, horizonLayer, horizonTmax, K, LOOKS, defaultDoc, render, withLook,
   type Doc, type Height, type HorizonInput, type Image, type ReliefMaps,
 } from 'core';
 import type { Reply, Request } from './protocol.ts';
@@ -18,7 +18,7 @@ function thumbs(id: number, doc: Doc, width: number, flip: boolean): void {
   // Resizing first and lighting the small picture gives exactly render(photo, look, {width}):
   // the renderer resamples first, and lighting depends only on where a pixel sits (§5.1).
   // Thumbnails show the Light layer only (Texture's maps are made for the full photo).
-  const small = render(p, neutralDoc(doc.photo), { width: w });
+  const small = render(p, defaultDoc(doc.photo), { width: w });
   const smallPhoto = { ...doc.photo, width: small.width, height: small.height };
   for (const look of LOOKS) {
     const d = withLook(doc, look.id, { flip });

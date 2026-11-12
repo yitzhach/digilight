@@ -18,7 +18,7 @@ export async function exportNow(over: ExportOptions = {}) {
   const c = exportChoice.value;
   busy.value = 'Exporting…';
   try {
-    const e = await exportPicture(p, d, { width: c.size === 'full' ? undefined : c.size, format: c.format, ...over });
+    const e = await exportPicture(p, d, { width: c.size === 'full' ? undefined : Math.min(c.size, p.image.width), format: c.format, ...over });
     if (canShare(e)) {
       ready.value = e;
       say('Your picture is ready: tap Save or share, then Save Image to put it in Photos.');

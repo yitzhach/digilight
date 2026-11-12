@@ -1,7 +1,7 @@
 // looks.ts — the one-tap starting points (BUILD.md §6, Looks). A look sets `ambient` and
 // `lights` only. Strength s mixes toward neutral; flip mirrors every u about 0.5.
 
-import { LIGHT, type Doc, type Light } from './schema.ts';
+import { LIGHT, type Doc, type Light } from './fields.ts';
 
 export interface Look {
   id: string; label: string;
@@ -49,4 +49,37 @@ export function withLook(doc: Doc, id: string, { strength = 1, flip = false }: L
     ambient: { level: mix(1, look.ambient.level, s), kelvin: mix(6500, look.ambient.kelvin, s) },
     lights,
   };
+}
+
+export interface LookMatch { id: string; strength: number; flip: boolean }
+
+const near = (a: unknown, b: unknown): boolean => {
+  if (typeof a === 'number' && typeof b === 'number') return Math.abs(a - b) <= 1e-6;
+  if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((x, i) => near(x, b[i]));
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    const ka = Object.keys(a), kb = Object.keys(b);
+    return ka.length === kb.length && ka.every((k) => near((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]));
+  }
+  return a === b;
+};
+
+/** The look, strength and flip `doc`'s ambient and lights match (within 1e-6), or null (lights
+ *  changed by hand). Where several match (a symmetric look flipped or not; Original at any
+ *  strength), `prefer` (the last tap) decides, else flip off and strength 1. */
+export function lookOf(doc: Doc, prefer?: Partial<LookMatch>): LookMatch | null {
+  const found: LookMatch[] = [];
+  for (const look of LOOKS) {
+    if (look.lights.length !== doc.lights.length) continue;
+    const first = look.lights[0], d0 = doc.lights[0];
+    let s = first && d0 ? d0.intensity / first.intensity : prefer?.id === look.id && prefer.strength !== undefined ? prefer.strength : 1;
+    s = Math.round(s * 1e9) / 1e9;
+    if (!(s >= 0 && s <= 1)) continue;
+    for (const flip of [false, true]) {
+      const w = withLook(doc, look.id, { strength: s, flip });
+      if (near(w.ambient, doc.ambient) && near(w.lights, doc.lights)) found.push({ id: look.id, strength: s, flip });
+    }
+  }
+  if (found.length === 0) return null;
+  const score = (m: LookMatch) => (m.id === prefer?.id ? 2 : 0) + (m.flip === (prefer?.flip ?? false) ? 1 : 0);
+  return found.reduce((a, b) => (score(b) > score(a) ? b : a));
 }

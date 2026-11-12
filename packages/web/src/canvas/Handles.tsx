@@ -10,6 +10,8 @@ import { geo } from './Stage.tsx';
 import { maxZoom, toPicture, toScreen, zoomAt, type Geometry } from './view.ts';
 
 const R = 11, PAD = 14;
+/** How far from its centre a handle answers: 22 px for a finger (§8), the drawn circle for a mouse. */
+const HIT = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches ? 22 : R;
 const clampPos = (x: number) => Math.min(3, Math.max(-2, x));
 const round3 = (x: number) => Math.round(x * 1000) / 1000;
 const withLight = (d: Doc, id: string, part: Partial<Light>): Doc =>
@@ -133,6 +135,7 @@ export function Handles() {
         return (
           <g key={l.id} data-light={l.id} data-part="pos" class={`handle${on ? ' selected' : ''}${l.on ? '' : ' off'}`}>
             <title>{`Light ${i + 1}: drag to move, scroll for brightness, double-click to switch ${l.on ? 'off' : 'on'}`}</title>
+            <circle cx={x} cy={y} r={HIT} class="hit" />
             <circle cx={x} cy={y} r={R} />
             <text x={x} y={y + 4} text-anchor="middle">{i + 1}</text>
           </g>
@@ -149,7 +152,7 @@ function Aim({ g, l }: { g: Geometry; l: Light }) {
       <line x1={hx} y1={hy} x2={ax} y2={ay} />
       <g data-light={l.id} data-part="aim">
         <title>Drag to aim this light</title>
-        <circle cx={ax} cy={ay} r={10} class="hit" />
+        <circle cx={ax} cy={ay} r={Math.max(10, HIT)} class="hit" />
         <path d={`M${ax - 7} ${ay}H${ax + 7}M${ax} ${ay - 7}V${ay + 7}`} />
       </g>
     </g>

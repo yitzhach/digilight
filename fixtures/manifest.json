@@ -19,5 +19,9 @@
   },
   "band": { "flat": "band-outdoor-crop.jpg", "flatOriginal": "band-outdoor.jpg", "cropBox": [236, 45, 1132, 1945], "notes": "Outdoors, even daylight; colour (orange band) and a near-black band." },
   "closeup": { "flat": "closeup-flat.jpg", "notes": "Already cropped; near-black band: room light alone cannot keep it from crushing (guard)." }
+ },
+ "iphone": {
+  "p3": { "file": "lintel-iphone-p3.jpg", "space": "display-p3", "size": [1512, 2016], "orientation": 1, "notes": "From Isaac's iPhone, 11-12, as sent in chat (scaled by the upload). The full-size HEIC is still to come." },
+  "exifRotated": { "file": "door-exif-rotated.jpg", "from": "door-flat-crop.jpg", "stored": [902, 640], "shown": [640, 902], "orientation": 6 }
  }
 }

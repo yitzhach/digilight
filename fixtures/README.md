@@ -19,6 +19,8 @@ _headers are).
 | band-outdoor.jpg | banded panel (grey / white / orange / black), outdoors, even daylight (as sent) |
 | band-outdoor-crop.jpg | cropped to the panel (896 × 1900) |
 | closeup-flat.jpg | close-up of another piece (grey / white / black band), indoors, flat light |
+| lintel-iphone-p3.jpg | a panel with a wooden lintel and base, indoors, from Isaac's iPhone as sent 11-12: a Display P3 JPEG, 1512 × 2016, no rotation (Phase 5b item 10) |
+| door-exif-rotated.jpg | door-flat-crop at 640 px wide, stored turned a quarter to the left with EXIF orientation 6, so it shows upright (made for the rotation test) |
 
 Pairs (flat + sun of the same piece, lined up): door, lintel. A flat crop plus its "-lined" sun
 photo is what tools/realref/score.py and measure_sun.cjs take; the app also takes the raw sun

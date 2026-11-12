@@ -15,8 +15,8 @@ button.current, button.primary { background: var(--accent); color: #1b1b1d; bord
 .bar { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--panel); }
 .bar .brand { margin-right: 8px; }
 .bar .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dim); padding: 0 8px; }
-.bar .error { color: var(--error); cursor: pointer; }
-.bar .note { cursor: pointer; }
+.notice { padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--panel); white-space: normal; overflow-wrap: anywhere; cursor: pointer; }
+.notice.error { color: var(--error); }
 .bar .share { display: flex; gap: 6px; }
 .bar .share .primary { width: auto; margin: 0; padding: 5px 12px; }
 
@@ -26,6 +26,7 @@ main { flex: 1; display: flex; min-height: 0; }
 .stage .handles { position: absolute; inset: 0; }
 .empty { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; color: var(--dim); padding: 24px; }
 .handle { cursor: grab; }
+.stage .handle circle.hit { fill: transparent; stroke: none; }
 .handle circle { fill: rgba(255, 244, 220, 0.9); stroke: #1b1b1d; stroke-width: 2; }
 .handle.selected circle { stroke: var(--accent); stroke-width: 3; }
 .handle.off circle { fill: rgba(120, 120, 120, 0.7); stroke-dasharray: 3 2; }
@@ -63,7 +64,7 @@ main { flex: 1; display: flex; min-height: 0; }
 
 @media (max-width: 700px) {
   main { flex-direction: column; }
-  .panel { width: auto; height: 45%; border-left: 0; border-top: 1px solid var(--line); }
+  .panel { width: auto; height: 45%; border-left: 0; border-top: 1px solid var(--line); padding-top: 0; }
   .tabs { display: flex; gap: 4px; position: sticky; top: 0; background: var(--panel); padding: 6px 0; z-index: 1; }
   .tabs button { flex: 1; }
   .tab { display: none; }
@@ -85,3 +86,10 @@ main { flex: 1; display: flex; min-height: 0; }
 .true-relief .row { display: flex; gap: 6px; margin-top: 8px; }
 .true-relief .error { color: var(--error, #ff8a80); font-size: 12px; }
 .true-relief input[type=number] { width: 80px; font: inherit; background: #333338; color: var(--text); border: 1px solid var(--line); border-radius: 4px; }
+.control.disabled { opacity: 0.5; }
+
+/* Where nothing hovers (a phone), each control's hint is on screen under it (§8). */
+@media (hover: none) {
+  .control[title]::after { content: attr(title); display: block; flex-basis: 100%; color: var(--dim); font-size: 12px; margin-top: 2px; }
+  .control.switch[title] { flex-wrap: wrap; }
+}

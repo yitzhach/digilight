@@ -1,5 +1,5 @@
 // main.tsx — the one screen (§8): top bar, the picture, the panel. Open by drop, paste or picker;
-// keys B (Before, held), Z / Shift+Z (undo / redo), Delete (remove the selected light).
+// keys B (Before, held), Z / Shift+Z (undo / redo, also with Cmd or Ctrl), Delete (remove the selected light).
 
 import { render } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
@@ -7,7 +7,7 @@ import { installApi } from './api.ts';
 import { Stage } from './canvas/Stage.tsx';
 import { exportNow, ShareButton } from './panel/ExportPanel.tsx';
 import { Panel } from './panel/Panel.tsx';
-import { before, busy, cmd, notice, openFile, photo, restore, run, selected } from './state.ts';
+import { before, busy, cmd, notice, openFile, photo, restore, run, say, selected } from './state.ts';
 import './style.css';
 
 const editable = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName) && (t as HTMLInputElement).type !== 'range' && (t as HTMLInputElement).type !== 'checkbox');
@@ -16,8 +16,9 @@ function App() {
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (editable(e.target) || e.metaKey || e.ctrlKey || e.altKey || !photo.value) return;
       const k = e.key.toLowerCase();
+      // Cmd or Ctrl only with Z (undo / redo, as Z alone); other shortcuts stay the browser's.
+      if (editable(e.target) || e.altKey || !photo.value || ((e.metaKey || e.ctrlKey) && k !== 'z')) return;
       if (k === 'b') { if (e.type === 'keydown') before.value = true; else before.value = false; return; }
       if (e.type !== 'keydown') return;
       if (k === 'z') run(() => (e.shiftKey ? cmd.redo() : cmd.undo()));
@@ -51,9 +52,10 @@ function App() {
           onPointerDown={() => (before.value = true)} onPointerUp={() => (before.value = false)} onPointerLeave={() => (before.value = false)}
           onPointerCancel={() => (before.value = false)} onContextMenu={(e) => e.preventDefault()}>Before</button>
         <ShareButton />
-        <span class="grow">{busy.value ?? (n && <span class={n.error ? 'error' : 'note'} onClick={() => (notice.value = null)}>{n.text}</span>)}</span>
+        <span class="grow">{busy.value}</span>
         <button disabled={!has || busy.value !== null} onClick={() => void exportNow()} title="Save the picture with the Export choices">Export</button>
       </header>
+      {n && <div class={`notice${n.error ? ' error' : ''}`} role={n.error ? 'alert' : 'status'} onClick={() => (notice.value = null)} title="Tap to close">{n.text}</div>}
       <main>
         <Stage />
         <Panel />
@@ -62,6 +64,9 @@ function App() {
   );
 }
 
+// An error nothing caught still reaches the person, as a message.
+window.addEventListener('error', (e) => say(`Something went wrong: ${e.message || 'an unknown error'}. If the picture looks wrong, reload the page.`, true));
+window.addEventListener('unhandledrejection', (e) => say(`Something went wrong: ${(e.reason as Error)?.message ?? String(e.reason)}. If the picture looks wrong, reload the page.`, true));
 installApi();
 render(<App />, document.getElementById('app')!);
 if (new URLSearchParams(location.search).has('bench')) void import('./bench.ts').then((b) => b.mountBench());

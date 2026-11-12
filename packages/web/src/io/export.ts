@@ -22,8 +22,8 @@ export async function exportPicture(photo: Photo, doc: Doc, opts: ExportOptions 
   const format = opts.format ?? 'jpeg', quality = opts.quality ?? 0.92;
   if (format !== 'jpeg' && format !== 'png') throw new Error('format must be "jpeg" or "png"');
   if (!(quality > 0 && quality <= 1)) throw new Error('quality must be over 0 and at most 1');
-  const width = Math.min(opts.width ?? photo.image.width, photo.image.width);
-  outputSize(doc.photo, width); // checks the width
+  const width = opts.width ?? photo.image.width;
+  outputSize(doc.photo, width); // checks the width: never over the photo's
   if (doc.relief.mode !== 'off') await reliefForExport(() => {});
   const kappa = guardKappa(photo.image, doc);
   const img = await renderRows(doc, width, kappa);

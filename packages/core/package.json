@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "main": "src/index.ts",
+  "sideEffects": false,
   "scripts": {
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
     "test": "vitest run",

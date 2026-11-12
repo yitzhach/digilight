@@ -37,3 +37,9 @@
 
 ## Audit (11-12)
 - No code changed. BUILD.md: Phase 5b (fix-ups, each seen in the code or the running app), Phase 6 in two parts (6a, 6b), Phase 8b; §5.9 Brightness goes through the whites protection; Phase 7's gate compares pixel hashes (D-049).
+
+## Phase 5b: fix-ups from the audit
+- The Looks panel reads the look, Strength and Flip from the document (`lookOf`): moving a lamp by hand greys Strength ("Lights changed by hand") instead of Strength wiping the hand's work; Undo and a reload show the right look (D-051).
+- Measured texture needs a height in every command; `load` reopens an autosave with no undo step, and an autosave that no longer fits says so; render and export refuse a width over the photo's.
+- Phone: messages on their own line and wrapped, each tab starts at its top, a handle answers a touch within 22 px, hints on screen. Cmd+Z / Ctrl+Z undo. A lost WebGL context is rebuilt; uncaught errors show as a message; a failed texture build no longer haunts the next export; an empty decode says the photo is too large for the phone.
+- Tests: smoke on the built app too; `fixups.spec.ts`, `iphone.spec.ts` (Display P3, EXIF rotation, HEIC once the file is in); a WebKit smoke job in CI; JavaScript size checked in CI, 245 to 161 KB (D-052).
