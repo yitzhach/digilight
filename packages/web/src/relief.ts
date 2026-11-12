@@ -1,20 +1,20 @@
 // relief.ts — Texture's maps for the open photo (BUILD.md Phase 4): the height and the table's
-// input from a worker, Tmax across the workers, then the table twice at once: on the GPU for the
-// picture (Stage, two directions a frame) and in the workers for exports. Started when Texture
+// input from the workers, then the table twice at once: on the GPU for the picture (Stage: Tmax,
+// then two directions a frame) and in the workers for exports (Tmax, then the layers). Started when Texture
 // is first switched on for a photo; the picture shows the Light layer until the maps are ready.
 
 import { signal } from '@preact/signals';
 import type { Height, HorizonInput } from 'core';
 import { reliefHeight, reliefTable, reliefTmax } from './workers/pool.ts';
 
-export interface ReliefInput { height: Height; inp: HorizonInput; tmax: number }
+export interface ReliefInput { height: Height; inp: HorizonInput; tmax: Promise<number> }
 
 /** What the GPU builds the table from (Stage watches it). */
 export const reliefInput = signal<ReliefInput | null>(null);
 /** The picture shows Texture (the GPU's maps are ready). */
 export const reliefShown = signal(false);
 /** Texture switched on to maps ready on screen, in ms (the bench reads it). */
-export const reliefTiming = signal<{ gpu?: number; cpu?: number } | null>(null);
+export const reliefTiming = signal<{ height?: number; gpu?: number; cpu?: number } | null>(null);
 
 let gen = 0, t0 = 0, cpu: Promise<void> | null = null, failed: Error | null = null;
 
@@ -32,10 +32,12 @@ export function startRelief(onError: (e: Error) => void): void {
   const alive = () => me === gen;
   cpu = (async () => {
     const { height, inp } = await reliefHeight(alive);
-    const tmax = await reliefTmax();
     if (me !== gen) return;
+    reliefTiming.value = { ...reliefTiming.value, height: performance.now() - t0 };
+    // The GPU finds Tmax itself where it can (D-039); the workers find their own for exports.
+    const tmax = reliefTmax();
     reliefInput.value = { height, inp, tmax };
-    await reliefTable(height.width * height.height, tmax, alive);
+    await reliefTable(height.width * height.height, await tmax, alive);
     if (me === gen) reliefTiming.value = { ...reliefTiming.value, cpu: performance.now() - t0 };
   })();
   cpu.catch((e: Error) => { if (me === gen) { failed = e; cpu = null; onError(e); } });

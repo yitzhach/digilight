@@ -41,6 +41,56 @@ void main() {
   outB = vec4(byteOf(rise(P, size, h0, ${MAX_TAPS})), 0.0, 0.0, 1.0);
 }`;
 
+/** Directions a frame for Tmax (as the table: a frame stays well under 100 ms). */
+export const TMAX_DIRS = 2;
+
+/** Tmax, step 1: per pixel, the largest rise so far over the directions done (ping-pong R32F). */
+export const TMAX = `#version 300 es
+precision highp float;
+precision highp int;
+
+uniform highp sampler2D u_pyr;
+uniform highp sampler2D u_prev; // the largest rise of the directions before (R32F)
+uniform int u_n, u_dirs;
+uniform int u_level[${MAX_TAPS}];
+uniform ivec2 u_off[${4 * MAX_TAPS}];
+uniform float u_inv[${4 * MAX_TAPS}];
+out vec4 outMax;
+
+void main() {
+  ivec2 P = ivec2(gl_FragCoord.xy), size = textureSize(u_pyr, 0);
+  float h0 = texelFetch(u_pyr, P, 0).r, best = texelFetch(u_prev, P, 0).r;
+  for (int d = 0; d < 4; d++) {
+    if (d >= u_dirs) break;
+    for (int j = 0; j < ${MAX_TAPS}; j++) {
+      if (j >= u_n) break;
+      int o = d * ${MAX_TAPS} + j;
+      ivec2 X = P + u_off[o];
+      if (X.x < 0 || X.y < 0 || X.x >= size.x || X.y >= size.y) break;
+      int l = u_level[j];
+      ivec2 t = min(X >> l, textureSize(u_pyr, l) - 1);
+      best = max(best, (texelFetch(u_pyr, t, l).r - h0) * u_inv[o]);
+    }
+  }
+  outMax = vec4(best, 0.0, 0.0, 1.0);
+}`;
+
+/** Tmax, step 2: the max of each 4 x 4 block, until one texel is left. */
+export const REDUCE = `#version 300 es
+precision highp float;
+precision highp int;
+uniform highp sampler2D u_src;
+out vec4 outMax;
+void main() {
+  ivec2 P = ivec2(gl_FragCoord.xy) * 4, size = textureSize(u_src, 0);
+  float m = 0.0;
+  for (int y = 0; y < 4; y++) for (int x = 0; x < 4; x++) {
+    ivec2 Q = P + ivec2(x, y);
+    if (Q.x < size.x && Q.y < size.y) m = max(m, texelFetch(u_src, Q, 0).r);
+  }
+  outMax = vec4(m, 0.0, 0.0, 1.0);
+}`;
+
 export const AO = `#version 300 es
 precision highp float;
 precision highp int;

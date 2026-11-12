@@ -72,6 +72,7 @@ async function measure(log: (s: string) => void): Promise<Row[]> {
   while (!reliefShown.value) { const now = await frame(); longest = Math.max(longest, now - last); last = now; }
   const on = performance.now() - t;
   rows.push({ moment: 'texture switched on to maps ready', budget: '3 s', result: ms(on), ok: on <= 3000 });
+  rows.push({ moment: '  of which estimate and pyramid (workers)', budget: '', result: ms(reliefTiming.value?.height ?? 0), ok: null });
   rows.push({ moment: '  longest frame meanwhile', budget: '100 ms', result: ms(longest), ok: longest <= 100 });
 
   log('Dragging a light with Texture on…');
@@ -88,8 +89,11 @@ async function measure(log: (s: string) => void): Promise<Row[]> {
 
   // The built app's scripts (in /assets/), compressed size as sent (not what the cache says);
   // the dev server serves no such files.
-  const js = performance.getEntriesByType('resource').filter((e) => /\/assets\/.*\.js$/.test(e.name) && !/libheif/.test(e.name))
-    .reduce((s, e) => s + (e as PerformanceResourceTiming).encodedBodySize, 0);
+  // Each script once: the render workers all load the same file.
+  const seen = new Map<string, number>();
+  for (const e of performance.getEntriesByType('resource') as PerformanceResourceTiming[])
+    if (/\/assets\/.*\.js$/.test(e.name) && !/libheif/.test(e.name)) seen.set(e.name, Math.max(seen.get(e.name) ?? 0, e.encodedBodySize));
+  const js = [...seen.values()].reduce((s, v) => s + v, 0);
   rows.push({ moment: 'JavaScript shipped (compressed, without HEIC)', budget: '250 KB', result: js ? `${Math.round(js / 1024)} KB` : 'built app only', ok: js ? js <= 250 * 1024 : null });
   return rows;
 }

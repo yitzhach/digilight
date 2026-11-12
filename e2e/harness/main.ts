@@ -30,14 +30,14 @@ const api = {
     const h = estimateHeight(img!), inp = horizonInput(h.h, h.width, h.height, true), cpu = buildHorizon(inp);
     const t = performance.now();
     let frames = 0;
-    await preview!.buildRelief(h, inp, cpu.tmax, () => { frames++; return new Promise((r) => requestAnimationFrame(r)); });
+    await preview!.buildRelief(h, inp, () => { frames++; return new Promise((r) => requestAnimationFrame(r)); }, () => Promise.resolve(cpu.tmax));
     const ms = performance.now() - t, gpu = preview!.readRelief()!;
     const cmp = (a: Uint8Array, b: Uint8Array) => {
       let w1 = 0, w2 = 0, max = 0;
       for (let i = 0; i < a.length; i++) { const d = Math.abs(a[i]! - b[i]!); if (d <= 1) w1++; if (d <= 2) w2++; if (d > max) max = d; }
       return { within1: w1 / a.length, within2: w2 / a.length, max };
     };
-    return { width: h.width, height: h.height, frames, ms, table: cmp(gpu.table, cpu.table), ao: cmp(gpu.ao, cpu.ao) };
+    return { width: h.width, height: h.height, frames, ms, tmax: [gpu.tmax, cpu.tmax], table: cmp(gpu.table, cpu.table), ao: cmp(gpu.ao, cpu.ao) };
   },
   draw(doc: Doc, kappa: number, opts: { scale?: number; view?: Partial<View> } = {}) {
     const p = preview!;

@@ -1,5 +1,5 @@
 // blur.ts — a Gaussian blur of one float channel, the same bits everywhere (D-034).
-// Sigma up to 5 pixels: the exact kernel (truncated at 3 sigma, weights summing to 1). Larger:
+// Sigma up to 3 pixels: the exact kernel (truncated at 3 sigma, weights summing to 1). Larger:
 // three box blurs whose widths match the Gaussian's variance (Wells), which is within 1% of it
 // and costs the same at any sigma. Edges repeat the border pixel.
 
@@ -8,7 +8,7 @@ import { dexp } from '../dmath.ts';
 /** `src` (w x h) blurred by a Gaussian of `sigma` pixels, as a new array. */
 export function gauss(src: Float32Array, w: number, h: number, sigma: number): Float32Array {
   if (!(sigma > 0)) return src.slice();
-  if (sigma <= 5) return separable(src, w, h, kernel(sigma));
+  if (sigma <= 3) return separable(src, w, h, kernel(sigma));
   let a = src;
   for (const r of boxRadii(sigma)) a = box(a, w, h, r);
   return a;
@@ -24,20 +24,25 @@ function kernel(sigma: number): Float64Array {
 
 function separable(src: Float32Array, w: number, h: number, k: Float64Array): Float32Array {
   const r = (k.length - 1) / 2, mid = new Float32Array(w * h), out = new Float32Array(w * h);
+  // Across: border pixels repeat (clamped reads); the interior reads straight through.
   for (let y = 0; y < h; y++) {
     const row = y * w;
     for (let x = 0; x < w; x++) {
       let s = 0;
-      for (let i = -r; i <= r; i++) { const xx = x + i < 0 ? 0 : x + i >= w ? w - 1 : x + i; s += k[i + r]! * src[row + xx]!; }
+      if (x >= r && x < w - r) for (let i = 0, o = row + x - r; i < k.length; i++) s += k[i]! * src[o + i]!;
+      else for (let i = -r; i <= r; i++) { const xx = x + i < 0 ? 0 : x + i >= w ? w - 1 : x + i; s += k[i + r]! * src[row + xx]!; }
       mid[row + x] = s;
     }
   }
+  // Down: whole rows at a time, so the reads run along memory.
+  const acc = new Float64Array(w);
   for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      let s = 0;
-      for (let i = -r; i <= r; i++) { const yy = y + i < 0 ? 0 : y + i >= h ? h - 1 : y + i; s += k[i + r]! * mid[yy * w + x]!; }
-      out[y * w + x] = s;
+    acc.fill(0);
+    for (let i = -r; i <= r; i++) {
+      const yy = y + i < 0 ? 0 : y + i >= h ? h - 1 : y + i, o = yy * w, kk = k[i + r]!;
+      for (let x = 0; x < w; x++) acc[x]! += kk * mid[o + x]!;
     }
+    out.set(acc, y * w);
   }
   return out;
 }

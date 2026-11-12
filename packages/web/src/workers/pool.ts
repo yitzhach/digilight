@@ -1,8 +1,8 @@
 // pool.ts — a few render workers. The photo goes to each once per photo: as shared memory when
 // the page is cross-origin isolated (all workers read one copy), else as one copy to one worker.
 
-import type { Doc, Height, HorizonInput, Image } from 'core';
-import { K, outputSize, thumbnail } from 'core';
+import type { Blurred, Channels, Doc, Height, HorizonInput, Image } from 'core';
+import { BLURS, K, outputSize, reliefSize, thumbnail } from 'core';
 import type { Reply, Request } from './protocol.ts';
 
 /** The guard judges on a thumbnail of this long side (core guard.ts GUARD_SIZE, §5.7). */
@@ -12,6 +12,8 @@ const shared = typeof SharedArrayBuffer !== 'undefined' && globalThis.crossOrigi
 const SIZE = shared ? Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 4) - 1)) : 1;
 
 let workers: Worker[] = [];
+/** The photo in shared memory (the staged estimate reads it), if shared. */
+let poolPhoto: Image | null = null;
 let nextId = 1;
 const waiting = new Map<number, { resolve: (r: Reply) => void; reject: (e: Error) => void; onThumb?: (r: Extract<Reply, { type: 'thumb' }>) => void }>();
 
@@ -52,6 +54,7 @@ export function setPoolPhoto(p: Image): Image | null {
     } else data = p.data.slice();
     w.postMessage({ type: 'photo', data, width: p.width, height: p.height } satisfies Request, shared ? [] : [data.buffer]);
   }
+  poolPhoto = shared ? p : null;
   return shared ? p : null;
 }
 
@@ -85,9 +88,38 @@ const one = async (w: Worker, m: Job): Promise<Reply> => {
 /** Directions [k0, k1) for worker i of n. */
 const share = (i: number, n: number): [number, number] => [Math.floor((i * K) / n), Math.floor(((i + 1) * K) / n)];
 
+/** Row bands [y0, y1) of h rows, one per worker. */
+const bands = (h: number, n: number) => Array.from({ length: n }, (_, i) => [Math.floor((i * h) / n), Math.floor(((i + 1) * h) / n)] as const);
+const f32 = (n: number) => new Float32Array(new SharedArrayBuffer(4 * n));
+
+/** The raw estimated height, its stages split across the workers (the same bits as core's
+ *  estimateHeight in one go). */
+async function rawHeight(ws: Worker[], p: Image): Promise<{ data: Float32Array; width: number; height: number }> {
+  const { width: w, height: h, same } = reliefSize(p), n = w * h;
+  let img = p;
+  if (!same) {
+    const out = new Uint8ClampedArray(new SharedArrayBuffer(4 * n));
+    await Promise.all(bands(h, ws.length).map(([y0, y1], i) => one(ws[i]!, { type: 'relief-thumb', out, width: w, height: h, y0, y1 })));
+    img = { data: out, width: w, height: h };
+  }
+  const ch: Channels = { L: f32(n), cr: f32(n), cg: f32(n), cb: f32(n) };
+  await Promise.all(bands(h, ws.length).map(([y0, y1], i) => one(ws[i]!, { type: 'relief-chan', img, ch, y0, y1 })));
+  const bl = Object.fromEntries(BLURS.map(([k]) => [k, f32(n)])) as unknown as Blurred;
+  let next = 0; // five blurs over the workers, each takes the next
+  await Promise.all(ws.map(async (wk) => {
+    for (let b; (b = BLURS[next++]); ) await one(wk, { type: 'relief-blur', src: ch[b[1]], width: w, height: h, sigma: b[2] * w, out: bl[b[0]] });
+  }));
+  const raw = f32(n);
+  await Promise.all(bands(h, ws.length).map(([y0, y1], i) => one(ws[i]!, { type: 'relief-raw', ch, bl, width: w, raw, y0, y1 })));
+  return { data: raw, width: w, height: h };
+}
+
 /** Estimated height and the table's input (worker 0), then given to every worker. */
 export async function reliefHeight(alive: () => boolean): Promise<{ height: Height; inp: HorizonInput }> {
-  const ws = start(), r = await one(ws[0]!, { type: 'relief-height', shared });
+  const ws = start();
+  const raw = shared && ws.length > 1 && poolPhoto ? await rawHeight(ws, poolPhoto) : undefined;
+  if (!alive()) throw new Error('a new photo was opened');
+  const r = await one(ws[0]!, { type: 'relief-height', shared, ...(raw ? { raw } : {}) });
   if (r.type !== 'height') throw new Error('relief: unexpected reply');
   if (!alive()) throw new Error('a new photo was opened');
   for (const w of ws.slice(1)) w.postMessage({ type: 'relief-input', height: r.height, inp: r.inp } satisfies Request);

@@ -3,7 +3,7 @@
 // maps (shared memory when the page is cross-origin isolated, a copy otherwise).
 
 import {
-  aoFromTable, estimateHeight, guardKappa, horizonInput, horizonLayer, horizonTmax, K, LOOKS, neutralDoc, render, withLook,
+  aoFromTable, channelRows, estimateHeight, gauss, guardKappa, normalise, rawRows, resampleRegion, horizonInput, horizonLayer, horizonTmax, K, LOOKS, neutralDoc, render, withLook,
   type Doc, type Height, type HorizonInput, type Image, type ReliefMaps,
 } from 'core';
 import type { Reply, Request } from './protocol.ts';
@@ -55,8 +55,17 @@ self.onmessage = (e: MessageEvent<Request>) => {
         break;
       }
       case 'thumbs': thumbs(m.id, m.doc, m.width, m.flip); break;
+      case 'relief-thumb': {
+        const img = resampleRegion(photo, m.width, m.height, 0, m.y0, m.width, m.y1 - m.y0);
+        m.out.set(img.data, m.y0 * m.width * 4);
+        post({ type: 'done', id: m.id });
+        break;
+      }
+      case 'relief-chan': channelRows(m.img, m.ch, m.y0, m.y1); post({ type: 'done', id: m.id }); break;
+      case 'relief-blur': m.out.set(gauss(m.src, m.width, m.height, m.sigma)); post({ type: 'done', id: m.id }); break;
+      case 'relief-raw': rawRows(m.ch, m.bl, m.width, m.raw, m.y0, m.y1); post({ type: 'done', id: m.id }); break;
       case 'relief-height': {
-        let h = estimateHeight(photo);
+        let h = m.raw ? normalise(m.raw.data, m.raw.width, m.raw.height) : estimateHeight(photo);
         if (m.shared) h = { ...h, h: share(h.h), p: share(h.p), q: share(h.q) };
         let i = horizonInput(h.h, h.width, h.height, true);
         if (m.shared) i = { ...i, pyramid: i.pyramid.map((L) => ({ ...L, data: share(L.data) })) };

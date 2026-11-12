@@ -90,7 +90,7 @@ export function Stage() {
       if (r === lastInput) return;
       lastInput = r;
       if (!r) { p.setRelief(null); return; }
-      void p.buildRelief(r.height, r.inp, r.tmax, () => new Promise((res) => requestAnimationFrame(res)))
+      void p.buildRelief(r.height, r.inp, () => new Promise((res) => requestAnimationFrame(res)), () => r.tmax)
         .then((ok) => { if (ok) { gpuReady(); request(); } })
         .catch((e: Error) => say(`Texture could not be shown: ${e.message}`, true));
     });

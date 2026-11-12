@@ -3,7 +3,7 @@
 
 import { guardKappa, prepareLighting, type Doc, type Height, type HorizonInput, type Image, type Lighting, type Space } from 'core';
 import { createContext, photoTexture, program, useSpace } from './context.ts';
-import { gpuHorizon, readHorizon, uploadHorizon, type ReliefTextures } from './horizon-gpu.ts';
+import { gpuHorizon, gpuTmaxSupported, readHorizon, uploadHorizon, type ReliefTextures } from './horizon-gpu.ts';
 import { FRAGMENT, LAMP_VEC4S, MAX_LAMPS, VERTEX } from './shaders/light.glsl.ts';
 
 export interface View {
@@ -27,14 +27,15 @@ export interface Preview {
   /** Waits until the GPU has finished what was drawn (reads one pixel); for timing. */
   sync(): void;
   readonly kappa: number;
-  /** Texture's maps, built on the GPU from the CPU's pyramid and Tmax: two directions a frame
-   *  (`frame` waits for the next one); used once done. A newer call or null cancels it. */
-  buildRelief(h: Height, inp: HorizonInput, tmax: number, frame: () => Promise<unknown>): Promise<boolean>;
+  /** Texture's maps, built on the GPU from the CPU's pyramid, a few directions a frame (`frame`
+   *  waits for the next one); used once done. Tmax is found on the GPU where it can render
+   *  floats, else `cpuTmax` gives it. A newer call or setRelief cancels it. */
+  buildRelief(h: Height, inp: HorizonInput, frame: () => Promise<unknown>, cpuTmax: () => Promise<number>): Promise<boolean>;
   /** Texture's maps made on the CPU (tests), or null for none. */
   setRelief(m: (Height & { table: Uint8Array; ao: Uint8Array; tmax: number }) | null): void;
   readonly reliefReady: boolean;
   /** The finished table and ao read back (tests). */
-  readRelief(): { table: Uint8Array; ao: Uint8Array } | null;
+  readRelief(): { table: Uint8Array; ao: Uint8Array; tmax: number } | null;
 }
 
 type Lamp = Lighting['lamps'][number];
@@ -170,9 +171,11 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
       gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
     },
     get kappa() { return kappa; },
-    async buildRelief(h, inp, tmax, frame) {
+    async buildRelief(h, inp, frame, cpuTmax) {
       const me = ++building;
       dropRelief(); relight();
+      const tmax = gpuTmaxSupported(gl) ? undefined : await cpuTmax();
+      if (me !== building) return false;
       const job = gpuHorizon(gl, h, inp, tmax);
       for (;;) {
         if (me !== building) { for (const t of [job.textures.slopes, job.textures.table, job.textures.ao]) gl.deleteTexture(t); return false; }
