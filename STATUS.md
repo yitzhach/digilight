@@ -17,8 +17,7 @@
   scale 1, release 14 ms, export 2.2 s: all within §9. Open would be about 1.5 s at 24 MP, so
   the guard thumbnail and the file hash moved off the main thread's path (D-031); a re-run on a
   24 MP photo would confirm.
-- Which looks don't read as real light. Tuning changes §6, `core/src/looks.ts` and the goldens
-  (`packages/core/test/goldens.json`) together. Can be done at the start of Phase 4.
+- Which looks don't read as real light (tune §6, `core/src/looks.ts`, goldens together).
 
 ## How to run
 - `pnpm typecheck && pnpm test` (unit), `pnpm e2e` (parity and smoke, headless Chromium,
