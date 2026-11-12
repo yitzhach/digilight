@@ -13,11 +13,11 @@
   offers Save or share, to put the picture in Photos (D-030).
 
 ## Waiting on Isaac (rest of Phase 3's gate)
-- On the iMac: the bench table (open a 24-megapixel photo, Run, paste it). "Texture off" rows
-  should be within §9. Software GL in the cloud gave: open 178 ms, thumbnails 132 ms, export
-  0.35 s (2.3 MP); frame rates and the release frame need a real GPU.
-- Which looks don't read as real light. Tuning changes §6, `core/src/looks.ts` and the goldens
-  (`packages/core/test/goldens.json`) together. Can be done at the start of Phase 4.
+- Bench on the iMac (Chrome 138, 17.9 MP photo): open 1.16 s, thumbnails 0.87 s, drag 60 fps at
+  scale 1, release 14 ms, export 2.2 s: all within §9. Open would be about 1.5 s at 24 MP, so
+  the guard thumbnail and the file hash moved off the main thread's path (D-031); a re-run on a
+  24 MP photo would confirm.
+- Which looks don't read as real light (tune §6, `core/src/looks.ts`, goldens together).
 
 ## How to run
 - `pnpm typecheck && pnpm test` (unit), `pnpm e2e` (parity and smoke, headless Chromium,
