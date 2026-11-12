@@ -2,7 +2,7 @@
 **Phase:** 5b (fix-ups from the audit): done here; its gate waits on Isaac's iPhone check, in the
 same sitting as Phase 5's phone test.
 **Live:** https://studio-digilight.bobdylan2000.workers.dev (from `main`; `?bench` for the bench).
-Phase 5b is on branch `claude/gracious-albattani-8t21yw` (with the audit's commits) until merged.
+Phase 5b is on `main` (11-12), so the live link has it.
 
 ## Done
 - Phases 0 to 4: workspace, `core` engine, `gl` preview, `web` app, Texture (estimated); deployed.
@@ -15,8 +15,8 @@ Phase 5b is on branch `claude/gracious-albattani-8t21yw` (with the audit's commi
   `load` for autosaves, which now say when they cannot be reopened; phone messages, tabs, 22 px
   handles, hints; Cmd/Ctrl+Z; a lost WebGL context rebuilt; errors shown; no stale texture
   failure; no upscaled render or export; an empty decode says the photo is too large. Smoke runs
-  on the built app too; P3 and EXIF fixtures and tests; WebKit smoke job in CI (may fail; see
-  its run); JavaScript 245 to 161 KB, checked in CI. 51 + 5 unit tests, e2e listed in CHANGELOG.
+  on the built app too; P3 and EXIF fixtures and tests; WebKit smoke job in CI (built app passes,
+  D-053); JavaScript 245 to 161 KB, checked in CI. 51 + 5 unit tests, e2e listed in CHANGELOG.
 
 ## Waiting on Isaac
 - **Phase 5b gate (iPhone):** apply a look, move a lamp, see Strength greyed ("Lights changed by

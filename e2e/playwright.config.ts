@@ -11,9 +11,9 @@ export default defineConfig({
       // No GPU on test machines: software GL (SwiftShader), as BUILD.md Phase 2's gate says.
       use: { browserName: 'chromium', launchOptions: { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] } },
     },
-    // Safari's engine, for the smoke test only (BUILD.md Phase 5b item 12). Run on GitHub's
+    // Safari's engine, for the smoke test on the built app only (BUILD.md Phase 5b item 12, D-053). Run on GitHub's
     // machines by its own CI job (`--project webkit`); never installed in cloud sessions.
-    { name: 'webkit', use: { browserName: 'webkit' }, grep: /smoke:/ },
+    { name: 'webkit', use: { browserName: 'webkit' }, grep: /smoke:.*built app/ },
   ],
   webServer: [
     // The harness page for parity, the app itself (dev server) and the built app (what deploys).
