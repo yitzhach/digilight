@@ -2,7 +2,7 @@
 
 A ground-up rebuild of DigiLight (v1: `yitzhach/digi-light-test`). Written 11-11 after a full
 audit of v1 and a model test on the user's real photos (docs/v2/bakeoff.md). Audited again on
-11-12 after Phase 5 (D-049: Phase 5b, Phase 6 in two parts, Phase 8b). The owner is Isaac
+11-12 after Phase 5 (D-049, agreed by Isaac in D-050: Phase 5b, Phase 6 in two parts, Phase 8b). The owner is Isaac
 Anderson (Isaac Anderson Art); "Isaac" below means him.
 
 **How to use this brief.** Do one phase per session, in order (§10). For a phase, read §1 to §4,
@@ -429,8 +429,8 @@ Nothing is ever rebuilt per frame.
 Cloud test machines have no GPU, so the budgets are checked on Isaac's iMac with the built-in
 bench page (`?bench`, Phase 3), which prints these numbers.
 
-Phones have no budget yet: Phase 5b records what Isaac's iPhone opens (megapixels, iOS version)
-and its bench table here. JavaScript was about 245 KB on 11-12 with the True Relief worker; CI
+Phones have no budget yet. Isaac's iPhone opens a full-size photo (11-12); Phase 5b adds its
+bench table here. JavaScript was about 245 KB on 11-12 with the True Relief worker; CI
 checks this row from Phase 5b.
 
 ---
@@ -612,9 +612,9 @@ Tests and CI:
 
 With Isaac, in the same sitting as Phase 5's phone test:
 
-13. Note the iPhone's iOS version and open a full-size photo (24 MP or more). The app decodes
-    through a canvas, which iOS up to 17 limits to 16.7 MP (67 MP is reported from iOS 18). If
-    it fails: decode at the largest size that works and say so on screen. Record the result in §9.
+13. Answered (Isaac, 11-12): a full-size photo opens on his iPhone, so the canvas limit of
+    older iOS (16.7 MP up to iOS 17) does not bite there. Still worth one line of care: if a
+    photo decodes to nothing (every pixel black), say "this photo is too large for this phone".
 14. The Phase 4 bench re-run (D-045). If the estimate stays over 3 s: it is experimental
     (D-047), so move the 3 s budget to the measured maps and log it.
 
@@ -776,7 +776,7 @@ address until Isaac says 2.0 has replaced it.
 | before Phase 0 | create the empty repository `yitzhach/digilight` |
 | before Phase 3's gate | connect it to Cloudflare Workers Builds; first deploy of `studio-digilight` |
 | Phase 3, 4, 5, 6a, 6b gates | try it on the iMac and say what reads wrong |
-| Phase 5b | the phone test with the iOS version and a full-size photo; one full-size HEIC of his own piece for `fixtures/` |
+| Phase 5b | one full-size HEIC of his own piece for `fixtures/`; the gate's check on the iPhone |
 | Phase 8 | a new Worker, its secret, any cost |
 | Phase 8b | a domain |
 | Phase 9 | turning on sign-in and payment |
