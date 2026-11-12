@@ -553,9 +553,17 @@ Read §5.9, §8.
 4. Projects: save and open `.digilight` (JSON with the photo and maps), a list in IndexedDB.
 5. Apply to more photos: drop several, the current lights and finish render onto each (not
    relief), download as a zip.
+6. Zoom buttons (Isaac, after Phase 3): Zoom out, Fit, Zoom in on the picture (keys `-`, `0`,
+   `=`), the same zoom as the wheel (§8).
+7. A **Settings** window, opened from the Export section (Isaac, after Phase 3), holding items 4
+   and 5 and: **Save settings** (a named preset of ambient, lights, tone and finish, kept in
+   IndexedDB, listed to apply in one tap); **Copy settings** and **Paste settings** (everything
+   but the photo and relief maps, pasted onto another photo as one undo step; also as JSON on
+   the clipboard so an AI agent can use it); **Save project** and **Open project**.
 
 **Gate:** parity and goldens with finish on; a project saved and reopened exports the same
-SHA-256; Isaac lights five pieces alike in under two minutes.
+SHA-256; Isaac lights five pieces alike in under two minutes, using copy and paste or a saved
+preset; the zoom buttons work on the iMac and the iPhone.
 
 ### Phase 7 — AI access, local (Opus 5.5, medium effort)
 
