@@ -1,5 +1,4 @@
 # Status
-
 **Phase:** 5 (True Relief): engine half done and passing its gate rows; the app flow is next.
 **Live:** https://studio-digilight.bobdylan2000.workers.dev (from `main`; `?bench` for the bench).
 
@@ -13,13 +12,11 @@
 
 ## Waiting on Isaac
 - Phase 4 bench: texture switched on is 5.5 s on the iMac (budget 3 s; D-045). Re-run `?bench`
-  once this is live and paste the table: it now shows each stage of the estimate.
+  and paste the table: it now shows each stage of the estimate.
 - Review round 4 (https://claude.ai/artifact/SEDbAFn98fYp5G5WkgSRyr, round `phase4-1`): no notes
-  saved yet. Until there are, Texture stays off by default and labelled "estimated".
-
-## How to run
-`pnpm typecheck && pnpm test`, `pnpm e2e`, `pnpm gate:relief` (3 min), `pnpm dev`, `pnpm build`.
-Never run `playwright install`. Review notes: ArtifactData, collection `notes`.
+  yet; until then Texture stays off by default and labelled "estimated".
+**Run:** `pnpm typecheck && pnpm test`, `pnpm e2e`, `pnpm gate:relief` (3 min), `pnpm dev`, `pnpm
+build`. Never run `playwright install`. Review notes: ArtifactData, collection `notes`.
 
 ## Next: new chat, Opus 5.5, medium effort (interface work): Phase 5, the app flow
 In `web` only; `core` does the work (`prepareSideLit`, `measureRelief`, `quantise`, `flipped`,
@@ -36,7 +33,7 @@ In `web` only; `core` does the work (`prepareSideLit`, `measureRelief`, `quantis
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do
 Phase 5's app flow as STATUS.md lists it (BUILD.md section 10, Phase 5, steps 3 and 5; section 8).
-No v1 files are needed. Answers to "Waiting on Isaac": bench re-run: [paste the table, or
-"not yet"]. Review round 4: [notes are saved / not yet].
+No v1 files are needed. Answers to "Waiting on Isaac": bench re-run: [paste the table, or "not
+yet"]. Review round 4: [notes are saved / not yet].
 Keep replies brief. Stop at the phase's gate and tell me what to check.
 ```
