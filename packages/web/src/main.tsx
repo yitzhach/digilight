@@ -48,7 +48,8 @@ function App() {
         <button disabled={!has} onClick={() => run(() => cmd.undo())} title="Undo (Z)">Undo</button>
         <button disabled={!has} onClick={() => run(() => cmd.redo())} title="Redo (Shift+Z)">Redo</button>
         <button disabled={!has} class={before.value ? 'current' : ''} title="Press and hold to see the photo as it was (B)"
-          onPointerDown={() => (before.value = true)} onPointerUp={() => (before.value = false)} onPointerLeave={() => (before.value = false)}>Before</button>
+          onPointerDown={() => (before.value = true)} onPointerUp={() => (before.value = false)} onPointerLeave={() => (before.value = false)}
+          onPointerCancel={() => (before.value = false)} onContextMenu={(e) => e.preventDefault()}>Before</button>
         <ShareButton />
         <span class="grow">{busy.value ?? (n && <span class={n.error ? 'error' : 'note'} onClick={() => (notice.value = null)}>{n.text}</span>)}</span>
         <button disabled={!has || busy.value !== null} onClick={() => void exportNow()} title="Save the picture with the Export choices">Export</button>
