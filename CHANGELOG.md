@@ -33,3 +33,4 @@
 - `web`: "Use a side-lit photo for real texture" in Texture: one to three photos lined up in a worker with progress, two previews and "Which looks right?", a dial per photo, Expert elevation or a lamp in cm; the measured height drives Texture, autosaved as a 16-bit PNG; `window.digilight.measureRelief` and `getMeasured` (D-048).
 - Estimated texture labelled experimental after review round 4 (D-047).
 - `e2e/truerelief.spec.ts`: the door pair through the flow; the height and the export equal `measureFromPhotos` + `render` in Node; the height comes back after a reload.
+- Buttons no longer select their text on a long press (Before on a phone showed selection handles); Before also lets go on a cancelled touch.
