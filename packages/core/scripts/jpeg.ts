@@ -22,6 +22,12 @@ export function loadFixture(name: string): Fixture {
   return f;
 }
 
+/** A JPEG file anywhere on disk as RGBA8. */
+export function loadImage(path: string): Image {
+  const img = jpeg.decode(readFileSync(path), { useTArray: true, formatAsRGBA: true, maxMemoryUsageInMB: 2048 });
+  return { data: new Uint8ClampedArray(img.data.buffer, img.data.byteOffset, img.data.length), width: img.width, height: img.height };
+}
+
 export function sha256(bytes: Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex');
 }

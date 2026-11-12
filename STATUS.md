@@ -1,38 +1,39 @@
 # Status
-
-**Phase:** 4 (Texture and shadows): merged and live; Texture-on sped up (D-039); gate waits on Isaac.
+**Phase:** 5 (True Relief): engine half done and passing its gate rows; the app flow is next.
 **Live:** https://studio-digilight.bobdylan2000.workers.dev (from `main`; `?bench` for the bench).
 
 ## Done
-- Phases 0 to 3: workspace, `core` engine (Light layer), `gl` preview, `web` app; deployed.
-- Phase 4: looks retuned from Isaac's 11-12 notes (D-033). Texture: `core/relief/` (estimate,
-  horizon table, sampling), `rel`, `sh`, `occl`, sheen in the reference and the shader,
-  `gl/horizon-gpu.ts` (two directions a frame), panel section 3, `setRelief`, maps made across
-  the workers for exports, bench rows (D-034 to D-038). 40 unit tests, 12 e2e: GPU table equals
-  the CPU's within 1 byte, Texture parity within 1 level, Texture export equals the reference.
+- Phases 0 to 4: workspace, `core` engine, `gl` preview, `web` app, Texture (estimated); deployed.
+- Phase 5, engine (steps 1, 2, 4, core of 5; D-040 to D-044): v1's measurement and line-up in
+  `core/relief/` (equal to v1 on Isaac's photos), the light's axis, the 16-bit stored height,
+  commands `measureRelief` / `setMeasured` / `getMeasured`, `pnpm gate:relief`: door 0.78 / 0.87,
+  lintel 0.68 / 0.85 (needs 0.45 / 0.50), own axis 0.79 / 0.88 and 0.59 / 0.78 (0.40 / 0.45), lamp
+  shots 0.80 to 0.87 (0.7). 44 unit tests, 12 e2e.
 
-## Waiting on Isaac (Phase 4's gate)
-- Bench (11-12, iMac): all rows in budget but texture switched on to maps ready, 3.55 s at
-  3.8 MP and 3.9 s at 17.9 MP (budget 3 s). D-039 moves Tmax to the GPU and splits the estimate
-  across the workers: once merged, re-run `?bench` (new row: the estimate's share).
-- Review round 4 (https://claude.ai/artifact/SEDbAFn98fYp5G5WkgSRyr, notes saved there, round
-  `phase4-1`): the four retuned looks, and Texture on door, lintel and close-up at Shadows
-  30/60/100 and two Depths. If Texture is worse than none: it ships off by default and labelled
-  "experimental" (it is already off by default; the label says "estimated").
+## Waiting on Isaac
+- Phase 4 bench: texture switched on is 5.5 s on the iMac (budget 3 s; D-045). Re-run `?bench`
+  and paste the table: it now shows each stage of the estimate.
+- Review round 4 (https://claude.ai/artifact/SEDbAFn98fYp5G5WkgSRyr, round `phase4-1`): no notes
+  yet; until then Texture stays off by default and labelled "estimated".
+**Run:** `pnpm typecheck && pnpm test`, `pnpm e2e`, `pnpm gate:relief` (3 min), `pnpm dev`, `pnpm
+build`. Never run `playwright install`. Review notes: ArtifactData, collection `notes`.
 
-## How to run
-- `pnpm typecheck && pnpm test` (unit), `pnpm e2e` (parity, relief, smoke; headless Chromium,
-  software GL), `pnpm dev` (the app), `pnpm build`. Never run `playwright install`.
-- Review rounds: `pnpm --filter core review` (D-019); read notes with ArtifactData (collection
-  `notes`, round `phase4-1`) into `core/out/notes/` before the next round.
-
-## Next: new chat, Fable 5.2, high effort (BUILD.md §13: Phase 5)
-Starts by closing Phase 4's gate, as Phase 4 started with Phase 3's notes. Fill in the bench line.
+## Next: new chat, Opus 5.5, medium effort (interface work): Phase 5, the app flow
+In `web` only; `core` does the work (`prepareSideLit`, `measureRelief`, `quantise`, `flipped`,
+`measuredRelief`, `packHeight`, `cmd.setMeasured`):
+1. A worker (`workers/measure.worker.ts`): line the side-lit photo up at relief size (about 10 s,
+   show progress), read the axis, measure at long side 512 (1 s) for the two previews.
+2. Panel section 3 (§8): "Use a side-lit photo for real texture" (one to three), two previews
+   lit from the upper-left end of the axis, one per end (`flipped`), "Which looks right?", a dial
+   (re-measures at 512), Expert: elevation (default 20), or lamp in cm and the width.
+3. On the choice: measure at relief size, `quantise`, `cmd.setMeasured`; the pool's
+   `relief-height` takes the height (`horizonInput(h, w, h, false)`), then the GPU as now.
+4. Autosave the height as a PNG (`packHeight`) with `lo`, `hi`; `window.digilight.measureRelief`.
+5. e2e: the door pair through the flow; the export equals `measureFromPhotos` + `render` in Node.
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do
-Phase 5 (BUILD.md section 10, plus the sections it names). Port from yitzhach/digi-light-test
-only the files the phase lists. Answers to "Waiting on Isaac": Phase 4 bench re-run after
-D-039: [paste the table]. Review round 4 notes are in its artifact's database (round
-phase4-1): apply them first (looks, Texture defaults or label; D-036), then Phase 5.
+Phase 5's app flow as STATUS.md lists it (BUILD.md section 10, Phase 5, steps 3 and 5; section 8).
+No v1 files are needed. Answers to "Waiting on Isaac": bench re-run: [paste the table, or "not
+yet"]. Review round 4: [notes are saved / not yet].
 Keep replies brief. Stop at the phase's gate and tell me what to check.
 ```

@@ -81,7 +81,7 @@ digilight/
     core/   pure TypeScript: the document, the maths, the reference renderer
       src/  schema.ts  dmath.ts  srgb.ts  kelvin.ts  geometry.ts  light.ts  tone.ts  guard.ts
             render.ts  finish.ts  looks.ts  metrics.ts  commands.ts  resample.ts
-            relief/  estimate.ts  horizon.ts  measure.ts  lineup.ts  axis.ts
+            relief/  estimate.ts  horizon.ts  measure.ts  lineup.ts  axis.ts  measured.ts  (+ parts, D-034, D-040)
       test/
     gl/     WebGL2 preview:  context.ts  preview.ts  horizon-gpu.ts  shaders/*.glsl.ts
     web/    the app:  main.tsx  state.ts  canvas/*  panel/*  io/*  workers/*
@@ -347,7 +347,7 @@ line map to them one to one.
 | `looks()`, `applyLook(id, {strength, flip})` | the looks |
 | `addLight(partial)`, `updateLight(id, partial)`, `removeLight(id)` | lights |
 | `setRelief({mode, depth, shadows})` | builds the maps on first use of a mode |
-| `measureRelief({photos: [{src, from?, elevation?}]})` | True Relief (Phase 5) |
+| `measureRelief({photos: [{src, from?, elevation?}]})` | True Relief (Phase 5; in `core` a photo is `image`, D-043); `setMeasured`, `getMeasured` carry the height |
 | `render({width, region})` | a picture from the reference renderer, with `metrics` |
 | `export({width, format, quality})` | the full-size picture and its record (document, photo and picture SHA-256) |
 | `undo()`, `redo()`, `reset()` | history |
@@ -531,8 +531,9 @@ are pure typed-array code that already works on these photos.
    First, run v1's code in Node on the door pair and save its height map; the port must
    correlate with it at 0.99 or better. Lamp places for DSC_8382 (19 in wide) and the sun
    directions are in `bench/bakeoff/common.py` (`PIECES`).
-2. `relief/axis.ts`: the light's axis from the pair (structure tensor of the mid band of
-   log(side-lit / flat); reference `bench/bakeoff/azimuth.py`; within 20° on the five fixtures).
+2. `relief/axis.ts`: the light's axis from the pair (structure tensor of the stroke band of
+   log(side-lit / flat); reference `bench/bakeoff/azimuth.py`, made sturdier in D-041; within 20°
+   on the five fixtures).
 3. The flow, with no numbers asked: "Add a side-lit photo" (one to three; handheld is fine), the
    app lines each up, proposes the axis, and shows two small previews, light from one end and
    from the other, asking "Which looks right?". A dial fine-tunes. Elevation defaults to 20°

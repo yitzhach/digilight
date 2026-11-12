@@ -1,5 +1,7 @@
 {
   "name": "studio-digilight",
   "compatibility_date": "2026-11-11",
-  "assets": { "directory": "packages/web/dist" }
+  "assets": { "directory": "packages/web/dist" },
+  // Branch builds run `wrangler preview`, which needs this block (it can be empty; D-046).
+  "previews": {}
 }
