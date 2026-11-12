@@ -1,10 +1,11 @@
 // bench.ts — the ?bench page (§9): runs the speed budgets on the loaded photo and prints a table
-// to paste back. Texture rows arrive with Phase 4.
+// to paste back.
 
 import { withLook } from 'core';
 import { stage } from './canvas/Stage.tsx';
 import { exportPicture } from './io/export.ts';
 import { thumbsReady } from './panel/Looks.tsx';
+import { reliefShown, reliefTiming } from './relief.ts';
 import { cmd, doc, openFile, photo, preview, run } from './state.ts';
 import { kappaFor } from './workers/pool.ts';
 
@@ -12,6 +13,20 @@ const frame = () => new Promise<number>((r) => requestAnimationFrame(r));
 const ms = (t: number) => `${Math.round(t)} ms`;
 
 interface Row { moment: string; budget: string; result: string; ok: boolean | null }
+
+/** Moves a light round a circle for 120 frames; frames a second over the last 100. */
+async function drag(id: string): Promise<number> {
+  const base = doc.value!, N = 120, times: number[] = [];
+  let last = await frame();
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2;
+    preview({ ...base, lights: base.lights.map((l) => (l.id === id ? { ...l, pos: [0.5 + 0.6 * Math.cos(a), 0.5 + 0.6 * Math.sin(a), l.pos[2]] } : l)) });
+    const now = await frame();
+    times.push(now - last); last = now;
+  }
+  const steady = times.slice(20);
+  return 1000 / (steady.reduce((s, x) => s + x, 0) / steady.length);
+}
 
 async function measure(log: (s: string) => void): Promise<Row[]> {
   const p = photo.value;
@@ -30,19 +45,12 @@ async function measure(log: (s: string) => void): Promise<Row[]> {
 
   log('Dragging a light…');
   run(() => cmd.setDoc(withLook(doc.value!, 'gallery')));
-  const base = doc.value!, id = base.lights[0]!.id, N = 120, times: number[] = [];
-  let last = await frame();
-  for (let i = 0; i < N; i++) {
-    const a = (i / N) * Math.PI * 2;
-    preview({ ...base, lights: base.lights.map((l) => (l.id === id ? { ...l, pos: [0.5 + 0.6 * Math.cos(a), 0.5 + 0.6 * Math.sin(a), l.pos[2]] } : l)) });
-    const now = await frame();
-    times.push(now - last); last = now;
-  }
-  const steady = times.slice(20), fps = 1000 / (steady.reduce((s, x) => s + x, 0) / steady.length);
+  const id = doc.value!.lights[0]!.id;
+  const fps = await drag(id);
   rows.push({ moment: 'dragging a light, texture off', budget: '30 fps', result: `${fps.toFixed(0)} fps (scale ${stage.scale.q})`, ok: fps >= 30 });
 
   t = performance.now();
-  run(() => cmd.updateLight(id, { pos: [0.3, -0.3, base.lights[0]!.pos[2]] }));
+  run(() => cmd.updateLight(id, { pos: [0.3, -0.3, doc.value!.lights[0]!.pos[2]] }));
   stage.drawSync(1);
   const rel = performance.now() - t;
   rows.push({ moment: 'pointer released to full-resolution frame', budget: '150 ms', result: ms(rel), ok: rel <= 150 });
@@ -56,8 +64,28 @@ async function measure(log: (s: string) => void): Promise<Row[]> {
   const ex = performance.now() - t;
   rows.push({ moment: 'export at full size, lights only', budget: '8 s', result: ms(ex), ok: ex <= 8000 });
 
-  for (const m of ['dragging a light, texture on', 'texture switched on to maps ready', 'export at full size, with texture'])
-    rows.push({ moment: m, budget: '', result: 'Phase 4', ok: null });
+  log('Switching Texture on…');
+  run(() => cmd.applyLook('raking-left'));
+  t = performance.now();
+  run(() => cmd.setRelief({ mode: 'estimated' }));
+  let longest = 0, last = await frame();
+  while (!reliefShown.value) { const now = await frame(); longest = Math.max(longest, now - last); last = now; }
+  const on = performance.now() - t;
+  rows.push({ moment: 'texture switched on to maps ready', budget: '3 s', result: ms(on), ok: on <= 3000 });
+  rows.push({ moment: '  longest frame meanwhile', budget: '100 ms', result: ms(longest), ok: longest <= 100 });
+
+  log('Dragging a light with Texture on…');
+  const fpsT = await drag(doc.value!.lights[0]!.id);
+  rows.push({ moment: 'dragging a light, texture on', budget: '20 fps', result: `${fpsT.toFixed(0)} fps (scale ${stage.scale.q})`, ok: fpsT >= 20 });
+
+  log('Exporting with Texture…');
+  t = performance.now();
+  await exportPicture(photo.value!, doc.value!, { format: 'jpeg' });
+  const exT = performance.now() - t;
+  rows.push({ moment: 'export at full size, with texture', budget: '20 s', result: ms(exT), ok: exT <= 20000 });
+  const cpu = reliefTiming.value?.cpu;
+  rows.push({ moment: '  of which the export\'s maps (workers, from switch-on)', budget: '', result: cpu ? ms(cpu) : '?', ok: null });
+
   // The built app's scripts (in /assets/), compressed size as sent (not what the cache says);
   // the dev server serves no such files.
   const js = performance.getEntriesByType('resource').filter((e) => /\/assets\/.*\.js$/.test(e.name) && !/libheif/.test(e.name))

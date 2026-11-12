@@ -85,3 +85,15 @@ test('render metrics flag a too-bright lamp', () => {
   expect(metrics.warnings.join(' ')).toMatch(/protect whites/);
   expect(metrics.render.p50).toBeGreaterThan(metrics.photo.p50);
 });
+
+test('setRelief: first switched on, Texture starts at depth 0.003 and shadows 0.4; later values are kept', () => {
+  const c = createCommands();
+  c.open({ data: new Uint8ClampedArray(8 * 6 * 4).fill(128), width: 8, height: 6, sha256: 'd'.repeat(64) });
+  let d = c.setRelief({ mode: 'estimated' });
+  expect([d.relief.mode, d.relief.depth, d.relief.shadows]).toEqual(['estimated', 0.003, 0.4]);
+  d = c.setRelief({ depth: 0.006 });
+  d = c.setRelief({ mode: 'off' });
+  d = c.setRelief({ mode: 'estimated' });
+  expect([d.relief.depth, d.relief.shadows]).toEqual([0.006, 0.4]);
+  expect(() => c.setRelief({ mode: 'measured' })).toThrow(/side-lit/);
+});

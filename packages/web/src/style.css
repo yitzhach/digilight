@@ -48,6 +48,7 @@ main { flex: 1; display: flex; min-height: 0; }
 .control input[type=range] { width: 100%; accent-color: var(--accent); }
 .control.switch { display: flex; gap: 8px; align-items: center; cursor: pointer; }
 .control.select { display: flex; justify-content: space-between; align-items: center; }
+.hint { color: var(--dim); font-size: 12px; margin: 4px 0 8px; }
 .control select { font: inherit; background: #333338; color: var(--text); border: 1px solid var(--line); border-radius: 4px; }
 .chips, .row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
 .chip.off { text-decoration: line-through; }

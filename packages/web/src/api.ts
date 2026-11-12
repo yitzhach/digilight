@@ -39,6 +39,7 @@ export function installApi(): void {
     addLight: wrap(cmd.addLight),
     updateLight: wrap(cmd.updateLight),
     removeLight: wrap(cmd.removeLight),
+    setRelief: wrap(cmd.setRelief),
     render: (opts?: Parameters<typeof cmd.render>[0]) => cmd.render(opts),
     /** Renders and returns {blob, record, name}; `download: true` also saves them. */
     async export(opts: ExportOptions & { download?: boolean } = {}) {

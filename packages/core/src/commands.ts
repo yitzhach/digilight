@@ -1,17 +1,20 @@
 // commands.ts — the only way the document changes (BUILD.md §7). Each command validates with
 // the schema, returns the new document and is one undo step. The app (window.digilight), the
 // command line and the MCP server map to these one to one.
-// setRelief and measureRelief arrive with relief (Phases 4, 5), export with the app (Phase 3).
+// measureRelief arrives with Phase 5; export lives in the app (D-026).
 
 import { guardKappa } from './guard.ts';
 import type { Space } from './kelvin.ts';
 import { LOOKS, withLook, type LookOptions } from './looks.ts';
 import { metrics, type Metrics } from './metrics.ts';
 import { render as renderImage, type Image, type Region } from './render.ts';
-import { describe as describeDoc, neutralDoc, parseDoc, type Doc, type Light, type Setting } from './schema.ts';
+import { describe as describeDoc, neutralDoc, parseDoc, RELIEF, type Doc, type Light, type Setting } from './schema.ts';
 
 export interface PhotoInput extends Image { space?: Space; sha256: string; widthMm?: number }
 export interface Info { width: number; height: number; space: Space; sha256: string; looks: string[] }
+
+/** Texture's settings when first switched on (§10 Phase 4, step 5). */
+export const RELIEF_START = { depth: 0.003, shadows: 0.4 } as const;
 
 /** "+ Add light" (§6): a lamp above centre, aimed at the centre. */
 export const NEW_LIGHT = { pos: [0.5, -0.2, 0.8], aim: [0.5, 0.5], intensity: 0.8, kelvin: 4000, cone: 90 } as const;
@@ -105,6 +108,17 @@ export function createCommands() {
       const i = lightIndex(id), d = current();
       const lights = d.lights.map((l, j) => (j === i ? { ...l, ...partial, id } : l));
       return clone(commit({ ...d, lights }));
+    },
+    /** Texture: setRelief({ mode: 'estimated' }), setRelief({ depth: 0.005 }). Switched on with
+     *  Depth and Shadows never set, they start at RELIEF_START. */
+    setRelief(partial: Partial<Doc['relief']>): Doc {
+      const d = current(), r = { ...d.relief, ...partial };
+      if (d.relief.mode === 'off' && r.mode !== 'off' && d.relief.depth === RELIEF.depth.default && d.relief.shadows === RELIEF.shadows.default) {
+        if (partial.depth === undefined) r.depth = RELIEF_START.depth;
+        if (partial.shadows === undefined) r.shadows = RELIEF_START.shadows;
+      }
+      if (r.mode === 'measured') throw new Error('measured relief comes from a side-lit photo (not yet available)');
+      return clone(commit({ ...d, relief: r }));
     },
     removeLight(id: string): Doc {
       const i = lightIndex(id), d = current();

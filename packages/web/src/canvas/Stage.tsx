@@ -5,6 +5,7 @@ import { effect, signal } from '@preact/signals';
 import { neutralDoc } from 'core';
 import { createPreview, type Preview } from 'gl';
 import { useEffect, useRef } from 'preact/hooks';
+import { gpuReady, reliefInput } from '../relief.ts';
 import { before, kappa, live, photo, say, shown } from '../state.ts';
 import { Handles } from './Handles.tsx';
 import { createScale, SETTLE_MS } from './scale.ts';
@@ -82,7 +83,18 @@ export function Stage() {
       wasLive = isLive;
       if (ph) request();
     });
-    return () => { stop(); ro.disconnect(); cancelAnimationFrame(pending); };
+    // Texture's maps on the GPU, two directions a frame, then shown (§9: no frame over 100 ms).
+    let lastInput: unknown = null;
+    const stopRelief = effect(() => {
+      const r = reliefInput.value;
+      if (r === lastInput) return;
+      lastInput = r;
+      if (!r) { p.setRelief(null); return; }
+      void p.buildRelief(r.height, r.inp, r.tmax, () => new Promise((res) => requestAnimationFrame(res)))
+        .then((ok) => { if (ok) { gpuReady(); request(); } })
+        .catch((e: Error) => say(`Texture could not be shown: ${e.message}`, true));
+    });
+    return () => { stop(); stopRelief(); ro.disconnect(); cancelAnimationFrame(pending); };
   }, []);
 
   return (

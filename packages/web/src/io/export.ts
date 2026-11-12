@@ -4,6 +4,7 @@
 // the SHA-256 of the photo file, of the picture's RGBA pixels and of the encoded file.
 
 import { guardKappa, outputSize, type Doc } from 'core';
+import { reliefForExport } from '../relief.ts';
 import { renderRows } from '../workers/pool.ts';
 import { canvas2d, imageData } from './colour.ts';
 import type { Photo } from './open.ts';
@@ -23,6 +24,7 @@ export async function exportPicture(photo: Photo, doc: Doc, opts: ExportOptions 
   if (!(quality > 0 && quality <= 1)) throw new Error('quality must be over 0 and at most 1');
   const width = Math.min(opts.width ?? photo.image.width, photo.image.width);
   outputSize(doc.photo, width); // checks the width
+  if (doc.relief.mode !== 'off') await reliefForExport(() => {});
   const kappa = guardKappa(photo.image, doc);
   const img = await renderRows(doc, width, kappa);
   const [canvas, g] = canvas2d(img.width, img.height, photo.space);

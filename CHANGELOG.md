@@ -16,3 +16,9 @@
 - `web`: open by drop, picker or paste (JPEG, PNG, WebP, HEIC with libheif when needed; Display P3 kept), the picture with zoom, pan, light and aim handles, Before, the adaptive scale, panel sections Looks (live thumbnails from a worker), Lights and Export, Expert controls from `describe()`, export through a worker pool with a `.json` record, `window.digilight`, autosave in IndexedDB, `?bench` page (D-025 to D-029).
 - `gl`: `sync()` for timing. `e2e/smoke.spec.ts`: open, every look, drag, export equals the reference's SHA-256.
 - Deployed as `studio-digilight` (Workers Builds from `main`). On a phone, export offers Save or share, so the picture goes straight to Photos (D-030).
+
+## Phase 4: Texture and shadows
+- Looks: Gallery, Spotlight, Dramatic cooler; Candlelight no longer blows out at the bottom (D-033).
+- `core/relief/`: estimated relief from one photo (labelled approximate), the horizon table (§5.6) with a max pyramid and exact pruning, map sampling; `rel`, `sh`, `occl` and sheen in the reference (D-034 to D-037). `setRelief` command.
+- `gl`: the table on the GPU two directions a frame (`horizon-gpu.ts`), Texture in the preview shader. Within 1 byte of the CPU table; parity within 1 level.
+- `web`: panel section 3 (Texture, Depth, Shadows, expert relief settings), maps made across the workers for exports, bench rows with texture (D-038). Review round 4.
