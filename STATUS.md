@@ -1,6 +1,6 @@
 # Status
-**Phase:** 5b (fix-ups from the audit): done here; its gate waits on Isaac's iPhone check, in the
-same sitting as Phase 5's phone test.
+**Phase:** 5b done (gate passed on Isaac's iPhone, 11-12). Phase 6a is next. Phase 5's own phone
+test (the side-lit flow) still waits on Isaac.
 **Live:** https://studio-digilight.bobdylan2000.workers.dev (from `main`; `?bench` for the bench).
 Phase 5b is on `main` (11-12), so the live link has it.
 
@@ -19,12 +19,10 @@ Phase 5b is on `main` (11-12), so the live link has it.
   D-053); JavaScript 245 to 161 KB, checked in CI. 51 + 5 unit tests, e2e listed in CHANGELOG.
 
 ## Waiting on Isaac
-- **Phase 5b gate (iPhone):** Strength greyed after moving a lamp and Undo brought it back
-  (Isaac, 11-12). Left: export, and read the whole message under the top bar.
 - **Phase 5 gate:** on the phone, a new piece's flat photo, Texture, "Use a side-lit photo for
   real texture", a handheld side-lit photo; pick the preview that looks right; try a raking look.
-- One full-size HEIC of his own piece from the iPhone (AirDrop or Files keeps it HEIC; a chat
-  upload turns it into a small JPEG) for `fixtures/`: its test is written and skipped until then.
+- A HEIC opens in the app on his iPhone (11-12). For the CI test, the file itself (AirDrop or
+  Files keeps it HEIC; a chat upload turns it into a JPEG) for `fixtures/`; skipped until then.
 - Phase 4 bench re-run on the iMac (`?bench`, paste the table; item 14, D-045).
 - Settings notes: screenshots with the look and slider numbers feed Phase 6a's defaults.
 **Run:** `pnpm typecheck && pnpm test`, `pnpm e2e`, `pnpm build && pnpm --filter web size`,
