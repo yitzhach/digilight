@@ -19,8 +19,8 @@ Phase 5b is on `main` (11-12), so the live link has it.
   D-053); JavaScript 245 to 161 KB, checked in CI. 51 + 5 unit tests, e2e listed in CHANGELOG.
 
 ## Waiting on Isaac
-- **Phase 5b gate (iPhone):** apply a look, move a lamp, see Strength greyed ("Lights changed by
-  hand"), Undo (it comes back), export, and read the message under the top bar.
+- **Phase 5b gate (iPhone):** Strength greyed after moving a lamp and Undo brought it back
+  (Isaac, 11-12). Left: export, and read the whole message under the top bar.
 - **Phase 5 gate:** on the phone, a new piece's flat photo, Texture, "Use a side-lit photo for
   real texture", a handheld side-lit photo; pick the preview that looks right; try a raking look.
 - One full-size HEIC of his own piece from the iPhone (AirDrop or Files keeps it HEIC; a chat
