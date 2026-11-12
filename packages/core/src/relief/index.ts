@@ -10,6 +10,15 @@ export { BLURS, channelRows, estimateHeight, normalise, rawRows, reliefPhoto, re
 export { gauss } from './blur.ts';
 export { aoFromTable, buildHorizon, horizonInput, horizonLayer, horizonRise, horizonTmax, K, makeTaps, maxPyramid, type Horizon, type HorizonInput, type Level, type Taps } from './horizon.ts';
 export { layerOf, ReliefSampler, type ReliefMaps } from './sample.ts';
+// True Relief (Phase 5): measured from side-lit photos.
+export { axisDistance, lightAxis, type LightAxis } from './axis.ts';
+export { applyH, invertH, lineUp, warpPhoto, type Homography, type LineUp } from './lineup.ts';
+export { measureRelief, type Measured, type MeasureInput, type Shot, type ShotReport } from './measure.ts';
+export type { ShotLight } from './shading.ts';
+export {
+  DEFAULT_ELEVATION, flipped, measuredHHat, measuredRelief, measureFromPhotos, packHeight, prepareSideLit, quantise, reliefFlat, unpackHeight,
+  type MeasuredHeight, type SideLit, type SidePhoto, type TrueRelief,
+} from './measured.ts';
 
 const cache = new WeakMap<Uint8ClampedArray, ReliefMaps>();
 

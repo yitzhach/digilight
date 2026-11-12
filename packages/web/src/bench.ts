@@ -7,7 +7,7 @@ import { exportPicture } from './io/export.ts';
 import { thumbsReady } from './panel/Looks.tsx';
 import { reliefShown, reliefTiming } from './relief.ts';
 import { cmd, doc, openFile, photo, preview, run } from './state.ts';
-import { kappaFor } from './workers/pool.ts';
+import { kappaFor, reliefStages } from './workers/pool.ts';
 
 const frame = () => new Promise<number>((r) => requestAnimationFrame(r));
 const ms = (t: number) => `${Math.round(t)} ms`;
@@ -73,6 +73,7 @@ async function measure(log: (s: string) => void): Promise<Row[]> {
   const on = performance.now() - t;
   rows.push({ moment: 'texture switched on to maps ready', budget: '3 s', result: ms(on), ok: on <= 3000 });
   rows.push({ moment: '  of which estimate and pyramid (workers)', budget: '', result: ms(reliefTiming.value?.height ?? 0), ok: null });
+  rows.push({ moment: `    ${Object.keys(reliefStages).join(' / ')}`, budget: '', result: `${Object.values(reliefStages).join(' / ')} ms`, ok: null });
   rows.push({ moment: '  longest frame meanwhile', budget: '100 ms', result: ms(longest), ok: longest <= 100 });
 
   log('Dragging a light with Texture on…');

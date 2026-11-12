@@ -23,3 +23,8 @@
 - `gl`: the table on the GPU two directions a frame (`horizon-gpu.ts`), Texture in the preview shader. Within 1 byte of the CPU table; parity within 1 level.
 - `web`: panel section 3 (Texture, Depth, Shadows, expert relief settings), maps made across the workers for exports, bench rows with texture (D-038). Review round 4.
 - Texture on faster: Tmax on the GPU, the estimate split across the workers (D-039); the bench counts each script once.
+
+## Phase 5: True Relief (engine half)
+- `core/relief/`: v1's measured relief and handheld line-up ported (`measure.ts`, `lineup.ts` and their parts), equal to v1's output on Isaac's photos; the light's axis read from the pair (`axis.ts`); the measured height kept as 16 bits for project files (`measured.ts`); commands `measureRelief`, `setMeasured`, `getMeasured` (D-040 to D-043).
+- `bench/relief-score.ts` (v1 score.py) and `bench/relief-gate.ts` (`pnpm gate:relief`, in CI): door 0.78 / 0.87, lintel 0.68 / 0.85, lamp shots 0.80 to 0.87 (D-044).
+- Bench page prints each stage of Texture's estimate (D-045).

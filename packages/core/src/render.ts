@@ -60,5 +60,5 @@ export function reliefFor(photo: Image, doc: Doc, given?: ReliefMaps): ReliefMap
   if (doc.relief.mode === 'off') return null;
   if (given) return given;
   if (doc.relief.mode === 'estimated') return estimatedRelief(photo);
-  throw new Error('measured relief needs its maps (from a side-lit photo, Phase 5)');
+  throw new Error('measured texture needs its maps: measure it from a side-lit photo first');
 }

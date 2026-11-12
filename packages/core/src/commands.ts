@@ -1,12 +1,13 @@
 // commands.ts — the only way the document changes (BUILD.md §7). Each command validates with
 // the schema, returns the new document and is one undo step. The app (window.digilight), the
 // command line and the MCP server map to these one to one.
-// measureRelief arrives with Phase 5; export lives in the app (D-026).
+// export lives in the app (D-026).
 
 import { guardKappa } from './guard.ts';
 import type { Space } from './kelvin.ts';
 import { LOOKS, withLook, type LookOptions } from './looks.ts';
 import { metrics, type Metrics } from './metrics.ts';
+import { measuredRelief, measureFromPhotos, reliefSize, type MeasuredHeight, type SidePhoto, type TrueRelief } from './relief/index.ts';
 import { render as renderImage, type Image, type Region } from './render.ts';
 import { describe as describeDoc, neutralDoc, parseDoc, RELIEF, type Doc, type Light, type Setting } from './schema.ts';
 
@@ -54,6 +55,8 @@ export function createCommands() {
   let photo: Image | null = null;
   let doc: Doc | null = null;
   let past: Doc[] = [], future: Doc[] = [];
+  /** True Relief's height for this photo, once measured (beside the document, §6). */
+  let measured: MeasuredHeight | null = null;
 
   const current = (): Doc => {
     if (!doc) throw new Error('open a photo first');
@@ -76,13 +79,24 @@ export function createCommands() {
     return i;
   };
 
+  /** Takes a measured height (from measureRelief elsewhere, or a project file) and switches
+   *  Texture to it; `depth` (picture widths) sets Depth. */
+  const setMeasured = (height: MeasuredHeight, depth?: number): Doc => {
+    const d = current(), size = reliefSize(d.photo);
+    if (height.width !== size.width || height.height !== size.height || height.data.length !== size.width * size.height)
+      throw new Error(`the measured height must be ${size.width} x ${size.height} for this photo`);
+    measured = height;
+    const dep = depth === undefined ? d.relief.depth : Math.min(RELIEF.depth.max, Math.max(0, Math.round(depth * 1e5) / 1e5));
+    return clone(commit({ ...d, relief: { ...d.relief, mode: 'measured', depth: dep } }));
+  };
+
   return {
     /** Starts a neutral document for a photo. */
     open(p: PhotoInput): Info {
       if (!(p.data instanceof Uint8ClampedArray) || p.data.length !== p.width * p.height * 4) throw new Error('photo must be RGBA8: width * height * 4 bytes');
       const d = neutralDoc({ width: p.width, height: p.height, space: p.space ?? 'srgb', sha256: p.sha256, ...(p.widthMm ? { widthMm: p.widthMm } : {}) });
       photo = { data: p.data, width: p.width, height: p.height };
-      doc = d; past = []; future = [];
+      doc = d; past = []; future = []; measured = null;
       return { width: d.photo.width, height: d.photo.height, space: d.photo.space, sha256: d.photo.sha256, looks: LOOKS.map((l) => l.id) };
     },
     getDoc: (): Doc => clone(current()),
@@ -117,9 +131,19 @@ export function createCommands() {
         if (partial.depth === undefined) r.depth = RELIEF_START.depth;
         if (partial.shadows === undefined) r.shadows = RELIEF_START.shadows;
       }
-      if (r.mode === 'measured') throw new Error('measured relief comes from a side-lit photo (not yet available)');
+      if (r.mode === 'measured' && !measured) throw new Error('measured texture needs a side-lit photo first (measureRelief)');
       return clone(commit({ ...d, relief: r }));
     },
+    /** True Relief (Phase 5): measures the surface from one to three side-lit photos and
+     *  switches Texture to it; Depth starts from the measurement. `from`: where a photo's light
+     *  came from (0 right, 90 top); left out, the axis read from the pair, upper end. */
+    measureRelief(opts: { photos: SidePhoto[]; widthCm?: number; onProgress?: (text: string) => void }): TrueRelief & { doc: Doc } {
+      const mm = current().photo.widthMm, widthCm = opts.widthCm ?? (mm ? mm / 10 : undefined);
+      const t = measureFromPhotos(photo!, opts.photos, { ...(widthCm ? { widthCm } : {}), ...(opts.onProgress ? { onProgress: opts.onProgress } : {}) });
+      return { ...t, doc: setMeasured(t.height, t.depth) };
+    },
+    setMeasured,
+    getMeasured: (): MeasuredHeight | null => measured,
     removeLight(id: string): Doc {
       const i = lightIndex(id), d = current();
       return clone(commit({ ...d, lights: d.lights.filter((_, j) => j !== i) }));
@@ -128,7 +152,7 @@ export function createCommands() {
     render(opts: { width?: number; region?: Region } = {}): { image: Image; metrics: Metrics } {
       const d = current();
       const kappa = guardKappa(photo!, d);
-      const image = renderImage(photo!, d, { ...opts, kappa });
+      const image = renderImage(photo!, d, { ...opts, kappa, ...(d.relief.mode === 'measured' && measured ? { relief: measuredRelief(measured) } : {}) });
       const base = renderImage(photo!, neutralDoc(d.photo), opts);
       return { image, metrics: metrics(image, base, kappa) };
     },

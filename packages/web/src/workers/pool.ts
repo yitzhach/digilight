@@ -92,35 +92,50 @@ const share = (i: number, n: number): [number, number] => [Math.floor((i * K) / 
 const bands = (h: number, n: number) => Array.from({ length: n }, (_, i) => [Math.floor((i * h) / n), Math.floor(((i + 1) * h) / n)] as const);
 const f32 = (n: number) => new Float32Array(new SharedArrayBuffer(4 * n));
 
+/** How long each stage of the last estimate took, in ms (the bench prints them). */
+export const reliefStages: Record<string, number> = {};
+function stopwatch() {
+  let t = performance.now();
+  return (name: string) => { const now = performance.now(); reliefStages[name] = Math.round(now - t); t = now; };
+}
+
 /** The raw estimated height, its stages split across the workers (the same bits as core's
  *  estimateHeight in one go). */
 async function rawHeight(ws: Worker[], p: Image): Promise<{ data: Float32Array; width: number; height: number }> {
   const { width: w, height: h, same } = reliefSize(p), n = w * h;
+  const lap = stopwatch();
   let img = p;
   if (!same) {
     const out = new Uint8ClampedArray(new SharedArrayBuffer(4 * n));
     await Promise.all(bands(h, ws.length).map(([y0, y1], i) => one(ws[i]!, { type: 'relief-thumb', out, width: w, height: h, y0, y1 })));
     img = { data: out, width: w, height: h };
   }
+  lap('resize');
   const ch: Channels = { L: f32(n), cr: f32(n), cg: f32(n), cb: f32(n) };
   await Promise.all(bands(h, ws.length).map(([y0, y1], i) => one(ws[i]!, { type: 'relief-chan', img, ch, y0, y1 })));
+  lap('channels');
   const bl = Object.fromEntries(BLURS.map(([k]) => [k, f32(n)])) as unknown as Blurred;
   let next = 0; // five blurs over the workers, each takes the next
   await Promise.all(ws.map(async (wk) => {
     for (let b; (b = BLURS[next++]); ) await one(wk, { type: 'relief-blur', src: ch[b[1]], width: w, height: h, sigma: b[2] * w, out: bl[b[0]] });
   }));
+  lap('blurs');
   const raw = f32(n);
   await Promise.all(bands(h, ws.length).map(([y0, y1], i) => one(ws[i]!, { type: 'relief-raw', ch, bl, width: w, raw, y0, y1 })));
+  lap('raw');
   return { data: raw, width: w, height: h };
 }
 
 /** Estimated height and the table's input (worker 0), then given to every worker. */
 export async function reliefHeight(alive: () => boolean): Promise<{ height: Height; inp: HorizonInput }> {
   const ws = start();
+  for (const k of Object.keys(reliefStages)) delete reliefStages[k];
   const raw = shared && ws.length > 1 && poolPhoto ? await rawHeight(ws, poolPhoto) : undefined;
+  const lap = stopwatch();
   if (!alive()) throw new Error('a new photo was opened');
   const r = await one(ws[0]!, { type: 'relief-height', shared, ...(raw ? { raw } : {}) });
   if (r.type !== 'height') throw new Error('relief: unexpected reply');
+  lap('height and pyramid');
   if (!alive()) throw new Error('a new photo was opened');
   for (const w of ws.slice(1)) w.postMessage({ type: 'relief-input', height: r.height, inp: r.inp } satisfies Request);
   return { height: r.height, inp: r.inp };
