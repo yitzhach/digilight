@@ -3,7 +3,7 @@
 // maps (shared memory when the page is cross-origin isolated, a copy otherwise).
 
 import {
-  aoFromTable, channelRows, estimateHeight, gauss, guardKappa, normalise, rawRows, resampleRegion, horizonInput, horizonLayer, horizonTmax, K, LOOKS, neutralDoc, render, withLook,
+  aoFromTable, channelRows, estimateHeight, gauss, guardKappa, measuredHHat, normalise, slopes, rawRows, resampleRegion, horizonInput, horizonLayer, horizonTmax, K, LOOKS, neutralDoc, render, withLook,
   type Doc, type Height, type HorizonInput, type Image, type ReliefMaps,
 } from 'core';
 import type { Reply, Request } from './protocol.ts';
@@ -65,9 +65,12 @@ self.onmessage = (e: MessageEvent<Request>) => {
       case 'relief-blur': m.out.set(gauss(m.src, m.width, m.height, m.sigma)); post({ type: 'done', id: m.id }); break;
       case 'relief-raw': rawRows(m.ch, m.bl, m.width, m.raw, m.y0, m.y1); post({ type: 'done', id: m.id }); break;
       case 'relief-height': {
-        let h = m.raw ? normalise(m.raw.data, m.raw.width, m.raw.height) : estimateHeight(photo);
+        const mh = m.measured, hh = mh ? measuredHHat(mh) : null;
+        let h: Height = mh ? { width: mh.width, height: mh.height, h: hh!, ...slopes(hh!, mh.width, mh.height) }
+          : m.raw ? normalise(m.raw.data, m.raw.width, m.raw.height) : estimateHeight(photo);
         if (m.shared) h = { ...h, h: share(h.h), p: share(h.p), q: share(h.q) };
-        let i = horizonInput(h.h, h.width, h.height, true);
+        // The measured height is not blurred for the table (§5.6, core measuredRelief).
+        let i = horizonInput(h.h, h.width, h.height, !mh);
         if (m.shared) i = { ...i, pyramid: i.pyramid.map((L) => ({ ...L, data: share(L.data) })) };
         height = h; inp = i; table = maps = null;
         post({ type: 'height', id: m.id, height: h, inp: i });

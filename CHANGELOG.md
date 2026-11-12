@@ -28,3 +28,8 @@
 - `core/relief/`: v1's measured relief and handheld line-up ported (`measure.ts`, `lineup.ts` and their parts), equal to v1's output on Isaac's photos; the light's axis read from the pair (`axis.ts`); the measured height kept as 16 bits for project files (`measured.ts`); commands `measureRelief`, `setMeasured`, `getMeasured` (D-040 to D-043).
 - `bench/relief-score.ts` (v1 score.py) and `bench/relief-gate.ts` (`pnpm gate:relief`, in CI): door 0.78 / 0.87, lintel 0.68 / 0.85, lamp shots 0.80 to 0.87 (D-044).
 - Bench page prints each stage of Texture's estimate (D-045).
+
+## Phase 5: True Relief (app flow)
+- `web`: "Use a side-lit photo for real texture" in Texture: one to three photos lined up in a worker with progress, two previews and "Which looks right?", a dial per photo, Expert elevation or a lamp in cm; the measured height drives Texture, autosaved as a 16-bit PNG; `window.digilight.measureRelief` and `getMeasured` (D-048).
+- Estimated texture labelled experimental after review round 4 (D-047).
+- `e2e/truerelief.spec.ts`: the door pair through the flow; the height and the export equal `measureFromPhotos` + `render` in Node; the height comes back after a reload.

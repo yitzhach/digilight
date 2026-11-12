@@ -73,3 +73,15 @@ main { flex: 1; display: flex; min-height: 0; }
   .bar .share { order: 10; width: 100%; }
   .bar .share .primary { flex: 1; }
 }
+
+/* True Relief (Phase 5) */
+.true-relief { margin: 12px 0; }
+.true-relief button.wide { width: 100%; }
+.true-relief .progress { display: flex; flex-direction: column; gap: 4px; font-size: 12px; margin: 8px 0; }
+.true-relief progress { width: 100%; accent-color: var(--accent); }
+.true-relief .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.true-relief .choice { padding: 3px; }
+.true-relief .choice canvas { width: 100%; display: block; border-radius: 3px; background: #111; }
+.true-relief .row { display: flex; gap: 6px; margin-top: 8px; }
+.true-relief .error { color: var(--error, #ff8a80); font-size: 12px; }
+.true-relief input[type=number] { width: 80px; font: inherit; background: #333338; color: var(--text); border: 1px solid var(--line); border-radius: 4px; }
