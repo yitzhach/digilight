@@ -13,10 +13,8 @@
   offers Save or share, to put the picture in Photos (D-030).
 
 ## Waiting on Isaac (rest of Phase 3's gate)
-- Bench on the iMac (Chrome 138, 17.9 MP photo): open 1.16 s, thumbnails 0.87 s, drag 60 fps at
-  scale 1, release 14 ms, export 2.2 s: all within §9. Open would be about 1.5 s at 24 MP, so
-  the guard thumbnail and the file hash moved off the main thread's path (D-031); a re-run on a
-  24 MP photo would confirm.
+- Bench on the iMac passed (17.9 MP: open 1.16 s, drag 60 fps, release 14 ms, export 2.2 s);
+  opening sped up for 24 MP (D-031), a re-run would confirm.
 - Looks (Isaac, 11-12): Gallery, Spotlight and Dramatic too warm; Candlelight too blown out.
   Phase 4 starts by tuning these (§6, `core/src/looks.ts`, goldens together; D-032), then a
   review round (D-019) for him to confirm. Zoom buttons and a Settings window: Phase 6.
