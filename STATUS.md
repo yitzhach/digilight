@@ -1,40 +1,40 @@
 # Status
 **Phase:** 5 (True Relief): engine and app flow done; the gate waits on Isaac's phone test.
+Audited 11-12 (D-049): no code changed; BUILD.md gained Phases 5b, 6a, 6b and 8b.
 **Live:** https://studio-digilight.bobdylan2000.workers.dev (from `main`; `?bench` for the bench).
 
 ## Done
 - Phases 0 to 4: workspace, `core` engine, `gl` preview, `web` app, Texture (estimated); deployed.
 - Phase 5, engine (D-040 to D-044): v1's measurement and line-up in `core/relief/`, the light's
-  axis, the 16-bit height, `measureRelief` / `setMeasured` / `getMeasured`, `pnpm gate:relief`:
-  door 0.78 / 0.87, lintel 0.68 / 0.85, own axis 0.79 / 0.88 and 0.59 / 0.78, lamps 0.80 to 0.87.
-- Phase 5, app flow (D-048): Texture's "Use a side-lit photo for real texture" (one to three
-  photos, lined up in a worker with progress, two previews, "Which looks right?", a dial per
-  photo, Expert elevation or lamp in cm); the height drives Texture and is autosaved as a 16-bit
-  PNG; `window.digilight.measureRelief`. e2e: the door pair through the flow equals Node's
-  `measureFromPhotos` + `render` bit for bit. 44 unit tests, 14 e2e.
-- Review round 4 read (D-047): estimated texture "way too gritty", so it stays off and is
-  labelled experimental. Look notes (Dramatic more contrast, lintel Spotlight muted) kept for
-  Phase 6. Before no longer selects its text on a phone long-press.
+  axis, the 16-bit height, `pnpm gate:relief`: door 0.78 / 0.87, lintel 0.68 / 0.85, lamps 0.80 to 0.87.
+- Phase 5, app flow (D-048): "Use a side-lit photo for real texture" (one to three photos, two
+  previews, "Which looks right?", a dial per photo); the height is autosaved as a 16-bit PNG.
+- Review round 4 (D-047): estimated texture "way too gritty": off by default, labelled
+  experimental. Look notes (Dramatic more contrast, lintel Spotlight muted) wait for Phase 6a.
+- Audit (D-049): all source read; 44 unit and 14 e2e tests pass; the built app driven at desktop
+  and iPhone sizes. The engine, parity and True Relief hold up. Found, and now Phase 5b:
+  Strength throws away lamps moved by hand (and deletes every light after a reload); messages
+  on a phone shrink to "S…"; `measured` is accepted with no height; Cmd+Z does nothing; no test
+  covers an iPhone photo (P3, HEIC), Safari or the deployed build; JavaScript is at 245 of 250 KB.
 
 ## Waiting on Isaac
 - **Phase 5 gate:** on the phone, open a new piece's flat photo, Texture, "Use a side-lit photo
   for real texture", a handheld photo of it in sun or a lamp from one side; pick the preview that
-  looks right; try a raking look. Say if the line-up failed, the choice was unclear, or it looked wrong.
-- Settings notes: Isaac is trying sliders on a few images (door: estimated texture at Depth 27,
-  Shadows 60 looked better). Screenshots with look and slider numbers feed Phase 6's defaults.
-- Phase 4 bench: texture switched on is 5.5 s on the iMac (budget 3 s; D-045). Re-run `?bench`
-  and paste the table: it shows each stage of the estimate.
+  looks right; try a raking look. Say if the line-up failed, the choice was unclear, or it looked
+  wrong. Also say the iOS version and whether a full-size photo (24 MP or more) opens.
+- One full-size HEIC from the iPhone of his own piece, for `fixtures/` (Phase 5b item 10).
+- Yes or no to D-049's calls: Phase 6 in two parts; Brightness through the whites protection;
+  no curve editor; Phase 8b before anyone pays.
+- Settings notes: screenshots with the look and slider numbers feed Phase 6a's defaults.
+- Phase 4 bench: texture switched on is 5.5 s on the iMac (budget 3 s; D-045). Re-run `?bench`.
 **Run:** `pnpm typecheck && pnpm test`, `pnpm e2e`, `pnpm gate:relief` (3 min), `pnpm dev`, `pnpm
 build`. Never run `playwright install`. Review notes: ArtifactData, collection `notes`.
 
-## Next: new chat, Opus 5.5 at medium effort: Phase 6 (Phase 5's phone test can follow)
-Prepare, Finish, Projects (BUILD.md §10 Phase 6; D-032's zoom buttons and Settings window).
-Project files carry the measured height (`packHeight`, `lo`, `hi`). Fold in D-047's look notes
-and any settings notes Isaac pastes.
+## Next: new chat, Opus 5.5 at medium effort: Phase 5b (fix-ups from the audit), then 6a
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do
-Phase 6 as BUILD.md section 10 lists it. Answers to "Waiting on Isaac": Phase 5 phone test:
-[worked / notes / "not yet"]. Bench re-run: [paste the table, or "not yet"]. Settings
-notes: [screenshots with the look and slider numbers, or "none yet"].
+Phase 5b as BUILD.md section 10 lists it. Answers to "Waiting on Isaac": Phase 5 phone test:
+[worked / notes / "not yet"; iOS version; did a full-size photo open]. HEIC for fixtures:
+[attached / "not yet"]. D-049's calls: [yes / changes]. Bench re-run: [table, or "not yet"].
 Keep replies brief. Stop at the phase's gate and tell me what to check.
 ```

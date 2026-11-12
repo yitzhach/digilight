@@ -1,7 +1,8 @@
 # DigiLight 2 — build brief
 
 A ground-up rebuild of DigiLight (v1: `yitzhach/digi-light-test`). Written 11-11 after a full
-audit of v1 and a model test on the user's real photos (docs/v2/bakeoff.md). The owner is Isaac
+audit of v1 and a model test on the user's real photos (docs/v2/bakeoff.md). Audited again on
+11-12 after Phase 5 (D-049: Phase 5b, Phase 6 in two parts, Phase 8b). The owner is Isaac
 Anderson (Isaac Anderson Art); "Isaac" below means him.
 
 **How to use this brief.** Do one phase per session, in order (§10). For a phase, read §1 to §4,
@@ -21,7 +22,9 @@ picks a look or moves lamps, and saves a picture that looks lit that way.
 
 1. **The art is never repainted.** Every output pixel is the photo's own pixel multiplied by
    computed light. The lighting never generates, blurs or sharpens anything. With no light
-   changed, the output is the photo, bit for bit.
+   changed, the output is the photo, bit for bit. Finish (§5.9) changes tone and colour one
+   pixel at a time, and only when the artist moves it. The photo is resampled in two places
+   only, both the artist's choice: a smaller export, and Crop and straighten (Phase 6b).
 2. **It works on any photo.** The Light layer needs no knowledge of the surface, so it cannot
    produce artifacts. Relief is a second, optional layer.
 3. **It is fast on a 2014 Retina 5K iMac** (macOS Big Sur 11.7.10, Radeon R9 M290X 2 GB,
@@ -29,7 +32,8 @@ picks a look or moves lamps, and saves a picture that looks lit that way.
 4. **It is simple.** About 15 controls. Everything else is behind one "Expert controls" switch
    and is mainly there for AI agents.
 5. **One picture everywhere.** The same document gives the same pixels in the app, from the
-   command line and from an AI agent.
+   command line and from an AI agent (for the same decoded photo: JPEG decoders differ by a
+   level here and there, D-029, so from Phase 7 a record also carries the decoded pixels' hash).
 
 **For whom:** artists photographing their own work (first paying customer). Scope is artwork
 only: flat or low-relief pieces photographed straight on. No portraits, rooms or general photos.
@@ -219,7 +223,7 @@ Changing `relief.depth` or `relief.shadows` never rebuilds the table.
 `tone.protectWhites` off: `kappa = 1`. On: `kappa` is the largest value in `[0.25, 1]` for which
 the share of **blown** pixels in the rendered picture, minus that share in the photo, is at most
 0.5%. Blown = display luma (luma of the encoded values) >= 250. Measured on a thumbnail (long
-side 512, area-averaged, relief off) by 12 steps of bisection; `kappa = 1` if 1 already passes.
+side 512, area-averaged, relief off, finish neutral) by 12 steps of bisection; `kappa = 1` if 1 already passes.
 `core/guard.ts` computes it; the preview gets it as a uniform. It is part of the render, so it
 is the same everywhere. The looks in §6 are balanced so that it rarely acts; it is a safety net
 for hand-set lights. (v1 counted a pixel blown when any one channel reached 250. A warm lamp on
@@ -232,14 +236,18 @@ for 6500 K, scaled to luma 1. So 6500 K is exactly `(1,1,1)`. Use a table every 
 to 12000 (constants in `kelvin.ts`, one per working space, generated once from v1's
 `src/kelvin.js` and committed), linear interpolation between entries.
 
-### 5.9 Finish (Phase 6; neutral values change nothing)
+### 5.9 Finish (Phase 6a; neutral values change nothing)
 
-Applied to `out` in this order: exposure (`out *= dexp2(finish.exposure)`), warmth (multiply by
+Exposure is light, not a finish on top: `E *= dexp2(finish.exposure)` at the end of §5.4 (sheen
+too), so §5.5 protects the whites it brightens. Multiplying `out` afterwards, as this section
+first said, would clip what §5.5 had just protected (D-049). The guard (§5.7) does not count it.
+
+Then, applied to `out` in this order: warmth (multiply by
 `colour(6500 - 2500*warmth)` for warmth > 0, `colour(6500 - 4500*warmth)` for < 0, renormalised to
 luma 1), then on display-encoded values `v`: contrast (`v = 0.5 + (v - 0.5) * (1 + contrast)` for
 contrast <= 0; for > 0 the S-curve `v = mix(v, smoothstep(0, 1, v), contrast)`), saturation (`v =
 grey + (v - grey) * (1 + saturation)`, grey = luma of the encoded values), curve (a 256-entry
-table, expert), vignette (`v *= 1 - vignette * smoothstep(0.55, 1.15, dist)`, `dist` = distance
+table, expert; read at `255 v`, linear between entries), vignette (`v *= 1 - vignette * smoothstep(0.55, 1.15, dist)`, `dist` = distance
 from the centre in units of half the diagonal), grain (expert; `v += grain * 0.08 * (h - 0.5)`,
 `h` in `[0, 1)` from an integer hash (PCG) of the pixel's cell on a grid 2048 cells wide, so
 every size has the same grain and the shader and the reference agree). Clamp to `[0, 1]`.
@@ -303,7 +311,9 @@ Simple sliders map as: light Brightness 0 to 200% = intensity 0 to 2; Warmth = k
 
 ### Looks (`core/looks.ts`): the one-tap starting points
 
-A look sets `ambient` and `lights` only. `flip` mirrors every `u` about 0.5. Strength `s` (0 to 1)
+A look sets `ambient` and `lights` only (never Finish, so applying one never undoes the artist's
+Finish). `lookOf(doc)` (Phase 5b) gives the look, strength and flip a document matches, or none:
+the panel shows that, never a remembered tap. `flip` mirrors every `u` about 0.5. Strength `s` (0 to 1)
 mixes toward neutral: `ambient.level = mix(1, look, s)`, `ambient.kelvin = mix(6500, look, s)`,
 each `intensity *= s`; at `s = 0` the document is neutral.
 These numbers were rendered on Isaac's door and lintel photos with this section's exact formulas
@@ -352,6 +362,9 @@ line map to them one to one.
 | `export({width, format, quality})` | the full-size picture and its record (document, photo and picture SHA-256) |
 | `undo()`, `redo()`, `reset()` | history |
 
+Every command refuses `relief.mode: 'measured'` while there is no measured height, and a width
+over the photo's (Phase 5b).
+
 `metrics` (port of v1 `measure.js` `imageMetrics`, trimmed): share of blown (display luma >= 250)
 and crushed (<= 5) pixels against the photo's, share with any channel at 255, luma percentiles
 5/50/95, `kappa`, and a `warnings` list. An AI agent judges its own result from these.
@@ -368,7 +381,8 @@ shows the photo), Export.
 picture's edge (the canvas shows a margin of half the picture's width around it). The selected
 light also shows a small cross at its aim; drag it to aim. Scroll or pinch on a handle changes
 its brightness. Double-click toggles it. Delete removes it. Wheel zooms the picture to 800%;
-drag on empty space pans. `B` = Before, `Z` / `Shift+Z` = undo / redo.
+drag on empty space pans. `B` = Before, `Z` / `Shift+Z` = undo / redo (also with Cmd or Ctrl).
+On a phone a handle answers a touch within 22 px of its centre.
 
 **Panel, simple mode** (the whole of it):
 
@@ -387,7 +401,8 @@ every expert setting of its part of the schema, generated from `describe()` (a s
 a select, by type). Nothing expert has hand-written interface.
 
 Words on screen are plain: no "azimuth", "kelvin", "specular". Every control has a one-line
-tooltip. Errors say what to do next.
+tooltip (on a phone, where nothing hovers, the hint is on screen). Errors say what to do next,
+on a line of their own that wraps.
 
 ---
 
@@ -413,6 +428,10 @@ Nothing is ever rebuilt per frame.
 
 Cloud test machines have no GPU, so the budgets are checked on Isaac's iMac with the built-in
 bench page (`?bench`, Phase 3), which prints these numbers.
+
+Phones have no budget yet: Phase 5b records what Isaac's iPhone opens (megapixels, iOS version)
+and its bench table here. JavaScript was about 245 KB on 11-12 with the True Relief worker; CI
+checks this row from Phase 5b.
 
 ---
 
@@ -547,29 +566,114 @@ on the measured relief scores shade corr at least 0.45 mid and 0.50 broad on bot
 0.45; DSC_8382 with its three lamp shots predicts each shot from the other two at 0.7 or better.
 Isaac runs the flow once on a new piece with his phone.
 
-### Phase 6 — Prepare, Finish, Projects (Sonnet 5.5, or Opus 5.5 at medium effort)
+### Phase 5b — Fix-ups from the audit (Opus 5.5, medium effort)
 
-Read §5.9, §8.
+From the audit of 11-12 (D-049). Each item was seen in the code or in the running app. No new
+features. Read §6 Looks, §7, §8.
 
-1. Finish (§5.9) in reference and shader; panel section 4; curve editor (expert).
-2. Crop and straighten: four corner handles with a suggested quadrilateral; the rectified photo
-   (bicubic) becomes the document's photo.
-3. Versions: "Keep this version" snapshots in a strip; tap to switch, hold to compare (replaces
+Bugs:
+
+1. **The panel's look comes from the document.** `lookOf(doc)` in `core/looks.ts`: the look,
+   strength and flip a document matches (within 1e-6), or none. The panel highlights that look
+   and takes Strength and Flip from it; with none, no look is highlighted and Strength is greyed
+   ("Lights changed by hand"). Now the panel remembers the last tap: Strength after moving a
+   lamp by hand puts the look back and drops the hand's work; after Undo the wrong look is
+   highlighted; after a reload Strength acts on "Original" and deletes every light.
+2. **`relief.mode: 'measured'` needs a height in every command** (`set`, `setDoc`), not only in
+   `setRelief`. Now `set('relief.mode', 'measured')` is accepted: the panel says "Measured from
+   your side-lit photo", the picture shows the estimate, and `render` throws. Phase 6a's Paste
+   settings would walk into it.
+3. **On a phone:** messages get a line of their own under the bar and wrap (now they shrink to
+   "S…", so no error is read); a new tab starts at its top (now it keeps the last tab's scroll)
+   and nothing shows above the tab row; a handle answers a touch within 22 px (now 11); each
+   control's hint is on screen.
+4. `Cmd+Z` / `Ctrl+Z`, and with Shift, undo and redo as `Z` does (now they do nothing).
+5. A lost WebGL context (a phone that puts the tab to sleep) is rebuilt: photo, maps, redraw. An
+   error nothing caught shows as a message.
+6. Texture: an export after a failed and then repeated map build no longer reports the old
+   failure (`web/relief.ts`, `failed`).
+7. `render` and `export` refuse a width over the photo's (now `render({width})` upscales).
+8. An autosaved document the schema no longer accepts says so (now it silently starts neutral).
+
+Tests and CI:
+
+9. The smoke test also runs against the built app (`vite preview` of `dist`). Now only the dev
+   server is tested, never what is deployed.
+10. Fixtures from Isaac's iPhone (needs Isaac: one full-size HEIC of his own piece): a Display
+    P3 photo keeps its profile through export and a neutral export equals the decoded pixels;
+    the HEIC opens through libheif (Chromium cannot open HEIC itself, so the test reaches that
+    path); a JPEG with EXIF rotation opens upright. No test covers any of the three today.
+11. A CI test adds up the gzip size of the built JavaScript (without the HEIC decoder) against
+    §9's 250 KB. It is about 245 KB: the page and each of the three workers carry their own
+    copy of `core` and the schema library (the guard worker is 44 KB for one function). Import
+    narrowly or share one chunk; aim under 200 KB before Phase 6a adds to it.
+12. Try the smoke test in Playwright's WebKit on GitHub's machines (Safari is the target; every
+    test runs in Chromium). If WebGL2 does not run there, log it and leave it.
+
+With Isaac, in the same sitting as Phase 5's phone test:
+
+13. Note the iPhone's iOS version and open a full-size photo (24 MP or more). The app decodes
+    through a canvas, which iOS up to 17 limits to 16.7 MP (67 MP is reported from iOS 18). If
+    it fails: decode at the largest size that works and say so on screen. Record the result in §9.
+14. The Phase 4 bench re-run (D-045). If the estimate stays over 3 s: it is experimental
+    (D-047), so move the 3 s budget to the measured maps and log it.
+
+**Gate:** tests pass, one for each bug above; on the iPhone Isaac applies a look, moves a lamp,
+sees Strength greyed, exports and reads the message.
+
+### Phase 6a — Finish, zoom, settings (Opus 5.5, medium effort)
+
+Phase 6 in two parts (D-049): it changed both renderers, added a geometry tool and two file
+formats, and its gate needed only this half. Read §5.9, §8. Decisions that apply: D-026, D-030,
+D-032, D-047.
+
+1. Finish (§5.9) in reference and shader; panel section 4. The curve is a setting only: agents
+   and presets set it. An editor would be hand-built expert interface, which §8 rules out (Later).
+2. Look tuning from D-047 and Isaac's settings notes, by lights only: Dramatic more contrast
+   (lower room light), Spotlight less flat on the lintel. A review round, then §6 and the goldens.
+3. Zoom buttons (Isaac, after Phase 3): Zoom out, Fit, Zoom in on the picture (keys `-`, `0`,
+   `=`), the same zoom as the wheel (§8). Fit fills the stage with the picture (5% margin);
+   lamps outside the view sit at its edge, as they do now; Zoom out shows them in place. Now
+   the fit keeps half a picture width free all round: on a phone the picture is about a third
+   of the screen's width.
+4. A **Settings** window, opened from the Export section (Isaac, after Phase 3): **Save
+   settings** (a named preset of ambient, lights, tone and finish, listed to apply in one tap);
+   **Copy settings** and **Paste settings** (everything but the photo and relief maps, pasted
+   onto another photo as one undo step; `relief.mode` becomes `off` unless that photo has its
+   own measured height; also JSON on the clipboard for an AI agent). Presets are kept in
+   IndexedDB and can be saved to and loaded from a file: Safari deletes a site's IndexedDB
+   after seven days without a visit, so the browser's list is a convenience, not the keeping
+   place.
+
+**Gate:** parity and goldens with finish on; Isaac lights five pieces alike in under two
+minutes, using copy and paste or a saved preset; the zoom buttons work on the iMac and the
+iPhone.
+
+### Phase 6b — Prepare and projects (Opus 5.5, medium effort)
+
+Read §6, §7, §8. Decisions that apply: D-042, D-043, D-048.
+
+1. Crop and straighten: four corner handles, starting at the frame's corners (v1 has no corner
+   finder to port; a suggested quadrilateral is Later). The corners go in the document
+   (`photo.crop`, in the file's pixels) and `photo.sha256` stays the file's, so the command
+   line makes the same picture from the same file. The warp (bicubic) is in `core`, with
+   `dmath`. It comes before True Relief: changing the crop afterwards drops the measured
+   height, and the app says so first. Side-lit photos line up to the cropped photo.
+2. Versions: "Keep this version" snapshots in a strip; tap to switch, hold to compare (replaces
    v1's batch viewer).
-4. Projects: save and open `.digilight` (JSON with the photo and maps), a list in IndexedDB.
+3. Projects: save and open `.digilight`: a zip, stored without compression (one small writer in
+   `web/io`, no dependency), of `doc.json`, the photo file as opened and the height PNG with
+   `lo` and `hi` (D-042). The file is the keeping place; the list in IndexedDB is recent
+   projects only (Safari's seven days), and the app asks for `navigator.storage.persist()`.
+4. Old documents still open. An additive schema change gets defaults; any other gets a step in
+   `core/migrate.ts` and a test that opens a committed document from before it.
 5. Apply to more photos: drop several, the current lights and finish render onto each (not
-   relief), download as a zip.
-6. Zoom buttons (Isaac, after Phase 3): Zoom out, Fit, Zoom in on the picture (keys `-`, `0`,
-   `=`), the same zoom as the wheel (§8).
-7. A **Settings** window, opened from the Export section (Isaac, after Phase 3), holding items 4
-   and 5 and: **Save settings** (a named preset of ambient, lights, tone and finish, kept in
-   IndexedDB, listed to apply in one tap); **Copy settings** and **Paste settings** (everything
-   but the photo and relief maps, pasted onto another photo as one undo step; also as JSON on
-   the clipboard so an AI agent can use it); **Save project** and **Open project**.
+   relief), one photo in memory at a time, download as a zip (item 3's writer).
+6. The Settings window gains **Save project** and **Open project**, and holds item 5.
 
-**Gate:** parity and goldens with finish on; a project saved and reopened exports the same
-SHA-256; Isaac lights five pieces alike in under two minutes, using copy and paste or a saved
-preset; the zoom buttons work on the iMac and the iPhone.
+**Gate:** a project saved and reopened exports the same pixel SHA-256, also after a crop; a
+project file committed in this phase opens in every later one; ten photos go through "Apply to
+more photos" on the iMac.
 
 ### Phase 7 — AI access, local (Opus 5.5, medium effort)
 
@@ -586,7 +690,12 @@ reference renderer (no browser), `sharp` for decoding and encoding.
   export.
 
 **Gate:** `e2e/mcp.spec.ts` drives the server through a full session; a 1,280 px preview returns
-in under 1 s; an export equals the app's export of the same document, byte for byte.
+in under 1 s (Light layer; the first use of Texture builds its maps, about 15 s, and says so);
+an export has the same pixel SHA-256 as the app's export of the same document, for a PNG photo.
+(Not "byte for byte", as this gate first said: two encoders write different files from the same
+pixels, and two JPEG decoders read a photo a level apart, D-029.) The record gains
+`photo.pixelsSha256`, the decoded pixels' hash, so `verify` can tell a decoder's difference from
+a renderer's.
 
 ### Phase 8 — AI access, hosted (Opus 5.5, medium effort)
 
@@ -595,13 +704,33 @@ secret and possible cost. Outline: Worker `studio-digilight-api`; `POST /v1/rend
 upload or URL, a document, width up to 2048: a Worker has 128 MB) and a remote MCP endpoint
 wrapping the same commands; JPEG decoding by a WASM decoder; a bearer key until sign-in exists.
 
+### Phase 8b — Ready for a first customer (Sonnet 5.5)
+
+Before anyone pays (D-049). Needs Isaac: a domain.
+
+1. Its own address (now `studio-digilight.<account>.workers.dev`); v1's address comes here
+   when Isaac says 2.0 has replaced it (§11).
+2. "How to photograph your piece": one screen, from the empty state and from Texture, for the
+   flat photo and the side-lit photo. True Relief works or fails by these.
+3. About: version, "your photos stay on this device", licences (libheif is LGPL: its notice
+   must be reachable from the app, and is not today).
+4. A browser that cannot run the app gets a page that says which can. Safari's private windows
+   add noise to pixels read back from a canvas, which is how a photo is decoded: test for it
+   (known pixels in, the same out) and say so. Favicon, title, home-screen icon.
+5. "Copy details" on any error message, so a customer can send what happened. No tracking.
+
+**Gate:** someone who has never seen the app goes from the address to a saved picture on a
+phone, with Isaac watching and not helping.
+
 ### Phase 9 — Sign-in, assistant, payment (Opus 5.5; the Studio Platform's own rules apply)
 
 Off by a flag until Isaac turns it on; testing needs no sign-in. Outline: sign-in and project
 storage through the Studio Platform SDK (`yitzhach/Art-Talk-Back`, `@studio/sdk`); a "Describe
 the light you want" box that sends the sentence and `describe()` to the platform's assistant,
 which answers with commands; plan limits (export size, True Relief, batch) read from the session.
-Write `docs/phase-9.md` first.
+Everything runs in the browser, so a limit read there can be switched off by anyone who looks:
+the plan says which limits the platform enforces (hosted renders, project storage) and which
+rest on trust. Write `docs/phase-9.md` first.
 
 ### Phase 10 — A trained model for one-photo relief (Fable 5.2, high effort; optional)
 
@@ -614,7 +743,10 @@ it can and on a server otherwise.
 ### Later (not in 2.0)
 
 A wall behind the piece with the light's pool and the piece's own drop shadow; window, blinds
-and leaf patterns on a light; 16-bit and TIFF export; Photoshop or Lightroom plugin.
+and leaf patterns on a light; 16-bit and TIFF export; Photoshop or Lightroom plugin. From the
+audit (D-049): a curve editor; a suggested quadrilateral for Crop; print size written into the
+exported file (from `photo.widthMm`); smaller exports averaged in linear light (they average
+the 8-bit values, as v1 did, so fine bright detail comes out a little dark; full size is exact).
 
 ---
 
@@ -643,8 +775,10 @@ address until Isaac says 2.0 has replaced it.
 |---|---|
 | before Phase 0 | create the empty repository `yitzhach/digilight` |
 | before Phase 3's gate | connect it to Cloudflare Workers Builds; first deploy of `studio-digilight` |
-| Phase 3, 4, 5, 6 gates | try it on the iMac and say what reads wrong |
+| Phase 3, 4, 5, 6a, 6b gates | try it on the iMac and say what reads wrong |
+| Phase 5b | the phone test with the iOS version and a full-size photo; one full-size HEIC of his own piece for `fixtures/` |
 | Phase 8 | a new Worker, its secret, any cost |
+| Phase 8b | a domain |
 | Phase 9 | turning on sign-in and payment |
 | Phase 10 | any paid model key |
 
@@ -658,9 +792,12 @@ address until Isaac says 2.0 has replaced it.
 | 3 App | Opus 5.5, medium (Sonnet 5.5 for panel work) | mostly interface |
 | 4 Texture and shadows | Opus 5.5, high; Fable 5.2 if GPU and CPU tables disagree | two implementations of one table |
 | **5 True Relief** | **Fable 5.2, high (or ultracode)** | the hardest code and the main reason to pay |
-| 6 Prepare, Finish, Projects | Sonnet 5.5 | well specified |
+| 5b Fix-ups from the audit | Opus 5.5, medium | small, but it touches `core`, the preview and CI |
+| 6a Finish, zoom, settings | Opus 5.5, medium | Finish is in both renderers |
+| 6b Prepare and projects | Opus 5.5, medium | the crop is in `core`; a file format to keep |
 | 7 AI access, local | Opus 5.5, medium | small, but the tool wording matters |
 | 8, 9 Hosted, sign-in, assistant | Opus 5.5, medium, after a written plan | touches the platform and money |
+| 8b Ready for a first customer | Sonnet 5.5 | pages and words |
 | **10 Trained model** | **Fable 5.2, high (or ultracode)** | research with an honest gate |
 
 ## 14. Session prompt

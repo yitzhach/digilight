@@ -34,3 +34,6 @@
 - Estimated texture labelled experimental after review round 4 (D-047).
 - `e2e/truerelief.spec.ts`: the door pair through the flow; the height and the export equal `measureFromPhotos` + `render` in Node; the height comes back after a reload.
 - Buttons no longer select their text on a long press (Before on a phone showed selection handles); Before also lets go on a cancelled touch.
+
+## Audit (11-12)
+- No code changed. BUILD.md: Phase 5b (fix-ups, each seen in the code or the running app), Phase 6 in two parts (6a, 6b), Phase 8b; §5.9 Brightness goes through the whites protection; Phase 7's gate compares pixel hashes (D-049).
