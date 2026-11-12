@@ -26,7 +26,13 @@
 - Review rounds: `pnpm --filter core review` (D-019); read notes with ArtifactData (collection
   `notes`, round `phase4-1`) into `core/out/notes/` before the next round.
 
-## Next
-- Read round 4's notes and the bench; adjust looks, Texture defaults (depth 0.003, shadows 0.4)
-  or label as he says. Low raking shadows run a little long (D-036): check his notes for that.
-- Then Phase 5 (True Relief from a side-lit photo): new chat, Fable 5.2, high effort.
+## Next: new chat, Fable 5.2, high effort (BUILD.md §13: Phase 5)
+Starts by closing Phase 4's gate, as Phase 4 started with Phase 3's notes. Fill in the bench line.
+```
+Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do
+Phase 5 (BUILD.md section 10, plus the sections it names). Port from yitzhach/digi-light-test
+only the files the phase lists. Answers to "Waiting on Isaac": Phase 4 bench re-run after
+D-039: [paste the table]. Review round 4 notes are in its artifact's database (round
+phase4-1): apply them first (looks, Texture defaults or label; D-036), then Phase 5.
+Keep replies brief. Stop at the phase's gate and tell me what to check.
+```
