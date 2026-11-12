@@ -16,7 +16,9 @@ export async function decodePhoto(blob: Blob, name = (blob as File).name ?? 'pho
   const heif = isHeif({ name, type: blob.type });
   if (!heif && blob.type && !KINDS.test(blob.type) && !/\.(jpe?g|png|webp)$/i.test(name))
     throw new Error(`"${name}" is not a photo DigiLight opens. Use a JPEG, PNG, WebP or HEIC file.`);
-  const [space, digest] = await Promise.all([spaceOf(blob), sha256(await blob.arrayBuffer())]);
+  // The file's hash runs while the photo decodes.
+  const digest = blob.arrayBuffer().then(sha256);
+  const space = await spaceOf(blob);
   let source: CanvasImageSource & { width: number; height: number };
   try {
     source = await createImageBitmap(blob); // the browser converts from the file's profile
@@ -31,5 +33,5 @@ export async function decodePhoto(blob: Blob, name = (blob as File).name ?? 'pho
   const data = g.getImageData(0, 0, width, height, { colorSpace: space }).data;
   // Opaque: DigiLight lights artwork, and the renderer treats every pixel as opaque.
   for (let p = 3; p < data.length; p += 4) data[p] = 255;
-  return { image: { data, width, height }, space, sha256: digest, name, blob };
+  return { image: { data, width, height }, space, sha256: await digest, name, blob };
 }

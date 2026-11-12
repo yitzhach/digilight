@@ -38,8 +38,8 @@ function ask(w: Worker, m: Request, onThumb?: (r: Extract<Reply, { type: 'thumb'
   });
 }
 
-/** Gives every worker the photo (call once per photo). */
-export function setPoolPhoto(p: Image): void {
+/** Gives every worker the photo (call once per photo); returns it in shared memory, if shared. */
+export function setPoolPhoto(p: Image): Image | null {
   for (const w of start()) {
     let data: Uint8ClampedArray;
     if (shared) {
@@ -52,6 +52,7 @@ export function setPoolPhoto(p: Image): void {
     } else data = p.data.slice();
     w.postMessage({ type: 'photo', data, width: p.width, height: p.height } satisfies Request, shared ? [] : [data.buffer]);
   }
+  return shared ? p : null;
 }
 
 /** The reference picture at `width`, rows split across the workers. */
@@ -83,14 +84,16 @@ export function lookThumbs(doc: Doc, width: number, flip: boolean, onThumb: (loo
 let guard: Worker | null = null, guardId = 0;
 const guardWaiting = new Map<number, (k: number) => void>();
 
-/** Gives the guard worker the photo's 512 px thumbnail (call once per photo). */
-export function setGuardPhoto(p: Image): void {
+/** Gives the guard worker the photo (call once per photo): the shared photo, from which it makes
+ *  its 512 px thumbnail itself, or else the thumbnail made here. */
+export function setGuardPhoto(p: Image, sharedPhoto: Image | null): void {
   guard ??= new Worker(new URL('./guard.worker.ts', import.meta.url), { type: 'module' });
   guard.onmessage = (e: MessageEvent<{ id: number; kappa?: number; error?: string }>) => {
     const done = guardWaiting.get(e.data.id);
     guardWaiting.delete(e.data.id);
     done?.(e.data.kappa ?? 1);
   };
+  if (sharedPhoto) { guard.postMessage({ photo: sharedPhoto }); return; }
   const t = thumbnail(p, GUARD_SIZE);
   guard.postMessage({ thumb: { data: t === p ? p.data.slice() : t.data, width: t.width, height: t.height } });
 }

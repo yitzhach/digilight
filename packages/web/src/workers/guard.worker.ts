@@ -2,11 +2,14 @@
 // once and the guard's factor follows. It needs only the guard's 512 px thumbnail of the photo,
 // which is its own guard thumbnail, so the factor is exactly guardKappa(photo, doc).
 
-import { guardKappa, type Doc, type Image } from 'core';
+import { guardKappa, thumbnail, type Doc, type Image } from 'core';
+
+const GUARD_SIZE = 512; // core guard.ts
 
 let thumb: Image | null = null;
-self.onmessage = (e: MessageEvent<{ thumb?: Image; id?: number; doc?: Doc }>) => {
+self.onmessage = (e: MessageEvent<{ photo?: Image; thumb?: Image; id?: number; doc?: Doc }>) => {
   const m = e.data;
+  if (m.photo) { thumb = thumbnail(m.photo, GUARD_SIZE); return; }
   if (m.thumb) { thumb = m.thumb; return; }
   try {
     self.postMessage({ id: m.id, kappa: guardKappa(thumb!, m.doc!) });

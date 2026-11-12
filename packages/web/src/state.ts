@@ -63,8 +63,7 @@ export async function openFile(blob: Blob, name?: string, saved?: Doc | null): P
     const p = await decodePhoto(blob, name);
     cmd.open({ ...p.image, space: p.space, sha256: p.sha256 });
     if (saved && saved.photo.sha256 === p.sha256) { try { cmd.setDoc(saved); } catch { /* an older document: start neutral */ } }
-    setPoolPhoto(p.image);
-    setGuardPhoto(p.image);
+    setGuardPhoto(p.image, setPoolPhoto(p.image));
     batch(() => { photo.value = p; kappa.value = 1; look.value = { id: 'original', strength: 1, flip: false }; notice.value = null; });
     sync();
     if (!saved) void savePhoto(blob, p.name).catch(() => {});

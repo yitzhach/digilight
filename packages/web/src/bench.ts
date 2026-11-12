@@ -58,10 +58,11 @@ async function measure(log: (s: string) => void): Promise<Row[]> {
 
   for (const m of ['dragging a light, texture on', 'texture switched on to maps ready', 'export at full size, with texture'])
     rows.push({ moment: m, budget: '', result: 'Phase 4', ok: null });
-  // The built app's scripts (in /assets/) as transferred; the dev server serves no such files.
+  // The built app's scripts (in /assets/), compressed size as sent (not what the cache says);
+  // the dev server serves no such files.
   const js = performance.getEntriesByType('resource').filter((e) => /\/assets\/.*\.js$/.test(e.name) && !/libheif/.test(e.name))
-    .reduce((s, e) => s + ((e as PerformanceResourceTiming).transferSize || (e as PerformanceResourceTiming).encodedBodySize), 0);
-  rows.push({ moment: 'JavaScript shipped (as transferred, without HEIC)', budget: '250 KB', result: js ? `${Math.round(js / 1024)} KB` : 'built app only', ok: js ? js <= 250 * 1024 : null });
+    .reduce((s, e) => s + (e as PerformanceResourceTiming).encodedBodySize, 0);
+  rows.push({ moment: 'JavaScript shipped (compressed, without HEIC)', budget: '250 KB', result: js ? `${Math.round(js / 1024)} KB` : 'built app only', ok: js ? js <= 250 * 1024 : null });
   return rows;
 }
 
