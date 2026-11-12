@@ -5,6 +5,7 @@
 
 import { guardKappa } from './guard.ts';
 import { prepareLighting } from './light.ts';
+import { estimatedRelief, type ReliefMaps } from './relief/index.ts';
 import { crop, resampleRegion, type Image } from './resample.ts';
 import type { Doc } from './schema.ts';
 import { shade } from './tone.ts';
@@ -18,6 +19,8 @@ export interface RenderOptions {
   region?: Region;
   /** The guard's factor, if already known (guardKappa); computed otherwise. */
   kappa?: number;
+  /** Relief maps for this photo (relief on). Estimated ones are made here if not given. */
+  relief?: ReliefMaps;
 }
 
 /** Output size for a width (default the photo's own). */
@@ -49,5 +52,13 @@ export function render(photo: Image, doc: Doc, opts: RenderOptions = {}): Image 
   const src = W === photo.width ? crop(photo, r.x, r.y, r.width, r.height) : resampleRegion(photo, W, H, r.x, r.y, r.width, r.height);
   if (isNeutral(doc)) return src;
   const kappa = opts.kappa ?? guardKappa(photo, doc);
-  return shade(src, W, r.x, r.y, prepareLighting(doc, H / W, kappa), doc.tone.highlightProtect);
+  return shade(src, W, r.x, r.y, prepareLighting(doc, H / W, kappa, reliefFor(photo, doc, opts.relief)), doc.tone.highlightProtect);
+}
+
+/** The relief maps a render of this document uses (null with relief off). */
+export function reliefFor(photo: Image, doc: Doc, given?: ReliefMaps): ReliefMaps | null {
+  if (doc.relief.mode === 'off') return null;
+  if (given) return given;
+  if (doc.relief.mode === 'estimated') return estimatedRelief(photo);
+  throw new Error('measured relief needs its maps (from a side-lit photo, Phase 5)');
 }

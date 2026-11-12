@@ -1,8 +1,8 @@
 // pool.ts — a few render workers. The photo goes to each once per photo: as shared memory when
 // the page is cross-origin isolated (all workers read one copy), else as one copy to one worker.
 
-import type { Doc, Image } from 'core';
-import { outputSize, thumbnail } from 'core';
+import type { Doc, Height, HorizonInput, Image } from 'core';
+import { K, outputSize, thumbnail } from 'core';
 import type { Reply, Request } from './protocol.ts';
 
 /** The guard judges on a thumbnail of this long side (core guard.ts GUARD_SIZE, §5.7). */
@@ -71,6 +71,44 @@ export async function renderRows(doc: Doc, width: number, kappa: number): Promis
     }
   }));
   return { data: out, width: W, height: H };
+}
+
+// ---------------------------------------------------------------- Texture's maps (Phase 4)
+
+type WithId = Extract<Request, { id: number }>;
+type Job = WithId extends infer R ? (R extends WithId ? Omit<R, 'id'> : never) : never;
+const one = async (w: Worker, m: Job): Promise<Reply> => {
+  const r = await ask(w, { ...m, id: nextId++ } as WithId);
+  if (r.type === 'error') throw new Error(r.message);
+  return r;
+};
+/** Directions [k0, k1) for worker i of n. */
+const share = (i: number, n: number): [number, number] => [Math.floor((i * K) / n), Math.floor(((i + 1) * K) / n)];
+
+/** Estimated height and the table's input (worker 0), then given to every worker. */
+export async function reliefHeight(alive: () => boolean): Promise<{ height: Height; inp: HorizonInput }> {
+  const ws = start(), r = await one(ws[0]!, { type: 'relief-height', shared });
+  if (r.type !== 'height') throw new Error('relief: unexpected reply');
+  if (!alive()) throw new Error('a new photo was opened');
+  for (const w of ws.slice(1)) w.postMessage({ type: 'relief-input', height: r.height, inp: r.inp } satisfies Request);
+  return { height: r.height, inp: r.inp };
+}
+
+/** The table's Tmax, directions split across the workers. */
+export async function reliefTmax(): Promise<number> {
+  const ws = start();
+  const vs = await Promise.all(ws.map((w, i) => { const [k0, k1] = share(i, ws.length); return one(w, { type: 'relief-tmax', k0, k1 }); }));
+  return Math.max(0, ...vs.map((v) => (v.type === 'value' ? v.value : 0)));
+}
+
+/** The table and hollows made by the workers, who then render with them (exports). */
+export async function reliefTable(n: number, tmax: number, alive: () => boolean): Promise<void> {
+  const ws = start();
+  const table = shared ? new Uint8Array(new SharedArrayBuffer(K * n)) : null, ao = shared ? new Uint8Array(new SharedArrayBuffer(n)) : null;
+  await Promise.all(ws.map((w, i) => { const [k0, k1] = share(i, ws.length); return one(w, { type: 'relief-layers', k0, k1, tmax, table }); }));
+  if (shared) await one(ws[0]!, { type: 'relief-ao', tmax, ao });
+  if (!alive()) return; // a new photo: the workers have dropped these maps
+  for (const w of ws) w.postMessage({ type: 'relief-maps', table, ao, tmax } satisfies Request);
 }
 
 /** Thumbnails of every look on this photo, `onThumb` as each is ready. */

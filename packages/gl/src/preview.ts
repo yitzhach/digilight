@@ -1,8 +1,9 @@
 // preview.ts — the interactive picture (BUILD.md Phase 2): core's lighting drawn by WebGL2 in
 // one pass. The reference renderer stays the truth; this imitates it within §5.11.
 
-import { guardKappa, prepareLighting, type Doc, type Image, type Lighting, type Space } from 'core';
+import { guardKappa, prepareLighting, type Doc, type Height, type HorizonInput, type Image, type Lighting, type Space } from 'core';
 import { createContext, photoTexture, program, useSpace } from './context.ts';
+import { gpuHorizon, readHorizon, uploadHorizon, type ReliefTextures } from './horizon-gpu.ts';
 import { FRAGMENT, LAMP_VEC4S, MAX_LAMPS, VERTEX } from './shaders/light.glsl.ts';
 
 export interface View {
@@ -26,6 +27,14 @@ export interface Preview {
   /** Waits until the GPU has finished what was drawn (reads one pixel); for timing. */
   sync(): void;
   readonly kappa: number;
+  /** Texture's maps, built on the GPU from the CPU's pyramid and Tmax: two directions a frame
+   *  (`frame` waits for the next one); used once done. A newer call or null cancels it. */
+  buildRelief(h: Height, inp: HorizonInput, tmax: number, frame: () => Promise<unknown>): Promise<boolean>;
+  /** Texture's maps made on the CPU (tests), or null for none. */
+  setRelief(m: (Height & { table: Uint8Array; ao: Uint8Array; tmax: number }) | null): void;
+  readonly reliefReady: boolean;
+  /** The finished table and ao read back (tests). */
+  readRelief(): { table: Uint8Array; ao: Uint8Array } | null;
 }
 
 type Lamp = Lighting['lamps'][number];
@@ -36,7 +45,7 @@ export function packLamps(lamps: readonly Lamp[]): Float32Array {
   const u = new Float32Array(MAX_LAMPS * LAMP_VEC4S * 4);
   lamps.forEach((p, i) => {
     u.set([p.Lx, p.Ly, p.Lz, p.r0, p.l0z, p.falloff, p.intensity, p.spot ? 1 : 0,
-      p.sx, p.sy, p.sz, 0, p.cosOuter, p.cosInner, 0, 0, p.r, p.g, p.b, 0], i * LAMP_VEC4S * 4);
+      p.sx, p.sy, p.sz, p.sun ? 1 : 0, p.cosOuter, p.cosInner, p.size, p.k0 + p.kt, p.r, p.g, p.b, 0], i * LAMP_VEC4S * 4);
   });
   return u;
 }
@@ -50,6 +59,13 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
     photo: loc('u_photo'), target: loc('u_target'), aspect: loc('u_aspect'), scale: loc('u_scale'),
     centre: loc('u_centre'), unit: loc('u_unit'), base: loc('u_base'), kappa: loc('u_kappa'),
     protect: loc('u_protect'), lamps: loc('u_lamps'), lamp: loc('u_lamp'),
+    relief: loc('u_relief'), slopes: loc('u_slopes'), horizon: loc('u_horizon'), aoTex: loc('u_aoTex'), rAspect: loc('u_rAspect'),
+    tmax: loc('u_tmax'), depth: loc('u_depth'), shadows: loc('u_shadows'), ao: loc('u_ao'), sheen: loc('u_sheen'), sharp: loc('u_sharp'),
+  };
+  let relief: ReliefTextures | null = null, building = 0;
+  const dropRelief = () => {
+    if (relief) for (const t of [relief.slopes, relief.table, relief.ao]) gl.deleteTexture(t);
+    relief = null;
   };
   let photo: Image | null = null, tex: WebGLTexture | null = null, aspect = 1;
   let doc: Doc | null = null, lighting: Lighting | null = null, lampData = packLamps([]), kappa = 1;
@@ -58,7 +74,9 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
 
   function relight(): void {
     if (!doc) return;
-    lighting = prepareLighting(doc, aspect, 1); // kappa goes in as its uniform
+    // kappa goes in as its uniform; with Texture on but its maps not ready, the Light layer only
+    const on = doc.relief.mode !== 'off' && relief ? doc : { ...doc, relief: { ...doc.relief, mode: 'off' as const } };
+    lighting = prepareLighting(on, aspect, 1, on.relief.mode !== 'off' || null);
     lampData = packLamps(lighting.lamps);
   }
 
@@ -98,6 +116,17 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
       gl.uniform1f(U.protect, doc!.tone.highlightProtect);
       gl.uniform1i(U.lamps, lighting.lamps.length);
       gl.uniform4fv(U.lamp, lampData);
+      const R = lighting.relief && relief ? doc!.relief : null;
+      gl.uniform1i(U.relief, R ? 1 : 0);
+      gl.uniform1i(U.slopes, 1); gl.uniform1i(U.horizon, 2); gl.uniform1i(U.aoTex, 3);
+      if (R && relief) {
+        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, relief.slopes);
+        gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D_ARRAY, relief.table);
+        gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, relief.ao);
+        gl.uniform1f(U.rAspect, relief.width / relief.height);
+        gl.uniform1f(U.tmax, relief.tmax); gl.uniform1f(U.depth, R.depth); gl.uniform1f(U.shadows, R.shadows);
+        gl.uniform1f(U.ao, R.ao); gl.uniform1f(U.sheen, R.sheen); gl.uniform1f(U.sharp, 2 ** R.sheenSharpness);
+      }
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
     if (q < 1) {
@@ -141,5 +170,25 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
       gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));
     },
     get kappa() { return kappa; },
+    async buildRelief(h, inp, tmax, frame) {
+      const me = ++building;
+      dropRelief(); relight();
+      const job = gpuHorizon(gl, h, inp, tmax);
+      for (;;) {
+        if (me !== building) { for (const t of [job.textures.slopes, job.textures.table, job.textures.ao]) gl.deleteTexture(t); return false; }
+        if (job.step()) break;
+        await frame();
+      }
+      relief = job.textures; relight();
+      return true;
+    },
+    setRelief(m) {
+      building++;
+      dropRelief();
+      if (m) relief = uploadHorizon(gl, m, m.table, m.ao, m.tmax);
+      relight();
+    },
+    get reliefReady() { return relief !== null; },
+    readRelief: () => (relief ? readHorizon(gl, relief) : null),
   };
 }

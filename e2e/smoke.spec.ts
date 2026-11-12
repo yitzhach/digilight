@@ -95,3 +95,28 @@ test('on a phone, export offers Save or share (the share sheet gets the picture)
   await expect(page.getByRole('button', { name: 'Save or share' })).toHaveCount(0);
   expect(downloaded).toBe(false);
 });
+
+test('Texture: switched on from the panel, shown, and exported equal to the reference', async ({ page }) => {
+  test.setTimeout(240_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto(APP);
+  await page.locator('input[type=file]').setInputFiles({ name: 'door.png', mimeType: 'image/png', buffer: png });
+  await page.locator('[data-look="raking-left"]').click();
+  await page.getByText('Texture (estimated)').click();
+  const d0 = await page.evaluate(() => (window as any).digilight.getDoc());
+  expect(d0.relief).toMatchObject({ mode: 'estimated', depth: 0.003, shadows: 0.4 });
+  await expect(page.getByText('Preparing the texture…')).toHaveCount(0, { timeout: 120_000 });
+
+  await page.locator('[data-format="png"]').click();
+  const downloads: import('@playwright/test').Download[] = [];
+  const two = new Promise<void>((done) => page.on('download', (d) => { downloads.push(d); if (downloads.length === 2) done(); }));
+  await page.locator('[data-action="download"]').click();
+  await two;
+  const files = await Promise.all(downloads.map(async (d) => ({ name: d.suggestedFilename(), bytes: readFileSync((await d.path())!) })));
+  const rec = JSON.parse(files.find((f) => f.name.endsWith('.json'))!.bytes.toString());
+  const doc = parseDoc(rec.document);
+  expect(doc.relief.mode).toBe('estimated');
+  expect(rec.picture.pixelsSha256).toBe(sha(render(photo, doc).data)); // Node makes its own maps: the same bits
+  expect(errors).toEqual([]);
+});

@@ -1,17 +1,26 @@
-// A review round for Isaac (phase gates): every look on fixture photos, as a page where he
+// A review round for Isaac (phase gates): pictures of fixture photos as a page where he
 // marks each picture and types or speaks a note. Notes are kept in the artifact's database
 // (collection "notes"), so the next session reads them with ArtifactData.
 //   node scripts/review.ts [door-flat-crop.jpg lintel-flat-crop.jpg ...]   -> out/review/
 // Publish out/review/index.html with files img/* and capabilities {db: {}, dictation: {}}.
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { createCommands, guardKappa, render } from '../src/index.ts';
+import { createCommands, type Image } from '../src/index.ts';
 import { encodeJpeg, loadFixture } from './jpeg.ts';
 
-// Round 1 (phase1-looks): every look as first written. Round 2: looks retuned from Isaac's notes, and
-// where it changes the picture a "B" with a stricter whites guard (counting from 240, not 250).
-const ROUND = { id: 'phase1-looks-3', title: 'Looks review', about: 'Round 3: Dramatic and Raking from the top no longer blow out the corner or edge nearest the lamp; Warm evening is less orange, Candlelight less muddy, Soft window a touch warmer. Your round 2 note is under each picture it applied to. If a look reads right now, tap Looks right.' };
-const VARIANT_B = 0; // 0: no "stricter whites" pictures (Isaac chose the normal guard in round 2)
+// Rounds 1 to 3 (phase1-looks-*): every look. Round 4 (phase4-1): the four looks retuned from
+// Isaac's notes after Phase 3 (D-033), then Texture (estimated relief) with the raking looks at
+// several Shadows and Depths on three photos (D-022), so he can judge it and pick strengths.
+const ROUND = {
+  id: 'phase4-1', title: 'Looks and Texture review',
+  about: 'Part 1: Gallery, Spotlight and Dramatic are cooler now; Candlelight\'s lamp stands further below, so the bottom no longer blows out. Part 2: Texture, guessed from the photo itself, under the raking looks at a few strengths. For each: does it look like the real surface, or embossed and fake? If it is worse than no texture, say so: it then ships switched off and marked experimental.',
+  generalHelp: 'Overall: is Texture worth having on? Which Shadows and Depth read most like the real piece?',
+};
+const LOOKS_RETUNED = ['gallery', 'spotlight', 'dramatic', 'candlelight'];
+type Tex = { look: string; depth: number; shadows: number; label: string };
+const T = (look: string, depth: number, shadows: number): Tex =>
+  ({ look, depth, shadows, label: depth ? `Depth ${Math.round(100 * Math.sqrt(depth / 0.02))}, Shadows ${Math.round(shadows * 100)}` : 'Texture off' });
+const TEXTURE: Tex[] = [T('raking-left', 0, 0), T('raking-left', 0.003, 0.3), T('raking-left', 0.003, 0.6), T('raking-left', 0.003, 1), T('raking-left', 0.006, 0.6), T('raking-top', 0.003, 0.6)];
 // Earlier notes, if saved with ArtifactData list (out_dir out/notes): shown under each picture.
 const prevDir = new URL('../out/notes/notes/', import.meta.url), prev: Record<string, string> = {};
 if (existsSync(prevDir)) for (const f of readdirSync(prevDir)) {
@@ -20,34 +29,34 @@ if (existsSync(prevDir)) for (const f of readdirSync(prevDir)) {
   if (v.item && v.note) prev[v.item] = v.note.trim();
 }
 const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-const PIECE: Record<string, string> = { 'door-flat-crop.jpg': 'Door', 'lintel-flat-crop.jpg': 'Lintel' };
+const PIECE: Record<string, string> = { 'door-flat-crop.jpg': 'Door', 'lintel-flat-crop.jpg': 'Lintel', 'closeup-flat.jpg': 'Close-up' };
 const names = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(PIECE);
+const LOOK_PIECES = ['door-flat-crop.jpg', 'lintel-flat-crop.jpg'];
 const out = new URL('../out/review/', import.meta.url);
 mkdirSync(new URL('img/', out), { recursive: true });
 
 const items: { id: string; piece: string; look: string; src: string; note: string }[] = [];
+const add = (id: string, piece: string, look: string, image: Image, note: string) => {
+  const src = `img/${id}.jpg`;
+  writeFileSync(new URL(src, out), encodeJpeg(image, 85));
+  const before = prev[id] ? `<br>Last round: “${esc(prev[id])}”` : '';
+  items.push({ id, piece, look, src, note: note + before });
+};
 for (const name of names) {
   const photo = loadFixture(name), c = createCommands(), piece = PIECE[name] ?? name.replace(/\.jpg$/, '');
   c.open(photo);
-  for (const look of c.looks()) {
-    c.applyLook(look.id);
-    const t = performance.now();
-    render(photo, c.getDoc());
-    const ms = performance.now() - t;
-    const { image, metrics: m } = c.render({ width: 1000 });
-    const id = `${piece.toLowerCase()}--${look.id}`, src = `img/${id}.jpg`;
-    writeFileSync(new URL(src, out), encodeJpeg(image, 82));
-    const before = prev[id] ? `<br>Last round: “${esc(prev[id])}”` : '';
-    items.push({ id, piece, look: look.label, src, note: `Median brightness ${m.photo.p50.toFixed(0)} → ${m.render.p50.toFixed(0)}${before}` });
-    console.log(`${id.padEnd(24)} kappa ${m.kappa.toFixed(2)}  ${ms.toFixed(0)} ms full size`);
-    const kb = VARIANT_B ? guardKappa(photo, c.getDoc(), VARIANT_B) : 1;
-    if (VARIANT_B && kb < m.kappa - 0.08) { // only where the difference is visible
-      const bImg = render(photo, c.getDoc(), { width: 1000, kappa: kb });
-      const bid = `${id}--b`, bsrc = `img/${bid}.jpg`;
-      writeFileSync(new URL(bsrc, out), encodeJpeg(bImg, 82));
-      items.push({ id: bid, piece, look: `${look.label} · stricter whites`, src: bsrc, note: `Same look, light dimmed to ${Math.round(kb * 100)}%` });
-      console.log(`${bid.padEnd(24)} kappa ${kb.toFixed(2)}`);
-    }
+  if (LOOK_PIECES.includes(name)) for (const id of LOOKS_RETUNED) {
+    c.applyLook(id);
+    const { image, metrics: m } = c.render({ width: 1000 }), label = c.looks().find((l) => l.id === id)!.label;
+    add(`${piece.toLowerCase()}--${id}`, piece, label, image, `Retuned look. Median brightness ${m.photo.p50.toFixed(0)} → ${m.render.p50.toFixed(0)}`);
+    console.log(`${piece} ${id}: kappa ${m.kappa.toFixed(2)}`);
+  }
+  for (const t of TEXTURE) {
+    c.reset(); c.applyLook(t.look);
+    if (t.depth) c.setRelief({ mode: 'estimated', depth: t.depth, shadows: t.shadows });
+    const { image } = c.render({ width: 1200 }), label = c.looks().find((l) => l.id === t.look)!.label;
+    add(`${piece.toLowerCase()}--tex-${t.look}-${t.depth}-${t.shadows}`, piece, `${label} · ${t.label}`, image, t.depth ? 'Texture on (estimated from the photo)' : 'For comparison: the same light, no texture');
+    console.log(`${piece} ${t.look} ${t.label}`);
   }
 }
 const page = readFileSync(new URL('review-page.html', import.meta.url), 'utf8')

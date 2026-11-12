@@ -153,7 +153,8 @@ contribution = e * colour(kelvin)                                // 5.8
 `intensity` is therefore the light added at the aim point, as a multiple of the photo's own
 light. Sheen (expert, default 0): `spec = sheen * intensity * fall * spot * sh *
 max(dot(n, normalize(l + (0,0,1))), 0)^(2^sheenSharpness)` (use `dpow`); it is **added** to the
-lit colour as `spec * colour(kelvin)`, not multiplied by the photo.
+lit colour as `spec * colour(kelvin)` (times the same per-channel factor as E, §5.4, so white
+adapt and `kappa` act on it too; D-037), not multiplied by the photo.
 
 ### 5.4 All the light at P
 
@@ -191,20 +192,24 @@ For `K = 32` directions `d_k = (cos(2*pi*k/K), -sin(2*pi*k/K))` (azimuth as in 5
 pixel:
 
 ```
-That_k(P) = max(0, max over j of (hs(P + t_j * d_k) - hs(P)) / t_j)
+That_k(P) = max(0, max over j of (hs(P + o_kj) - hs(P)) / |o_kj|)
 t_j = texel * 1.35^j,  j = 0, 1, ... while t_j <= 0.2            // reach: 0.2 picture widths
+o_kj = floor(0.5 + t_j * d_k / texel) * texel                     // whole relief pixels (D-035)
 ```
 
 - `hs` is `hHat`, blurred first by a Gaussian of sigma 0.002 widths when `relief.mode ==
   'estimated'` (guessed grain must not throw shadows), unblurred when `'measured'`.
 - Each tap reads a **max pyramid** of `hs` at level `floor(log2(max(1, 0.35 * t_j / texel)))` (a
   small table of integers, one per `j`), so a thin ridge between two far taps is not stepped
-  over. Taps outside the picture are skipped.
+  over. Taps outside the picture are skipped. Level `l`'s texel `i` is the max of level `l - 1`'s
+  `2i` and `2i + 1` (sizes halve rounding down, as GPU mip levels; the last texel takes the rest),
+  and a tap reads texel `min(X >> l, size - 1)`. The CPU and GPU read the very same texels.
 - Stored as one byte per direction: `byte = round(255 * sqrt(That_k / Tmax))`, `Tmax` the largest
   value in the table (kept beside it). Decode: `That = (byte/255)^2 * Tmax`.
 - `horizonAt(P, lx, ly)`: `f = K * datan2(-ly, lx) / (2*pi)` wrapped to `[0, K)`;
   `k0 = floor(f)`; result `mix(That_k0(P), That_(k0+1 mod K)(P), f - k0)`.
-- `ao` byte: `round(255 * x/(1+x))`, `x = mean over k of That_k`. At render:
+- `ao` byte: `round(255 * x/(1+x))`, `x = mean over k of That_k` decoded from the table's bytes
+  (so the GPU makes the same ao from its own table; D-037). At render:
   `occl(P) = xd/(1+xd)`, `xd = 2 * relief.depth * x`, `x` decoded from the byte.
 
 Changing `relief.depth` or `relief.shadows` never rebuilds the table.
@@ -307,18 +312,18 @@ These numbers were rendered on Isaac's door and lintel photos with this section'
 keeps the photo's median brightness within 6%. They are a starting point; Phase 3's gate tunes
 them with him.
 
-| id | ambient (level, kelvin) | light: pos (u, v, z), aim, intensity, kelvin, cone, edge, falloff, size (retuned with Isaac, D-020) |
+| id | ambient (level, kelvin) | light: pos (u, v, z), aim, intensity, kelvin, cone, edge, falloff, size (retuned with Isaac, D-020, D-033) |
 |---|---|---|
 | original | 1, 6500 | none |
-| gallery | 0.6, 5000 | (0.5, −0.35, 0.9), (0.5, 0.45), 0.45, 3800, 45, 0.9, 0.5, 0.05 |
-| spotlight | 0.35, 5000 | (0.5, −0.25, 1.1), (0.5, 0.5), 0.6, 3600, 32, 1, 0.6, 0.05 |
+| gallery | 0.6, 6000 | (0.5, −0.35, 0.9), (0.5, 0.45), 0.45, 4600, 45, 0.9, 0.5, 0.05 |
+| spotlight | 0.35, 6000 | (0.5, −0.25, 1.1), (0.5, 0.5), 0.6, 4500, 32, 1, 0.6, 0.05 |
 | soft-window | 0.35, 6000 | (−0.8, 0.35, 0.8), (0.5, 0.5), 0.7, 5200, 90, 0.6, 1, 0.4 |
 | warm-evening | 0.55, 5500 | (−1.5, 0.2, 0.6), (0.5, 0.5), 0.4, 3800, 90, 0.6, 0.5, 0.15 |
 | cool-daylight | 0.5, 9000 | (0.5, −0.6, 1.2), (0.5, 0.5), 0.5, 8500, 90, 0.6, 0.5, 0.3 |
 | raking-left | 0.35, 6500 | (−2.0, 0.5, 0.35), (0.5, 0.5), 0.8, 4500, 90, 0.6, 0.5, 0.02 |
 | raking-top | 0.4, 6500 | (0.5, −2.0, 0.35), (0.5, 0.5), 0.6, 4500, 90, 0.6, 0.25, 0.02 |
-| dramatic | 0.25, 5000 | (−0.5, −0.45, 1.0), (0.45, 0.45), 0.55, 3800, 30, 1, 0.6, 0.05 |
-| candlelight | 0.4, 4500 | (0.5, 1.2, 0.5), (0.5, 0.65), 0.5, 2600, 90, 0.6, 0.8, 0.03 |
+| dramatic | 0.25, 6000 | (−0.5, −0.45, 1.0), (0.45, 0.45), 0.55, 4500, 30, 1, 0.6, 0.05 |
+| candlelight | 0.4, 4500 | (0.5, 1.5, 0.6), (0.5, 0.6), 0.5, 2700, 90, 0.6, 0.6, 0.03 |
 
 Why these shapes: a lamp close to the picture's edge is many times brighter on that edge than
 at the centre, so raking and side lights stand far off (`u` or `v` of −2 to −1.2). The two raking

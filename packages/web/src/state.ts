@@ -5,6 +5,7 @@ import { batch, signal } from '@preact/signals';
 import { createCommands, type Doc } from 'core';
 import { decodePhoto, type Photo } from './io/open.ts';
 import { loadSaved, saveDoc, savePhoto } from './io/store.ts';
+import { resetRelief, startRelief } from './relief.ts';
 import { kappaFor, setGuardPhoto, setPoolPhoto } from './workers/pool.ts';
 
 export const cmd = createCommands();
@@ -33,6 +34,7 @@ function sync(): void {
   const d = cmd.getDoc();
   // The picture is drawn at once with the last factor; the guard's new one follows (D-025).
   void kappaFor(d).then((k) => { if (doc.peek() === d) kappa.value = k; });
+  if (d.relief.mode !== 'off') startRelief((e) => say(`Texture could not be prepared: ${errorText(e)}`, true));
   batch(() => {
     doc.value = d; shown.value = d; live.value = false;
     if (!d.lights.some((l) => l.id === selected.value)) selected.value = d.lights[0]?.id ?? null;
@@ -62,6 +64,7 @@ export async function openFile(blob: Blob, name?: string, saved?: Doc | null): P
   try {
     const p = await decodePhoto(blob, name);
     cmd.open({ ...p.image, space: p.space, sha256: p.sha256 });
+    resetRelief();
     if (saved && saved.photo.sha256 === p.sha256) { try { cmd.setDoc(saved); } catch { /* an older document: start neutral */ } }
     setGuardPhoto(p.image, setPoolPhoto(p.image));
     batch(() => { photo.value = p; kappa.value = 1; look.value = { id: 'original', strength: 1, flip: false }; notice.value = null; });

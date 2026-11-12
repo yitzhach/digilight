@@ -92,7 +92,7 @@ $('pieceChips').innerHTML = pieces.map((p) => `<button class="chip" data-f="${p}
 function card(it) {
   const el = document.createElement(it.general ? 'div' : 'article');
   el.className = 'card'; el.dataset.id = it.id;
-  el.innerHTML = `${it.general ? '<h2 class="look">General notes</h2><p class="stat">Anything about the looks as a set: what is missing, what you would use most.</p>' :
+  el.innerHTML = `${it.general ? '<h2 class="look">General notes</h2><p class="stat">${ROUND.generalHelp || 'Anything about the looks as a set: what is missing, what you would use most.'}</p>' :
     `<button class="pic" aria-label="Open ${it.look} on the ${it.piece} full screen"><img loading="lazy" src="${it.src}" alt="${it.piece}, ${it.look}"></button>
     <div class="head"><span class="look">${it.look}</span><span class="piece">${it.piece}</span></div>
     <div class="stat">${it.note || ''}</div>

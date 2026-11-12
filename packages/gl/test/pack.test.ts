@@ -9,6 +9,6 @@ test('packLamps lays each lamp out as the shader reads it', () => {
   const u = packLamps(L.lamps);
   expect(u.length).toBe(MAX_LAMPS * LAMP_VEC4S * 4);
   expect([...u.subarray(0, 20)]).toEqual([p.Lx, p.Ly, p.Lz, p.r0, p.l0z, p.falloff, p.intensity, 1,
-    p.sx, p.sy, p.sz, 0, p.cosOuter, p.cosInner, 0, 0, p.r, p.g, p.b, 0].map(Math.fround));
+    p.sx, p.sy, p.sz, 0, p.cosOuter, p.cosInner, p.size, 0, p.r, p.g, p.b, 0].map(Math.fround));
   expect(u.subarray(20).every((v) => v === 0)).toBe(true);
 });
