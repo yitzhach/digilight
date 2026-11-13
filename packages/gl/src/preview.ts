@@ -1,7 +1,7 @@
 // preview.ts — the interactive picture (BUILD.md Phase 2): core's lighting drawn by WebGL2 in
 // one pass. The reference renderer stays the truth; this imitates it within §5.11.
 
-import { guardKappa, prepareLighting, type Doc, type Height, type HorizonInput, type Image, type Lighting, type Space } from 'core';
+import { guardKappa, prepareFinish, prepareLighting, type Doc, type Finish, type Height, type HorizonInput, type Image, type Lighting, type Space } from 'core';
 import { createContext, photoTexture, program, useSpace } from './context.ts';
 import { gpuHorizon, gpuTmaxSupported, readHorizon, uploadHorizon, type ReliefTextures } from './horizon-gpu.ts';
 import { FRAGMENT, LAMP_VEC4S, MAX_LAMPS, VERTEX } from './shaders/light.glsl.ts';
@@ -62,6 +62,8 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
     protect: loc('u_protect'), lamps: loc('u_lamps'), lamp: loc('u_lamp'),
     relief: loc('u_relief'), slopes: loc('u_slopes'), horizon: loc('u_horizon'), aoTex: loc('u_aoTex'), rAspect: loc('u_rAspect'),
     tmax: loc('u_tmax'), depth: loc('u_depth'), shadows: loc('u_shadows'), ao: loc('u_ao'), sheen: loc('u_sheen'), sharp: loc('u_sharp'),
+    finish: loc('u_finish'), warm: loc('u_warm'), contrast: loc('u_contrast'), saturation: loc('u_saturation'),
+    vignette: loc('u_vignette'), grain: loc('u_grain'), vig: loc('u_vig'), hasCurve: loc('u_hasCurve'), curve: loc('u_curve'),
   };
   let relief: ReliefTextures | null = null, building = 0;
   const dropRelief = () => {
@@ -69,7 +71,7 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
     relief = null;
   };
   let photo: Image | null = null, tex: WebGLTexture | null = null, aspect = 1;
-  let doc: Doc | null = null, lighting: Lighting | null = null, lampData = packLamps([]), kappa = 1;
+  let doc: Doc | null = null, lighting: Lighting | null = null, lampData = packLamps([]), kappa = 1, fin: Finish | null = null;
   let view: View = { zoom: 1, pan: [0.5, 0.5] }, q = 1;
   let fbo: WebGLFramebuffer | null = null, fboTex: WebGLTexture | null = null, fboW = 0, fboH = 0;
 
@@ -79,6 +81,7 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
     const on = doc.relief.mode !== 'off' && relief ? doc : { ...doc, relief: { ...doc.relief, mode: 'off' as const } };
     lighting = prepareLighting(on, aspect, 1, on.relief.mode !== 'off' || null);
     lampData = packLamps(lighting.lamps);
+    fin = prepareFinish(doc, aspect);
   }
 
   function target(w: number, h: number): WebGLFramebuffer {
@@ -111,7 +114,17 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
       gl.uniform1f(U.aspect, aspect);
       gl.uniform1f(U.scale, view.zoom * Math.min(tw, th / aspect));
       gl.uniform2f(U.centre, view.pan[0], view.pan[1] * aspect);
-      gl.uniform1i(U.unit, lighting.unit && kappa === 1 ? 1 : 0);
+      gl.uniform1i(U.unit, lighting.unit && kappa === 1 && !fin ? 1 : 0);
+      gl.uniform1i(U.finish, fin ? 1 : 0);
+      if (fin) {
+        const w = fin.warm ?? [1, 1, 1];
+        gl.uniform3f(U.warm, w[0], w[1], w[2]);
+        gl.uniform1f(U.contrast, fin.contrast); gl.uniform1f(U.saturation, fin.saturation);
+        gl.uniform1f(U.vignette, fin.vignette); gl.uniform1f(U.grain, fin.grain);
+        gl.uniform3f(U.vig, fin.cx, fin.cy, fin.inv);
+        gl.uniform1i(U.hasCurve, fin.curve ? 1 : 0);
+        if (fin.curve) gl.uniform4fv(U.curve, Float32Array.from(fin.curve));
+      }
       gl.uniform3f(U.base, lighting.base[0], lighting.base[1], lighting.base[2]);
       gl.uniform1f(U.kappa, kappa);
       gl.uniform1f(U.protect, doc!.tone.highlightProtect);

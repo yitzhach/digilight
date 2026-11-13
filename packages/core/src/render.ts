@@ -3,6 +3,7 @@
 // independent: any region gives exactly the pixels a whole render has there, so callers can
 // split the work across workers (pass the same `kappa` to each).
 
+import { prepareFinish } from './finish.ts';
 import { guardKappa } from './guard.ts';
 import { prepareLighting } from './light.ts';
 import { estimatedRelief, type ReliefMaps } from './relief/index.ts';
@@ -53,7 +54,7 @@ export function render(photo: Image, doc: Doc, opts: RenderOptions = {}): Image 
   const src = W === photo.width ? crop(photo, r.x, r.y, r.width, r.height) : resampleRegion(photo, W, H, r.x, r.y, r.width, r.height);
   if (isNeutral(doc)) return src;
   const kappa = opts.kappa ?? guardKappa(photo, doc);
-  return shade(src, W, r.x, r.y, prepareLighting(doc, H / W, kappa, reliefFor(photo, doc, opts.relief)), doc.tone.highlightProtect);
+  return shade(src, W, r.x, r.y, prepareLighting(doc, H / W, kappa, reliefFor(photo, doc, opts.relief)), doc.tone.highlightProtect, prepareFinish(doc, H / W));
 }
 
 /** The relief maps a render of this document uses (null with relief off). */

@@ -134,3 +134,17 @@ export function dpow(x: number, y: number): number {
   }
   return dexp(y * dln(x));
 }
+
+// x^(5/12) = x^(1/2.4), the sRGB curve's power, which Finish (§5.9) takes per pixel and channel,
+// where dpow would treble the render's time. A table of t^(5/6) every 1/2048 in t = sqrt(x)
+// guesses (relative error under 3e-6 on the range); one Newton step on y^12 = x^5 squares it.
+// Outside [1/256, 2], dpow.
+const ROOT_N = 2048;
+const ROOT = Float64Array.from({ length: 1.5 * ROOT_N + 2 }, (_, i) => dpow(i / ROOT_N, 5 / 6));
+
+export function dpow5_12(x: number): number {
+  if (!(x >= 1 / 256 && x < 2)) return dpow(x, 5 / 12);
+  const f = Math.sqrt(x) * ROOT_N, i = f | 0, x2 = x * x;
+  const y = ROOT[i]! + (ROOT[i + 1]! - ROOT[i]!) * (f - i), y2 = y * y, y4 = y2 * y2;
+  return (y * (11 + (x2 * x2 * x) / (y4 * y4 * y4))) / 12;
+}

@@ -1,16 +1,16 @@
-// Panel.tsx — the 320 px panel (§8): Looks, Lights, Texture, Export, and the Expert controls
-// switch. On a phone it is a sheet at the bottom with one tab per section. Finish (section 4)
-// arrives in Phase 6.
+// Panel.tsx — the 320 px panel (§8): Looks, Lights, Texture, Finish, Export, and the Expert
+// controls switch. On a phone it is a sheet at the bottom with one tab per section.
 
 import { signal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
 import { expert, photo } from '../state.ts';
 import { ExportPanel } from './ExportPanel.tsx';
+import { Finish } from './Finish.tsx';
 import { Lights } from './Lights.tsx';
 import { Looks } from './Looks.tsx';
 import { Texture } from './Texture.tsx';
 
-const TABS = [['looks', 'Looks', Looks], ['lights', 'Lights', Lights], ['texture', 'Texture', Texture], ['export', 'Export', ExportPanel]] as const;
+const TABS = [['looks', 'Looks', Looks], ['lights', 'Lights', Lights], ['texture', 'Texture', Texture], ['finish', 'Finish', Finish], ['export', 'Export', ExportPanel]] as const;
 const tab = signal<(typeof TABS)[number][0]>('looks');
 
 export function Panel() {

@@ -1,6 +1,6 @@
 # Status
-**Phase:** 6a under way. Done and on `main` (11-13): item 3, the zoom buttons (D-055), and a
-version line at the foot of the page (D-056). Left in 6a: items 1 (Finish), 2 (looks), 4 (Settings).
+**Phase:** 6a under way. Done (11-13): item 3, the zoom buttons (D-055), a version line at the
+foot of the page (D-056), and item 1, Finish (D-057). Left in 6a: items 2 (looks), 4 (Settings).
 **Live:** https://studio-digilight.bobdylan2000.workers.dev (from `main`; `?bench` for the bench).
 The foot of the page says which update it is; quote that line when something looks wrong.
 
@@ -11,10 +11,12 @@ The foot of the page says which update it is; quote that line when something loo
 - Review round 4 (D-047): estimated texture off by default, experimental. Look notes wait for 6a.
 - Audit (D-049, agreed in D-050): BUILD.md gained Phases 5b, 6a, 6b and 8b.
 - Phase 5b (D-051 to D-054): the audit's fix-ups; gate passed on the iPhone. List in CHANGELOG.md.
-- Phase 6a item 3 (D-055): Zoom out, Fit, Zoom in (keys `-` `0` `=`); a photo opens fitted to the
-  stage; panning never loses the picture. 59 unit tests, 26 e2e (HEIC skipped).
+- Phase 6a item 3 (D-055): zoom buttons and keys. Item 1 (D-057): Finish in both renderers and
+  the panel; parity and goldens with it on. 69 unit tests, 30 e2e (HEIC skipped).
 
 ## Waiting on Isaac
+- **Finish and export (11-13):** each Finish slider does what it says, Brightness keeps the whites;
+  an export shows its progress line at once (D-058). iMac and iPhone.
 - **Zoom and version (11-13):** buttons, keys and wheel on the iMac; buttons and pinch on the
   iPhone; the version line at the foot of the page on both.
 - **Phase 5 gate:** on the phone, a new piece's flat photo, Texture, "Use a side-lit photo for
@@ -26,13 +28,12 @@ The foot of the page says which update it is; quote that line when something loo
 `pnpm gate:relief` (3 min), `pnpm dev`. Never run `playwright install`. Review notes: ArtifactData.
 
 ## Next: new chats on Opus 5.5, repository `yitzhach/digilight` only, one at a time
-1. **High effort.** Phase 6a item 1, Finish: §5.9 in both renderers, parity, goldens, the panel.
-2. **Medium effort.** Phase 6a items 2 and 4 (look tuning, the Settings window), then 6a's gate.
-3. Phase 6b: **high** for item 1 (the crop's warp in `core`), **medium** for items 2 to 6.
+1. **Medium effort.** Phase 6a items 2 and 4 (look tuning, the Settings window), then 6a's gate.
+2. Phase 6b: **high** for item 1 (the crop's warp in `core`), **medium** for items 2 to 6.
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do
-chat [1, 2 or 3] of STATUS.md's "Next" as BUILD.md section 10 lists it; nothing beyond it.
-Answers to "Waiting on Isaac": zoom and version: [worked / notes]. Phase 5 phone test: [worked /
+chat [1 or 2] of STATUS.md's "Next" as BUILD.md section 10 lists it; nothing beyond it.
+Answers to "Waiting on Isaac": Finish: [worked / notes]. Zoom and version: [worked / notes]. Phase 5 phone test: [worked /
 notes / "not yet"]. HEIC: [attached / "not yet"]. Bench: [table / "not yet"]. Settings notes:
 [screenshots / "none yet"]. Keep replies brief. Stop at the gate and tell me what to check.
 ```

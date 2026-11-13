@@ -1,6 +1,6 @@
 // guard.ts — protect whites (BUILD.md §5.7): the largest kappa in [0.25, 1] for which the
 // rendered picture has at most 0.5% more blown pixels than the photo. Judged on a thumbnail
-// (long side 512, area-averaged, relief off) by 12 steps of bisection.
+// (long side 512, area-averaged, relief off, finish neutral) by 12 steps of bisection.
 
 import { prepareLighting } from './light.ts';
 import { thumbnail, type Image } from './resample.ts';
@@ -31,8 +31,10 @@ export function guardKappa(photo: Image, doc: Doc, at = BLOWN): number {
   if (!doc.tone.protectWhites) return 1;
   const { thumb, blown } = guardThumb(photo, at);
   const a = thumb.height / thumb.width;
+  // Finish is not counted (§5.7), Brightness included: judged as if it were neutral.
+  const d = doc.finish.exposure === 0 ? doc : { ...doc, finish: { ...doc.finish, exposure: 0 } };
   const pass = (k: number) =>
-    blownShare(shade(thumb, thumb.width, 0, 0, prepareLighting(doc, a, k), doc.tone.highlightProtect), at) - blown <= MAX_NEW_BLOWN;
+    blownShare(shade(thumb, thumb.width, 0, 0, prepareLighting(d, a, k), doc.tone.highlightProtect), at) - blown <= MAX_NEW_BLOWN;
   if (pass(1)) return 1;
   let lo = 0.25, hi = 1;
   for (let i = 0; i < 12; i++) {

@@ -250,16 +250,19 @@ grey + (v - grey) * (1 + saturation)`, grey = luma of the encoded values), curve
 table, expert; read at `255 v`, linear between entries), vignette (`v *= 1 - vignette * smoothstep(0.55, 1.15, dist)`, `dist` = distance
 from the centre in units of half the diagonal), grain (expert; `v += grain * 0.08 * (h - 0.5)`,
 `h` in `[0, 1)` from an integer hash (PCG) of the pixel's cell on a grid 2048 cells wide, so
-every size has the same grain and the shader and the reference agree). Clamp to `[0, 1]`.
-The display-encoded value here is the continuous sRGB curve (`dpow`); when finish is neutral
-this whole step is skipped.
+every size has the same grain and the shader and the reference agree; the cell of picture point
+`(x, y)` is `floor(2048 x + 1/3), floor(2048 y + 1/3)`: shifted a third of a cell so no pixel
+centre at a power-of-two width sits on a cell's edge, D-057). Clamp to `[0, 1]`, then the 8-bit
+code is `floor(255 v + 0.5)` (what §5.10's encode gives). The display-encoded value here is the
+continuous sRGB curve (`dpow5_12` for its power, §5.10); when finish is neutral this whole step is
+skipped. Warmth's colour is in the photo's working space, like every light's (§5.8).
 
 ### 5.10 Exact numbers
 
 - Decode: a 256-entry table of linear values (committed constants). Encode to 8 bits: binary
   search in a 255-entry table of the linear thresholds between neighbouring codes (committed).
   `encode(decode(code)) == code` for all 256 codes; no `pow` at run time.
-- `dmath.ts`: `dcos, dsin, datan2, dexp, dexp2, dln, dpow` built from `+ - * /` and `Math.sqrt`
+- `dmath.ts`: `dcos, dsin, datan2, dexp, dexp2, dln, dpow` (and `dpow5_12`, Finish's sRGB power) built from `+ - * /` and `Math.sqrt`
   only (range reduction and polynomials; error under 1e-9 relative, tested against `Math.*`).
   These give the same bits on every machine and browser, which is what makes a picture
   reproducible and the goldens stable.
@@ -633,7 +636,7 @@ Phase 6 in two parts (D-049): it changed both renderers, added a geometry tool a
 formats, and its gate needed only this half. Read §5.9, §8. Decisions that apply: D-026, D-030,
 D-032, D-047.
 
-1. Finish (§5.9) in reference and shader; panel section 4. The curve is a setting only: agents
+1. **Done 11-13 (D-057).** Finish (§5.9) in reference and shader; panel section 4. The curve is a setting only: agents
    and presets set it. An editor would be hand-built expert interface, which §8 rules out (Later).
 2. Look tuning from D-047 and Isaac's settings notes, by lights only: Dramatic more contrast
    (lower room light), Spotlight less flat on the lintel. A review round, then §6 and the goldens.

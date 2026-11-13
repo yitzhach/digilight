@@ -1,5 +1,6 @@
-// Preview against reference (BUILD.md §5.11, Phase 2): six documents on a fixture at 1024 px.
-// 99% of channel values within 2 levels, none beyond 6; the neutral document exact.
+// Preview against reference (BUILD.md §5.11, Phase 2): six documents on a fixture at 1024 px,
+// and two of them again with Finish on (Phase 6a). 99% of channel values within 2 levels, none
+// beyond 6; the neutral document exact.
 //
 // The preview is given the photo at 1024 px as the reference resizes it (area average), so this
 // compares the lighting; how the GPU filters a zoomed-out photo is a display matter (D-023).
@@ -29,6 +30,12 @@ const DOCS: Record<string, Doc> = {
     ],
   }),
 };
+// Finish on (§5.9): every setting, both signs, grain and a curve.
+DOCS['gallery + finish'] = parseDoc({ ...DOCS.gallery!, finish: { exposure: 0.4, contrast: 0.5, warmth: 0.6, saturation: 0.3, vignette: 0.7, grain: 0.5 } });
+DOCS['four-light + finish'] = parseDoc({ ...DOCS['four-light mix']!, finish: {
+  exposure: -0.5, contrast: -0.4, warmth: -0.8, saturation: -0.6, vignette: 0.2, grain: 1,
+  curve: Array.from({ length: 256 }, (_, i) => (i / 255) ** 1.4),
+} });
 
 const small: Image = render(photo, base, { width: WIDTH }); // neutral: the resized photo itself
 const b64 = (img: Image) => Buffer.from(img.data.buffer, img.data.byteOffset, img.data.length).toString('base64');
