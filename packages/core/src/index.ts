@@ -1,6 +1,7 @@
 // core: the document, the maths and the reference renderer (BUILD.md §4).
 export * from './commands.ts';
 export { colour, type RGB, type Space } from './kelvin.ts';
+export { GRAIN_CELLS, GRAIN_SHIFT, grainAt, pcg, prepareFinish, toDisplay, type Finish } from './finish.ts';
 export { guardKappa } from './guard.ts';
 export { direction, prepareLighting, type Lighting } from './light.ts';
 export { resampleRegion, thumbnail } from './resample.ts';

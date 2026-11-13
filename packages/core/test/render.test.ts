@@ -17,6 +17,11 @@ function procedural(): Image {
 }
 const docFor = (img: { width: number; height: number }, sha = 'b'.repeat(64)): Doc =>
   neutralDoc({ width: img.width, height: img.height, space: 'srgb', sha256: sha });
+/** Finish settings for the goldens and the region test (§5.9; Phase 6a). */
+const FINISHES = {
+  warm: { exposure: 0.4, contrast: 0.5, warmth: 0.6, saturation: 0.3, vignette: 0.7, grain: 0.5 },
+  cool: { exposure: -0.5, contrast: -0.4, warmth: -0.8, saturation: -0.6, vignette: 0.2, curve: Array.from({ length: 256 }, (_, i) => (i / 255) ** 1.4) },
+};
 const hash = (img: Image) => sha256(new Uint8Array(img.data.buffer, img.data.byteOffset, img.data.length));
 
 test('identity: a neutral document returns the photo byte for byte (door)', () => {
@@ -37,13 +42,15 @@ test('each look on the procedural photo matches its golden SHA-256', () => {
   const got: Record<string, string> = {};
   for (const look of LOOKS) got[look.id] = hash(render(photo, withLook(docFor(photo), look.id)));
   got['gallery-flip-half'] = hash(render(photo, withLook(docFor(photo), 'gallery', { strength: 0.5, flip: true })));
+  for (const [name, finish] of Object.entries(FINISHES)) got[`finish-${name}`] = hash(render(photo, parseDoc({ ...withLook(docFor(photo), 'gallery'), finish })));
   if (process.env.UPDATE_GOLDENS) writeFileSync(file, `${JSON.stringify(got, null, 2)}\n`);
   expect(got).toEqual(JSON.parse(readFileSync(file, 'utf8')));
 });
 
 test('a region has exactly the pixels of the whole render there, at any width', () => {
-  const photo = procedural(), d = withLook(docFor(photo), 'dramatic');
-  for (const width of [256, 200, 128]) {
+  const photo = procedural();
+  for (const [d, width] of [withLook(docFor(photo), 'dramatic'), parseDoc({ ...withLook(docFor(photo), 'dramatic'), finish: FINISHES.warm })]
+    .flatMap((d) => [256, 200, 128].map((w) => [d, w] as const))) {
     const whole = render(photo, d, { width });
     const region = { x: 17, y: 23, width: 61, height: 40 };
     const part = render(photo, d, { width, region });
@@ -74,7 +81,7 @@ test('light adds where it points: the spotlight is brighter at its aim than at a
   expect(at(1, 1)).toBeLessThan(at(32, 24) - 25);
 });
 
-test('full-size render of door-flat-crop with the gallery look takes under 1 s', () => {
+test('full-size render of door-flat-crop with the gallery look takes under 1 s (1.5 s with a finish)', () => {
   const photo = loadFixture('door-flat-crop.jpg');
   const d = withLook(docFor(photo, photo.sha256), 'gallery');
   render(photo, d, { width: 64 }); // warm up
@@ -84,4 +91,9 @@ test('full-size render of door-flat-crop with the gallery look takes under 1 s',
   console.log(`gallery, ${photo.width} x ${photo.height}: ${ms.toFixed(0)} ms`);
   expect(out.data.length).toBe(photo.data.length);
   expect(ms).toBeLessThan(1000);
+  const f = parseDoc({ ...d, finish: FINISHES.warm }), t2 = performance.now();
+  render(photo, f);
+  const ms2 = performance.now() - t2;
+  console.log(`  with a finish: ${ms2.toFixed(0)} ms`);
+  expect(ms2).toBeLessThan(1500);
 });

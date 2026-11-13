@@ -42,7 +42,7 @@ export interface Lighting {
 
 /**
  * The document's light for a picture `a = H / W` high, `kappa` the guard's factor (§5.7).
- * Per channel factor f = kappa / mix(1, Wc / luma(Wc), whiteAdapt) (§5.4), folded into every
+ * Per channel factor f = kappa * 2^exposure / mix(1, Wc / luma(Wc), whiteAdapt) (§5.4, §5.9), folded into every
  * colour so the per-pixel sum is already E. `maps`: relief maps, used when relief is on (`true`:
  * relief on, its maps sampled elsewhere, as by the GPU preview; lightingAt then cannot run).
  */
@@ -54,7 +54,9 @@ export function prepareLighting(doc: Doc, a: number, kappa: number, maps?: Relie
   const cols = on.map((l) => colour(l.kelvin, space));
   on.forEach((l, i) => { for (let c = 0; c < 3; c++) Wc[c]! += l.intensity * cols[i]![c]!; });
   const wl = luma(Wc[0], Wc[1], Wc[2]), wa = doc.tone.whiteAdapt;
-  const f = [0, 1, 2].map((c) => kappa / (wl > 0 ? 1 + (Wc[c]! / wl - 1) * wa : 1)) as RGB;
+  // Finish's Brightness is light (§5.9): it scales E, and sheen with it, as kappa does.
+  const k = doc.finish.exposure === 0 ? kappa : kappa * dexp2(doc.finish.exposure);
+  const f = [0, 1, 2].map((c) => k / (wl > 0 ? 1 + (Wc[c]! / wl - 1) * wa : 1)) as RGB;
 
   const relief = R.mode !== 'off' && maps
     ? { s: maps === true ? null : new ReliefSampler(maps), depth: R.depth, shadows: R.shadows, ao: R.ao, sheen: R.sheen, sharp: dexp2(R.sheenSharpness) }

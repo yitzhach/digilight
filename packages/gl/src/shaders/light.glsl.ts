@@ -1,7 +1,10 @@
 // light.glsl.ts — the preview's one pass: BUILD.md §5.3 to §5.5 in float32, with Texture (relief:
-// rel, sh, occl, sheen) when its maps are ready. It mirrors core's light.ts lightingAt and tone.ts
-// toneMap line for line; the lamps (and, with relief, the suns) arrive already prepared by core's
-// prepareLighting (colours carry the white-adapt factor).
+// rel, sh, occl, sheen) when its maps are ready, then Finish (§5.9). It mirrors core's light.ts
+// lightingAt, tone.ts toneMap and finish.ts finishPixel line for line; the lamps (and, with relief,
+// the suns) arrive already prepared by core's prepareLighting (colours carry the white-adapt
+// factor and Brightness), the finish by core's prepareFinish.
+
+import { GRAIN_CELLS, GRAIN_SHIFT } from 'core';
 
 /** Most lights a document holds (§6), so the uniform arrays are this long. */
 export const MAX_LAMPS = 8;
@@ -36,6 +39,12 @@ uniform highp sampler2DArray u_horizon; // R8 x 32: the horizon table (5.6)
 uniform sampler2D u_aoTex;           // R8: hollows
 uniform float u_rAspect; // relief width / height
 uniform float u_tmax, u_depth, u_shadows, u_ao, u_sheen, u_sharp;
+uniform bool u_finish;   // Finish is not neutral (5.9)
+uniform vec3 u_warm;     // warmth's colour, luma 1 ((1, 1, 1) at warmth 0)
+uniform float u_contrast, u_saturation, u_vignette, u_grain;
+uniform vec3 u_vig;      // the picture's centre (picture widths) and 1 / half its diagonal
+uniform bool u_hasCurve;
+uniform vec4 u_curve[64]; // the tone curve's 256 values, four to a vec4
 
 out vec4 outColour;
 
@@ -126,6 +135,34 @@ vec3 toneMap(vec3 c, vec3 E, vec3 S) {
   return max(lit, 0.0);
 }
 
+float smoothstep01(float x) { float t = clamp(x, 0.0, 1.0); return t * t * (3.0 - 2.0 * t); }
+float curveAt(float v) {
+  float x = clamp(255.0 * v, 0.0, 255.0);
+  int i = min(254, int(floor(x)));
+  float a = u_curve[i >> 2][i & 3], b = u_curve[(i + 1) >> 2][(i + 1) & 3];
+  return a + (b - a) * (x - float(i));
+}
+uint pcg(uint v) {
+  uint s = v * 747796405u + 2891336453u;
+  uint w = ((s >> ((s >> 28u) + 4u)) ^ s) * 277803737u;
+  return (w >> 22u) ^ w;
+}
+float grainAt(vec2 P) { // core's grainAt: GRAIN_CELLS cells across, shifted GRAIN_SHIFT of a cell
+  uvec2 c = uvec2(floor(P * ${GRAIN_CELLS}.0 + ${GRAIN_SHIFT}));
+  return float(pcg(c.x + pcg(c.y))) / 4294967296.0;
+}
+vec3 finish(vec3 c, vec2 P) { // linear in, display-encoded out
+  c *= u_warm;
+  vec3 v = mix(c * 12.92, 1.055 * pow(max(c, 0.0), vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), c));
+  if (u_contrast < 0.0) v = 0.5 + (v - 0.5) * (1.0 + u_contrast);
+  else if (u_contrast > 0.0) v += (vec3(smoothstep01(v.r), smoothstep01(v.g), smoothstep01(v.b)) - v) * u_contrast;
+  if (u_saturation != 0.0) { float grey = luma(v); v = grey + (v - grey) * (1.0 + u_saturation); }
+  if (u_hasCurve) v = vec3(curveAt(v.r), curveAt(v.g), curveAt(v.b));
+  if (u_vignette > 0.0) v *= 1.0 - u_vignette * smoothstep0(0.55, 1.15, length(P - u_vig.xy) * u_vig.z);
+  if (u_grain > 0.0) v += u_grain * 0.08 * (grainAt(P) - 0.5);
+  return clamp(v, 0.0, 1.0);
+}
+
 void main() {
   // Picture point of this pixel (5.1: x right, y down, in picture widths).
   vec2 f = vec2(gl_FragCoord.x, u_target.y - gl_FragCoord.y);
@@ -137,6 +174,8 @@ void main() {
   vec3 S;
   vec3 E = lightingAt(P, S) * u_kappa;
   S *= u_kappa;
-  if (all(equal(E, vec3(1.0))) && all(equal(S, vec3(0.0)))) { outColour = px; return; }
-  outColour = vec4(encode(toneMap(decode(px.rgb), E, S)), px.a);
+  bool same = all(equal(E, vec3(1.0))) && all(equal(S, vec3(0.0)));
+  if (same && !u_finish) { outColour = px; return; }
+  vec3 lin = same ? decode(px.rgb) : toneMap(decode(px.rgb), E, S);
+  outColour = vec4(u_finish ? finish(lin, P) : encode(lin), px.a);
 }`;

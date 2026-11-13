@@ -48,3 +48,6 @@
 ## Phase 6a, item 3 only: zoom buttons
 - Zoom out, Fit and Zoom in on the picture, keys `-`, `0`, `=`; a photo opens fitted to the stage (5% margin); Zoom out shows the lamps around the picture; panning never loses the picture (D-055). The rest of Phase 6a (Finish, look tuning, Settings) is still to do.
 - A version line at the foot of the page: the update's date, time and short name (D-056).
+
+## Phase 6a, item 1: Finish
+- Finish (§5.9) in the reference and the preview: Brightness, Contrast, Warmth, Saturation, Vignette in a new panel section; Grain and a tone curve for expert use and agents (D-057). Parity and goldens with finish on.

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { datan2, dcos, dexp, dexp2, dln, dpow, dsin } from '../src/dmath.ts';
+import { datan2, dcos, dexp, dexp2, dln, dpow, dpow5_12, dsin } from '../src/dmath.ts';
 
 let seed = 12345;
 const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -48,4 +48,12 @@ test('dpow against Math', () => {
   expect(dpow(-2, 3)).toBeCloseTo(-8, 12);
   expect(dpow(0, 2)).toBe(0);
   expect(dpow(7, 0)).toBe(1);
+});
+
+test('dpow5_12 (the sRGB curve\'s power) against Math, across and beyond its table', () => {
+  const p = (x: number) => Math.pow(x, 5 / 12);
+  expect(worst(N, () => [0.003 + rnd() * 2.2], dpow5_12, p)).toBeLessThan(1e-10);
+  expect(worst(N, () => [rnd() * 0.01], dpow5_12, p)).toBeLessThan(1e-9);
+  for (const x of [1 / 256, 0.5, 1, 1.999999, 2]) expect(Math.abs(dpow5_12(x) - p(x)) / p(x)).toBeLessThan(1e-10);
+  expect(dpow5_12(0)).toBe(0);
 });
