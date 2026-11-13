@@ -4,7 +4,7 @@
 
 import { signal } from '@preact/signals';
 import { canShare, download, exportPicture, share, type Exported, type ExportOptions } from '../io/export.ts';
-import { busy, doc, photo, say } from '../state.ts';
+import { busy, doc, photo, progress, say } from '../state.ts';
 
 /** A finished picture waiting for the person to tap "Save or share". */
 export const ready = signal<Exported | null>(null);
@@ -18,7 +18,8 @@ export async function exportNow(over: ExportOptions = {}) {
   const c = exportChoice.value;
   busy.value = 'Exporting…';
   try {
-    const e = await exportPicture(p, d, { width: c.size === 'full' ? undefined : Math.min(c.size, p.image.width), format: c.format, ...over });
+    const e = await exportPicture(p, d, { width: c.size === 'full' ? undefined : Math.min(c.size, p.image.width), format: c.format, ...over },
+      (f) => { progress.value = f; });
     if (canShare(e)) {
       ready.value = e;
       say('Your picture is ready: tap Save or share, then Save Image to put it in Photos.');
@@ -30,7 +31,7 @@ export async function exportNow(over: ExportOptions = {}) {
   } catch (err) {
     say(`Export failed: ${(err as Error).message}`, true);
     return null;
-  } finally { busy.value = null; }
+  } finally { busy.value = null; progress.value = null; }
 }
 
 export function ExportPanel() {

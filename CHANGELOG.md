@@ -51,3 +51,4 @@
 
 ## Phase 6a, item 1: Finish
 - Finish (§5.9) in the reference and the preview: Brightness, Contrast, Warmth, Saturation, Vignette in a new panel section; Grain and a tone curve for expert use and agents (D-057). Parity and goldens with finish on.
+- Export shows its progress (a percentage and a bar), and the page no longer freezes when it starts (D-058).

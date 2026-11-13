@@ -36,10 +36,14 @@ test('Finish: the sliders set the document, undo steps back, the export is the r
   expect((await getDoc()).finish.grain).toBe(0.3);
 
   await page.locator('[data-format="png"]').click();
+  // An export shows how far it has got at once, and the bar goes when it is done (D-058).
+  const bar = page.getByRole('progressbar', { name: 'Exporting' });
   const downloads: import('@playwright/test').Download[] = [];
   const two = new Promise<void>((done) => page.on('download', (d) => { downloads.push(d); if (downloads.length === 2) done(); }));
   await page.locator('[data-action="download"]').click();
+  await expect(bar).toBeVisible({ timeout: 1000 });
   await two;
+  await expect(bar).toHaveCount(0);
   const files = await Promise.all(downloads.map(async (d) => ({ name: d.suggestedFilename(), bytes: readFileSync((await d.path())!) })));
   const rec = JSON.parse(files.find((f) => f.name.endsWith('.json'))!.bytes.toString());
   expect(rec.picture.pixelsSha256).toBe(sha(render(photo, parseDoc(rec.document)).data));

@@ -23,6 +23,8 @@ export const selected = signal<string | null>(null);
 export const expert = signal(false);
 export const before = signal(false);
 export const busy = signal<string | null>(null);
+/** How far a long job (an export) has got, 0 to 1; null when none runs. */
+export const progress = signal<number | null>(null);
 export const notice = signal<{ text: string; error: boolean } | null>(null);
 /** The last look tapped: only breaks ties where the document matches several (lookOf). */
 export const lastTap = signal<LookMatch>({ id: 'original', strength: 1, flip: false });

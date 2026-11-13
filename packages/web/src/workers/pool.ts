@@ -58,19 +58,21 @@ export function setPoolPhoto(p: Image): Image | null {
   return shared ? p : null;
 }
 
-/** The reference picture at `width`, rows split across the workers. */
-export async function renderRows(doc: Doc, width: number, kappa: number): Promise<Image> {
+/** The reference picture at `width`, rows split across the workers; `onRows` hears the share
+ *  of rows done after each band. */
+export async function renderRows(doc: Doc, width: number, kappa: number, onRows?: (done: number) => void): Promise<Image> {
   const ws = start(), { width: W, height: H } = outputSize(doc.photo, width);
   const out = new Uint8ClampedArray(W * H * 4);
   // More bands than workers, so a slow band does not hold the rest.
   const bands = Math.min(H, ws.length * 4), rowsEach = Math.ceil(H / bands);
-  let next = 0;
+  let next = 0, done = 0;
   await Promise.all(ws.map(async (w) => {
     for (let y; (y = next * rowsEach) < H; ) {
       next++;
       const h = Math.min(rowsEach, H - y), id = nextId++;
       const r = await ask(w, { type: 'render', id, doc, width: W, kappa, region: { x: 0, y, width: W, height: h } });
       if (r.type === 'pixels') out.set(r.data, y * W * 4);
+      done += h; onRows?.(done / H);
     }
   }));
   return { data: out, width: W, height: H };

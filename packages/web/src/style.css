@@ -17,6 +17,8 @@ button.current, button.primary { background: var(--accent); color: #1b1b1d; bord
 .bar .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dim); padding: 0 8px; }
 .notice { padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--panel); white-space: normal; overflow-wrap: anywhere; cursor: pointer; }
 .notice.error { color: var(--error); }
+.progress { position: relative; padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--panel); font-variant-numeric: tabular-nums; }
+.progress i { position: absolute; left: 0; bottom: -1px; height: 3px; background: var(--accent); }
 .bar .share { display: flex; gap: 6px; }
 .bar .share .primary { width: auto; margin: 0; padding: 5px 12px; }
 
