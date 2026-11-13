@@ -8,6 +8,7 @@ import { installApi } from './api.ts';
 import { Stage } from './canvas/Stage.tsx';
 import { zoomFit, zoomStep } from './canvas/Zoom.tsx';
 import { exportNow, ReadyLine } from './panel/ExportPanel.tsx';
+import { SettingsWindow } from './panel/Settings.tsx';
 import { Panel } from './panel/Panel.tsx';
 import { before, busy, cmd, notice, openFile, photo, progress, restore, run, say, selected } from './state.ts';
 import { versionLabel } from './version.ts';
@@ -71,6 +72,7 @@ function App() {
         <Stage />
         <Panel />
       </main>
+      <SettingsWindow />
       <footer class="version" title="Which update of DigiLight this is: when it was made, and its name">Version {versionLabel()}</footer>
     </div>
   );

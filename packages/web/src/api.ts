@@ -41,6 +41,8 @@ export function installApi(): void {
     get: (path: string) => cmd.get(path),
     set: wrap(cmd.set),
     describe: () => cmd.describe(),
+    getSettings: (opts?: { relief?: boolean }) => cmd.getSettings(opts),
+    applySettings: wrap(cmd.applySettings),
     looks: () => cmd.looks(),
     applyLook: wrap(cmd.applyLook),
     addLight: wrap(cmd.addLight),

@@ -357,6 +357,7 @@ line map to them one to one.
 | `getDoc()`, `setDoc(doc)` | the whole document |
 | `get(path)`, `set(path, value)`, `set({path: value, ...})` | one or more settings by path, e.g. `lights.0.kelvin` |
 | `describe()` | `[{path, label, tier, min, max, step, default, value}]` for every setting: the expert panel and an AI's menu |
+| `getSettings({relief})`, `applySettings(settings)` | everything but the photo, and onto this photo in one step: Texture comes on only as this photo's own measured height (Phase 6a; Copy and Paste settings, presets) |
 | `looks()`, `applyLook(id, {strength, flip})` | the looks |
 | `addLight(partial)`, `updateLight(id, partial)`, `removeLight(id)` | lights |
 | `setRelief({mode, depth, shadows})` | builds the maps on first use of a mode |
@@ -645,7 +646,7 @@ D-032, D-047.
    lamps outside the view sit at its edge, as they do now; Zoom out shows them in place. Now
    the fit keeps half a picture width free all round: on a phone the picture is about a third
    of the screen's width.
-4. A **Settings** window, opened from the Export section (Isaac, after Phase 3): **Save
+4. **Done 11-13 (D-060).** A **Settings** window, opened from the Export section (Isaac, after Phase 3): **Save
    settings** (a named preset of ambient, lights, tone and finish, listed to apply in one tap);
    **Copy settings** and **Paste settings** (everything but the photo and relief maps, pasted
    onto another photo as one undo step; `relief.mode` becomes `off` unless that photo has its
