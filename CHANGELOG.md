@@ -53,3 +53,6 @@
 - Finish (§5.9) in the reference and the preview: Brightness, Contrast, Warmth, Saturation, Vignette in a new panel section; Grain and a tone curve for expert use and agents (D-057). Parity and goldens with finish on.
 - Export shows its progress (a percentage and a bar), and the page no longer freezes when it starts (D-058).
 - On a phone, export is one step: Export, then one Save or share button once the picture is ready; no separate Download (D-059).
+
+## Phase 6a, item 4: the Settings window
+- Copy and Paste settings between photos (one undo step), named presets applied in one tap, presets saved to and loaded from a file (D-060). Look tuning (item 2) and Phase 6a's gate still to do.

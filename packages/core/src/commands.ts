@@ -9,6 +9,7 @@ import { LOOKS, withLook, type LookOptions } from './looks.ts';
 import { metrics, type Metrics } from './metrics.ts';
 import { measuredRelief, measureFromPhotos, reliefSize, type MeasuredHeight, type SidePhoto, type TrueRelief } from './relief/index.ts';
 import { render as renderImage, type Image, type Region } from './render.ts';
+import { settingsOf, withSettings, type Settings } from './settings.ts';
 import { describe as describeDoc, neutralDoc, parseDoc, RELIEF, type Doc, type Light, type Setting } from './schema.ts';
 
 export interface PhotoInput extends Image { space?: Space; sha256: string; widthMm?: number }
@@ -127,6 +128,11 @@ export function createCommands() {
       return clone(commit(next));
     },
     describe: (): Setting[] => describeDoc(current()),
+    /** Everything but the photo (Copy settings; `relief: false` for a preset). */
+    getSettings: (opts?: { relief?: boolean }): Settings => settingsOf(current(), opts),
+    /** Settings (or a document, or their JSON) onto this photo, one step; Texture comes on only
+     *  where this photo has its own measured height (Paste settings, a preset). */
+    applySettings: (input: unknown): Doc => clone(commit(withSettings(current(), input, measured !== null))),
     looks: () => LOOKS.map((l) => ({ id: l.id, label: l.label })),
     applyLook: (id: string, opts?: LookOptions): Doc => clone(commit(withLook(current(), id, opts))),
     addLight(partial: Partial<Omit<Light, 'id'>> = {}): Doc {

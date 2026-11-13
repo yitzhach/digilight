@@ -9,6 +9,7 @@ export { LOOKS, lookOf, withLook, type Look, type LookMatch, type LookOptions } 
 export { metrics, pictureStats, type Metrics, type PictureStats } from './metrics.ts';
 export * from './relief/index.ts';
 export { isNeutral, outputSize, reliefFor, render, type Image, type Region, type RenderOptions } from './render.ts';
+export { readSettings, settingsOf, SETTINGS_APP, withSettings, type Settings } from './settings.ts';
 export { describe, neutralDoc, parseDoc, docSchema, type Setting } from './schema.ts';
 export { defaultDoc, defaultLight, type Doc, type Light, type PhotoInfo } from './fields.ts';
 

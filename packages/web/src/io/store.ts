@@ -1,7 +1,7 @@
 // store.ts — autosave: the photo file, the document and True Relief's measured height (a PNG,
 // 16 bits over red and green, with lo and hi; BUILD.md Phase 5) in IndexedDB, reopened on load.
 
-import { packHeight, unpackHeight, type Doc, type MeasuredHeight } from 'core';
+import { packHeight, unpackHeight, type Doc, type MeasuredHeight, type Settings } from 'core';
 
 const DB = 'digilight', STORE = 'autosave';
 
@@ -59,4 +59,12 @@ export async function loadSaved(): Promise<Saved | null> {
     const measured = h ? await heightFromPng(h).catch(() => null) : null;
     return { ...p, doc, measured };
   } catch { return null; } // private windows can refuse IndexedDB: start empty
+}
+
+/** Saved presets (Settings window): a convenience only, Safari deletes it after seven days
+ *  without a visit, so the presets file is the keeping place (Phase 6a item 4). */
+export interface Preset { name: string; settings: Settings }
+export const savePresets = (list: Preset[]) => tx('readwrite', (s) => s.put(list, 'presets'));
+export async function loadPresets(): Promise<Preset[]> {
+  try { return (await tx<Preset[] | undefined>('readonly', (s) => s.get('presets'))) ?? []; } catch { return []; }
 }
