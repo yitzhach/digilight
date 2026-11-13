@@ -15,9 +15,8 @@ The foot of the page says which update it is; quote that line when something loo
   the panel; parity and goldens with it on. 69 unit tests, 30 e2e (HEIC skipped).
 
 ## Waiting on Isaac
-- **Finish (11-13):** on the iMac and the iPhone, the Finish section's five sliders on a lit piece;
-  each should do what it says, and Brightness should not blow out the whites. Export: the
-  progress line shows at once and fills (D-058).
+- **Finish and export (11-13):** each Finish slider does what it says, Brightness keeps the whites;
+  an export shows its progress line at once (D-058). iMac and iPhone.
 - **Zoom and version (11-13):** buttons, keys and wheel on the iMac; buttons and pinch on the
   iPhone; the version line at the foot of the page on both.
 - **Phase 5 gate:** on the phone, a new piece's flat photo, Texture, "Use a side-lit photo for
