@@ -73,6 +73,18 @@ export function download(e: Exported): void {
 /** The picture as a file the phone's share sheet takes ("Save Image" puts it in Photos). */
 const asFile = (e: Exported) => new File([e.blob], e.name, { type: e.blob.type });
 
+let sharesFiles: boolean | undefined;
+/** True where the browser can hand a picture to the system share sheet (phones, Safari). */
+export function canShareFiles(): boolean {
+  if (sharesFiles === undefined) {
+    try {
+      sharesFiles = typeof navigator.share === 'function'
+        && navigator.canShare?.({ files: [new File([new Uint8Array(1)], 'picture.jpg', { type: 'image/jpeg' })] }) === true;
+    } catch { sharesFiles = false; }
+  }
+  return sharesFiles;
+}
+
 /** True where the browser can hand files to the system share sheet (phones, Safari). */
 export function canShare(e: Exported): boolean {
   try { return typeof navigator.share === 'function' && navigator.canShare?.({ files: [asFile(e)] }) === true; } catch { return false; }

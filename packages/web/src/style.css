@@ -19,8 +19,9 @@ button.current, button.primary { background: var(--accent); color: #1b1b1d; bord
 .notice.error { color: var(--error); }
 .progress { position: relative; padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--panel); font-variant-numeric: tabular-nums; }
 .progress i { position: absolute; left: 0; bottom: -1px; height: 3px; background: var(--accent); }
-.bar .share { display: flex; gap: 6px; }
-.bar .share .primary { width: auto; margin: 0; padding: 5px 12px; }
+.ready { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.ready span { flex: 1; min-width: 0; }
+.ready .primary { width: auto; margin: 0; padding: 8px 14px; white-space: nowrap; }
 
 main { flex: 1; display: flex; min-height: 0; }
 .version { flex: none; padding: 2px 10px; border-top: 1px solid var(--line); background: var(--panel); color: var(--dim); font-size: 11px; text-align: right; font-variant-numeric: tabular-nums; -webkit-user-select: text; user-select: text; }
@@ -78,8 +79,6 @@ main { flex: 1; display: flex; min-height: 0; }
   .tab.current { display: block; }
   .bar .brand { display: none; }
   .bar { flex-wrap: wrap; }
-  .bar .share { order: 10; width: 100%; }
-  .bar .share .primary { flex: 1; }
 }
 
 /* True Relief (Phase 5) */

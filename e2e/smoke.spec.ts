@@ -92,8 +92,17 @@ test('on a phone, export offers Save or share (the share sheet gets the picture)
   await page.locator('[data-look="gallery"]').click();
   let downloaded = false;
   page.on('download', () => { downloaded = true; });
+  const save = page.getByRole('button', { name: 'Save or share' });
+  await expect(page.locator('[data-action="download"]')).toHaveText('Export');
   await page.locator('[data-action="download"]').click();
-  await page.getByRole('button', { name: 'Save or share' }).click();
+  await expect(save).toBeVisible();
+  // One step on a phone: no separate Download beside it (D-059).
+  await expect(page.locator('.ready button', { hasText: 'Download' })).toHaveCount(0);
+  // A new export takes the old picture's button away until the new one is ready.
+  await page.getByRole('button', { name: 'Export', exact: true }).first().click();
+  await expect(save).toHaveCount(0);
+  await expect(save).toBeVisible();
+  await save.click();
   const shared = await page.waitForFunction(() => (window as any).shared).then((h) => h.jsonValue());
   expect(shared).toEqual([['door-digilight.jpg', 'image/jpeg', expect.any(Number)]]);
   await expect(page.getByRole('button', { name: 'Save or share' })).toHaveCount(0);

@@ -1,10 +1,11 @@
 // ExportPanel.tsx — panel section 5 (§8): size (Full, 3000, 2000 px), JPEG or PNG, Download.
-// On a phone (where the share sheet takes files) the finished picture is offered with a "Save or
-// share" button instead of a download, so it can go straight to Photos (D-030).
+// On a phone (where the share sheet takes files) the button says Export, and the finished picture
+// is offered in one line under the top bar with a single "Save or share" button: the share sheet
+// saves it to Photos or Files, so there is no separate download there (D-030, D-059).
 
 import { signal } from '@preact/signals';
-import { canShare, download, exportPicture, share, type Exported, type ExportOptions } from '../io/export.ts';
-import { busy, doc, photo, progress, say } from '../state.ts';
+import { canShare, canShareFiles, download, exportPicture, share, type Exported, type ExportOptions } from '../io/export.ts';
+import { busy, doc, notice, photo, progress, say } from '../state.ts';
 
 /** A finished picture waiting for the person to tap "Save or share". */
 export const ready = signal<Exported | null>(null);
@@ -16,13 +17,14 @@ export async function exportNow(over: ExportOptions = {}) {
   const p = photo.value, d = doc.value;
   if (!p || !d) { say('Open a photo first.', true); return null; }
   const c = exportChoice.value;
+  ready.value = null; // a new export replaces the last one's button
   busy.value = 'Exporting…';
   try {
     const e = await exportPicture(p, d, { width: c.size === 'full' ? undefined : Math.min(c.size, p.image.width), format: c.format, ...over },
       (f) => { progress.value = f; });
     if (canShare(e)) {
-      ready.value = e;
-      say('Your picture is ready: tap Save or share, then Save Image to put it in Photos.');
+      ready.value = e; // its line under the top bar says so
+      notice.value = null;
     } else {
       download(e);
       say(`Saved ${e.name} (${e.record.picture.width} x ${e.record.picture.height}) and its record to your downloads.`);
@@ -52,13 +54,13 @@ export function ExportPanel() {
           <button key={f} class={`chip${c.format === f ? ' current' : ''}`} data-format={f} onClick={() => (exportChoice.value = { ...c, format: f })}>{f.toUpperCase()}</button>
         ))}
       </div>
-      <button class="primary" data-action="download" disabled={busy.value !== null} onClick={() => void exportNow()}>Download</button>
+      <button class="primary" data-action="download" disabled={busy.value !== null} onClick={() => void exportNow()}>{canShareFiles() ? 'Export' : 'Download'}</button>
     </section>
   );
 }
 
-/** The "Save or share" button for a finished picture (shown in the top bar). */
-export function ShareButton() {
+/** On a phone, once the picture is ready: one line under the top bar with "Save or share". */
+export function ReadyLine() {
   const e = ready.value;
   if (!e) return null;
   const go = async () => {
@@ -70,10 +72,10 @@ export function ShareButton() {
     }
   };
   return (
-    <span class="share">
-      <button class="primary" onClick={() => void go()} title="Open the share sheet: Save Image puts it in Photos">Save or share</button>
-      <button onClick={() => { download(e); ready.value = null; }} title="Download the picture and its record (.json) instead">Download</button>
+    <div class="ready" role="status">
+      <span>Your picture is ready. Save Image puts it in Photos; Save to Files keeps it as a file.</span>
+      <button class="primary" onClick={() => void go()} title="Open the share sheet">Save or share</button>
       <button onClick={() => (ready.value = null)} title="Close" aria-label="Close">×</button>
-    </span>
+    </div>
   );
 }

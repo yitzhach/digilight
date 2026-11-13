@@ -7,7 +7,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import { installApi } from './api.ts';
 import { Stage } from './canvas/Stage.tsx';
 import { zoomFit, zoomStep } from './canvas/Zoom.tsx';
-import { exportNow, ShareButton } from './panel/ExportPanel.tsx';
+import { exportNow, ReadyLine } from './panel/ExportPanel.tsx';
 import { Panel } from './panel/Panel.tsx';
 import { before, busy, cmd, notice, openFile, photo, progress, restore, run, say, selected } from './state.ts';
 import { versionLabel } from './version.ts';
@@ -57,7 +57,6 @@ function App() {
         <button disabled={!has} class={before.value ? 'current' : ''} title="Press and hold to see the photo as it was (B)"
           onPointerDown={() => (before.value = true)} onPointerUp={() => (before.value = false)} onPointerLeave={() => (before.value = false)}
           onPointerCancel={() => (before.value = false)} onContextMenu={(e) => e.preventDefault()}>Before</button>
-        <ShareButton />
         <span class="grow">{pr === null && busy.value}</span>
         <button disabled={!has || busy.value !== null} onClick={() => void exportNow()} title="Save the picture with the Export choices">Export</button>
       </header>
@@ -66,6 +65,7 @@ function App() {
           <span>Exporting the picture… {Math.round(100 * pr)}%</span><i style={{ width: `${100 * pr}%` }} />
         </div>
       )}
+      <ReadyLine />
       {n && <div class={`notice${n.error ? ' error' : ''}`} role={n.error ? 'alert' : 'status'} onClick={() => (notice.value = null)} title="Tap to close">{n.text}</div>}
       <main>
         <Stage />
