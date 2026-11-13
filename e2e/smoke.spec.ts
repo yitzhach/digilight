@@ -26,6 +26,8 @@ for (const [where, app] of APPS) test(`smoke: open, looks, drag, export (${where
   await expect(page.locator('.look canvas:not(.loading)')).toHaveCount(LOOKS.length, { timeout: 30_000 });
   const getDoc = () => page.evaluate(() => (window as any).digilight.getDoc());
   expect((await getDoc()).photo).toMatchObject({ width: photo.width, height: photo.height, sha256: sha(png) });
+  // The foot of the page says which update this is: the commit's date, time and short name.
+  await expect(page.locator('.version')).toHaveText(/^Version \d{4}-\d\d-\d\d \d\d:\d\d · [0-9a-f]{7}$/);
 
   for (const look of LOOKS) {
     await page.locator(`[data-look="${look.id}"]`).click();

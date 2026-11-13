@@ -403,6 +403,9 @@ On a phone a handle answers a touch within 22 px of its centre.
 every expert setting of its part of the schema, generated from `describe()` (a slider, a switch or
 a select, by type). Nothing expert has hand-written interface.
 
+The foot of the page shows which update this is: the commit's date and time (in the viewer's
+own clock) and its short name, set when the app is built (D-056).
+
 Words on screen are plain: no "azimuth", "kelvin", "specular". Every control has a one-line
 tooltip (on a phone, where nothing hovers, the hint is on screen). Errors say what to do next,
 on a line of their own that wraps.
@@ -624,7 +627,7 @@ With Isaac, in the same sitting as Phase 5's phone test:
 **Gate:** tests pass, one for each bug above; on the iPhone Isaac applies a look, moves a lamp,
 sees Strength greyed, exports and reads the message.
 
-### Phase 6a — Finish, zoom, settings (Opus 5.5, medium effort)
+### Phase 6a — Finish, zoom, settings (Opus 5.5; high effort for item 1, medium for the rest)
 
 Phase 6 in two parts (D-049): it changed both renderers, added a geometry tool and two file
 formats, and its gate needed only this half. Read §5.9, §8. Decisions that apply: D-026, D-030,
@@ -652,7 +655,7 @@ D-032, D-047.
 minutes, using copy and paste or a saved preset; the zoom buttons work on the iMac and the
 iPhone.
 
-### Phase 6b — Prepare and projects (Opus 5.5, medium effort)
+### Phase 6b — Prepare and projects (Opus 5.5; high effort for item 1, medium for the rest)
 
 Read §6, §7, §8. Decisions that apply: D-042, D-043, D-048.
 
@@ -796,8 +799,8 @@ address until Isaac says 2.0 has replaced it.
 | 4 Texture and shadows | Opus 5.5, high; Fable 5.2 if GPU and CPU tables disagree | two implementations of one table |
 | **5 True Relief** | **Fable 5.2, high (or ultracode)** | the hardest code and the main reason to pay |
 | 5b Fix-ups from the audit | Opus 5.5, medium | small, but it touches `core`, the preview and CI |
-| 6a Finish, zoom, settings | Opus 5.5, medium | Finish is in both renderers |
-| 6b Prepare and projects | Opus 5.5, medium | the crop is in `core`; a file format to keep |
+| 6a Finish, zoom, settings | Opus 5.5: high for Finish (item 1), medium for looks and Settings | Finish changes §5.9 in both renderers, with parity and goldens; the rest is interface |
+| 6b Prepare and projects | Opus 5.5: high for the crop (item 1), medium for the rest | the crop's warp is exact arithmetic in `core`; then a file format to keep |
 | 7 AI access, local | Opus 5.5, medium | small, but the tool wording matters |
 | 8, 9 Hosted, sign-in, assistant | Opus 5.5, medium, after a written plan | touches the platform and money |
 | 8b Ready for a first customer | Sonnet 5.5 | pages and words |

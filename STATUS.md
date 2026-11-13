@@ -1,39 +1,38 @@
 # Status
-**Phase:** 5b done (gate passed on Isaac's iPhone, 11-12). Phase 6a is next; its item 3 (Zoom out,
-Fit, Zoom in; D-055) is done ahead of the rest, 11-13, on branch `claude/funny-noether-8uiyv7`.
-**Live:** https://studio-digilight.bobdylan2000.workers.dev (from `main`, which has Phase 5b but
-not the zoom buttons yet; `?bench` for the bench).
+**Phase:** 6a under way. Done and on `main` (11-13): item 3, the zoom buttons (D-055), and a
+version line at the foot of the page (D-056). Left in 6a: items 1 (Finish), 2 (looks), 4 (Settings).
+**Live:** https://studio-digilight.bobdylan2000.workers.dev (from `main`; `?bench` for the bench).
+The foot of the page says which update it is; quote that line when something looks wrong.
 
 ## Done
 - Phases 0 to 4: workspace, `core` engine, `gl` preview, `web` app, Texture (estimated); deployed.
 - Phase 5 (D-040 to D-048): True Relief measured from side-lit photos, in core and in the app;
   `pnpm gate:relief`: door 0.78 / 0.87, lintel 0.68 / 0.85, lamps 0.80 to 0.87.
 - Review round 4 (D-047): estimated texture off by default, experimental. Look notes wait for 6a.
-- Audit (D-049), agreed by Isaac (D-050): BUILD.md gained Phases 5b, 6a, 6b and 8b.
-- Phase 5b (D-051, D-052): the Looks panel reads the look from the document (Strength greyed,
-  "Lights changed by hand", after a lamp is moved); measured needs a height in every command;
-  `load` for autosaves, which now say when they cannot be reopened; phone messages, tabs, 22 px
-  handles, hints; Cmd/Ctrl+Z; a lost WebGL context rebuilt; errors shown; no stale texture
-  failure; no upscaled render or export; an empty decode says the photo is too large. Smoke runs
-  on the built app too; P3 and EXIF fixtures and tests; WebKit smoke job in CI (built app passes,
-  D-053); JavaScript 245 to 161 KB, checked in CI. Unit and e2e tests listed in CHANGELOG.
+- Audit (D-049, agreed in D-050): BUILD.md gained Phases 5b, 6a, 6b and 8b.
+- Phase 5b (D-051 to D-054): the audit's fix-ups; gate passed on the iPhone. List in CHANGELOG.md.
+- Phase 6a item 3 (D-055): Zoom out, Fit, Zoom in (keys `-` `0` `=`); a photo opens fitted to the
+  stage; panning never loses the picture. 59 unit tests, 26 e2e (HEIC skipped).
 
 ## Waiting on Isaac
-- **Zoom:** the buttons, keys and wheel on the iMac; the buttons and pinch on the iPhone.
+- **Zoom and version (11-13):** buttons, keys and wheel on the iMac; buttons and pinch on the
+  iPhone; the version line at the foot of the page on both.
 - **Phase 5 gate:** on the phone, a new piece's flat photo, Texture, "Use a side-lit photo for
   real texture", a handheld side-lit photo; pick the preview that looks right; try a raking look.
-- A HEIC opens in the app on his iPhone (11-12). For the CI test, the file itself (AirDrop or
-  Files keeps it HEIC; a chat upload turns it into a JPEG) for `fixtures/`; skipped until then.
+- The HEIC file itself for `fixtures/` (AirDrop or Files; a chat upload makes it a JPEG).
 - Phase 4 bench re-run on the iMac (`?bench`, paste the table; item 14, D-045).
-- Settings notes: screenshots with the look and slider numbers feed Phase 6a's defaults.
+- Settings notes: screenshots with the look and slider numbers, for chat 2's look tuning.
 **Run:** `pnpm typecheck && pnpm test`, `pnpm e2e`, `pnpm build && pnpm --filter web size`,
 `pnpm gate:relief` (3 min), `pnpm dev`. Never run `playwright install`. Review notes: ArtifactData.
 
-## Next: new chat, Opus 5.5 at medium effort, repository `yitzhach/digilight` only: Phase 6a
+## Next: new chats on Opus 5.5, repository `yitzhach/digilight` only, one at a time
+1. **High effort.** Phase 6a item 1, Finish: §5.9 in both renderers, parity, goldens, the panel.
+2. **Medium effort.** Phase 6a items 2 and 4 (look tuning, the Settings window), then 6a's gate.
+3. Phase 6b: **high** for item 1 (the crop's warp in `core`), **medium** for items 2 to 6.
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do
-Phase 6a as BUILD.md section 10 lists it (item 3, zoom, is done: D-055). Answers to "Waiting on
-Isaac": zoom and the Phase 5 phone test: [worked / notes / "not yet"]. HEIC: [attached / "not
-yet"]. Bench re-run: [table, or "not yet"]. Settings notes: [screenshots, or "none yet"].
-Keep replies brief. Stop at the phase's gate and tell me what to check.
+chat [1, 2 or 3] of STATUS.md's "Next" as BUILD.md section 10 lists it; nothing beyond it.
+Answers to "Waiting on Isaac": zoom and version: [worked / notes]. Phase 5 phone test: [worked /
+notes / "not yet"]. HEIC: [attached / "not yet"]. Bench: [table / "not yet"]. Settings notes:
+[screenshots / "none yet"]. Keep replies brief. Stop at the gate and tell me what to check.
 ```

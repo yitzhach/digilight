@@ -1,6 +1,6 @@
-// main.tsx — the one screen (§8): top bar, the picture, the panel. Open by drop, paste or picker;
-// keys B (Before, held), Z / Shift+Z (undo / redo, also with Cmd or Ctrl), Delete (remove the selected
-// light), - 0 = (zoom out, fit, zoom in).
+// main.tsx — the one screen (§8): top bar, the picture, the panel, the version. Open by drop,
+// paste or picker; keys B (Before, held), Z / Shift+Z (undo / redo, also with Cmd or Ctrl),
+// Delete (remove the selected light), - 0 = (zoom out, fit, zoom in).
 
 import { render } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
@@ -10,6 +10,7 @@ import { zoomFit, zoomStep } from './canvas/Zoom.tsx';
 import { exportNow, ShareButton } from './panel/ExportPanel.tsx';
 import { Panel } from './panel/Panel.tsx';
 import { before, busy, cmd, notice, openFile, photo, restore, run, say, selected } from './state.ts';
+import { versionLabel } from './version.ts';
 import './style.css';
 
 const editable = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName) && (t as HTMLInputElement).type !== 'range' && (t as HTMLInputElement).type !== 'checkbox');
@@ -65,6 +66,7 @@ function App() {
         <Stage />
         <Panel />
       </main>
+      <footer class="version" title="Which update of DigiLight this is: when it was made, and its name">Version {versionLabel()}</footer>
     </div>
   );
 }
