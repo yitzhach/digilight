@@ -378,10 +378,13 @@ at the bottom with one tab per section). Top bar: Open, Undo, Redo, **Before** (
 shows the photo), Export.
 
 **On the picture.** Each light is a round handle that can be dragged anywhere, including off the
-picture's edge (the canvas shows a margin of half the picture's width around it). The selected
+picture's edge; a lamp outside the view sits at its edge. The selected
 light also shows a small cross at its aim; drag it to aim. Scroll or pinch on a handle changes
-its brightness. Double-click toggles it. Delete removes it. Wheel zooms the picture to 800%;
-drag on empty space pans. `B` = Before, `Z` / `Shift+Z` = undo / redo (also with Cmd or Ctrl).
+its brightness. Double-click toggles it. Delete removes it. A photo opens fitted: it fills the
+stage with a 5% margin. Wheel or pinch zooms in to 800% and out until half a picture width is
+free all round (the lamps near the picture show in place); drag on empty space pans, never past
+that widest view. Three buttons on the picture do the same zoom: **Zoom out**, **Fit**,
+**Zoom in** (keys `-`, `0`, `=`; D-055). `B` = Before, `Z` / `Shift+Z` = undo / redo (also with Cmd or Ctrl).
 On a phone a handle answers a touch within 22 px of its centre.
 
 **Panel, simple mode** (the whole of it):
@@ -631,7 +634,7 @@ D-032, D-047.
    and presets set it. An editor would be hand-built expert interface, which §8 rules out (Later).
 2. Look tuning from D-047 and Isaac's settings notes, by lights only: Dramatic more contrast
    (lower room light), Spotlight less flat on the lintel. A review round, then §6 and the goldens.
-3. Zoom buttons (Isaac, after Phase 3): Zoom out, Fit, Zoom in on the picture (keys `-`, `0`,
+3. **Done 11-13, ahead of the rest of this phase (D-055).** Zoom buttons (Isaac, after Phase 3): Zoom out, Fit, Zoom in on the picture (keys `-`, `0`,
    `=`), the same zoom as the wheel (§8). Fit fills the stage with the picture (5% margin);
    lamps outside the view sit at its edge, as they do now; Zoom out shows them in place. Now
    the fit keeps half a picture width free all round: on a phone the picture is about a third

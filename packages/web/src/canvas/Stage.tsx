@@ -9,7 +9,8 @@ import { gpuReady, reliefInput } from '../relief.ts';
 import { before, kappa, live, photo, say, shown } from '../state.ts';
 import { Handles } from './Handles.tsx';
 import { createScale, SETTLE_MS } from './scale.ts';
-import { previewZoom, type Geometry } from './view.ts';
+import { clampPan, minZoom, previewZoom, type Geometry } from './view.ts';
+import { Zoom } from './Zoom.tsx';
 
 export const geo = signal<Geometry>({ w: 1, h: 1, aspect: 1, zoom: 1, pan: [0.5, 0.5] });
 
@@ -59,7 +60,8 @@ export function Stage() {
     const resize = () => {
       const r = el.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
       c.width = Math.max(1, Math.round(r.width * dpr)); c.height = Math.max(1, Math.round(r.height * dpr));
-      geo.value = { ...geo.value, w: r.width, h: r.height };
+      const g = { ...geo.value, w: r.width, h: r.height };
+      geo.value = clampPan({ ...g, zoom: Math.max(g.zoom, minZoom(g)) });
     };
     const ro = new ResizeObserver(resize);
     ro.observe(el);
@@ -115,7 +117,7 @@ export function Stage() {
   return (
     <div class="stage" ref={box}>
       <canvas ref={canvas} />
-      {photo.value ? <Handles /> : <Empty />}
+      {photo.value ? <><Handles /><Zoom /></> : <Empty />}
     </div>
   );
 }

@@ -44,3 +44,6 @@
 - Phone: messages on their own line and wrapped, each tab starts at its top, a handle answers a touch within 22 px, hints on screen. Cmd+Z / Ctrl+Z undo. A lost WebGL context is rebuilt; uncaught errors show as a message; a failed texture build no longer haunts the next export; an empty decode says the photo is too large for the phone.
 - Tests: smoke on the built app too; `fixups.spec.ts`, `iphone.spec.ts` (Display P3, EXIF rotation, HEIC once the file is in); a WebKit smoke job in CI; JavaScript size checked in CI, 245 to 161 KB (D-052).
 - Gate passed on Isaac's iPhone, 11-12 (D-054).
+
+## Phase 6a, item 3 only: zoom buttons
+- Zoom out, Fit and Zoom in on the picture, keys `-`, `0`, `=`; a photo opens fitted to the stage (5% margin); Zoom out shows the lamps around the picture; panning never loses the picture (D-055). The rest of Phase 6a (Finish, look tuning, Settings) is still to do.

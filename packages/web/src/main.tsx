@@ -1,10 +1,12 @@
 // main.tsx — the one screen (§8): top bar, the picture, the panel. Open by drop, paste or picker;
-// keys B (Before, held), Z / Shift+Z (undo / redo, also with Cmd or Ctrl), Delete (remove the selected light).
+// keys B (Before, held), Z / Shift+Z (undo / redo, also with Cmd or Ctrl), Delete (remove the selected
+// light), - 0 = (zoom out, fit, zoom in).
 
 import { render } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { installApi } from './api.ts';
 import { Stage } from './canvas/Stage.tsx';
+import { zoomFit, zoomStep } from './canvas/Zoom.tsx';
 import { exportNow, ShareButton } from './panel/ExportPanel.tsx';
 import { Panel } from './panel/Panel.tsx';
 import { before, busy, cmd, notice, openFile, photo, restore, run, say, selected } from './state.ts';
@@ -23,6 +25,9 @@ function App() {
       if (e.type !== 'keydown') return;
       if (k === 'z') run(() => (e.shiftKey ? cmd.redo() : cmd.undo()));
       else if ((k === 'delete' || k === 'backspace') && selected.value) { const id = selected.value; run(() => cmd.removeLight(id)); }
+      else if (k === '-' || k === '_') zoomStep(-1);
+      else if (k === '=' || k === '+') zoomStep(1);
+      else if (k === '0') zoomFit();
       else return;
       e.preventDefault();
     };

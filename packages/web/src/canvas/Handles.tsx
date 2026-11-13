@@ -1,13 +1,15 @@
 // Handles.tsx — the lights on the picture and the gestures over it (§8): drag a handle to move
 // its light (anywhere, also past the edge), drag the selected light's cross to aim it, scroll on
-// a handle for brightness, double-click to switch it, wheel or pinch to zoom, drag to pan.
+// a handle for brightness, double-click to switch it, wheel or pinch to zoom, drag to pan
+// (the buttons for the same zoom are Zoom.tsx).
 // A drag shows its document live (preview) and commits once on release: one undo step.
 
 import type { Doc, Light } from 'core';
 import { useRef } from 'preact/hooks';
-import { cmd, photo, preview, run, selected, shown } from '../state.ts';
+import { cmd, preview, run, selected, shown } from '../state.ts';
 import { geo } from './Stage.tsx';
-import { maxZoom, toPicture, toScreen, zoomAt, type Geometry } from './view.ts';
+import { clampPan, toPicture, toScreen, zoomAt, type Geometry } from './view.ts';
+import { zoomMax } from './Zoom.tsx';
 
 const R = 11, PAD = 14;
 /** How far from its centre a handle answers: 22 px for a finger (§8), the drawn circle for a mouse. */
@@ -42,7 +44,6 @@ export function Handles() {
     const r = svg.current!.getBoundingClientRect();
     return [e.clientX - r.left, e.clientY - r.top];
   };
-  const zoomMax = () => maxZoom(geo.value, photo.value!.image.width, window.devicePixelRatio || 1);
 
   function down(e: PointerEvent) {
     const t = (e.target as Element).closest('[data-light]');
@@ -74,9 +75,8 @@ export function Handles() {
     const dr = drag.current, gg = geo.value;
     if (!dr) return;
     if (dr.kind === 'pan') {
-      if (gg.zoom === 1) return;
       const [u0, v0] = toPicture(gg, dr.x, dr.y), [u1, v1] = toPicture(gg, x, y);
-      geo.value = { ...gg, pan: [dr.pan[0] - (u1 - u0), dr.pan[1] - (v1 - v0)] };
+      geo.value = clampPan({ ...gg, pan: [dr.pan[0] - (u1 - u0), dr.pan[1] - (v1 - v0)] });
       dr.x = x; dr.y = y; dr.pan = geo.value.pan;
       return;
     }

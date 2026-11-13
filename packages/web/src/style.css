@@ -34,6 +34,10 @@ main { flex: 1; display: flex; min-height: 0; }
 .aim line { stroke: rgba(240, 180, 83, 0.6); stroke-dasharray: 4 3; }
 .aim path { stroke: var(--accent); stroke-width: 2; }
 .aim .hit { fill: transparent; cursor: crosshair; }
+.zoom { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 4px; }
+.zoom.side { flex-direction: column-reverse; }
+.zoom button { min-width: 34px; padding: 5px 0; background: rgba(36, 36, 39, 0.9); }
+@media (pointer: coarse) { .zoom button { min-width: 44px; min-height: 40px; } }
 
 .panel { width: 320px; flex: none; overflow-y: auto; background: var(--panel); border-left: 1px solid var(--line); padding: 4px 14px 20px; }
 .panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dim); margin: 16px 0 8px; }
