@@ -22,8 +22,7 @@ The foot of the page says which update it is; quote that line when something loo
   iPhone; the version line at the foot of the page on both.
 - **Phase 5 gate:** on the phone, a new piece's flat photo, Texture, "Use a side-lit photo for
   real texture", a handheld side-lit photo; pick the preview that looks right; try a raking look.
-- The HEIC file itself for `fixtures/` (AirDrop or Files; a chat upload makes it a JPEG).
-- Phase 4 bench re-run on the iMac (`?bench`, the table). Settings notes for the look tuning.
+- The HEIC file for `fixtures/` (AirDrop or Files); the iMac bench (`?bench`); settings notes.
 **Run:** `pnpm typecheck && pnpm test`, `pnpm e2e`, `pnpm build && pnpm --filter web size`,
 `pnpm gate:relief` (3 min), `pnpm dev`. Never run `playwright install`. Review notes: ArtifactData.
 
