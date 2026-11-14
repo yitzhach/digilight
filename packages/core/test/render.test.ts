@@ -98,4 +98,4 @@ test('full-size render of door-flat-crop with the gallery look takes under 1 s; 
   const light = best(d), ms2 = best(f);
   console.log(`  with a finish: ${ms2.toFixed(0)} ms (${(ms2 / light).toFixed(2)} times lights only)`);
   expect(ms2).toBeLessThan(3 * light);
-});
+}, 30_000); // five full-size renders: over vitest's 5 s on a slow runner
