@@ -68,3 +68,17 @@ export const savePresets = (list: Preset[]) => tx('readwrite', (s) => s.put(list
 export async function loadPresets(): Promise<Preset[]> {
   try { return (await tx<Preset[] | undefined>('readonly', (s) => s.get('presets'))) ?? []; } catch { return []; }
 }
+
+/** Recent projects (Settings window): the last few saved or opened, newest first. A convenience
+ *  only, like the presets: the `.digilight` file is the keeping place (Phase 6b item 3). */
+export interface Recent { name: string; when: string; file: Blob }
+export const RECENT_MAX = 5;
+export async function loadRecent(): Promise<Recent[]> {
+  try { return (await tx<Recent[] | undefined>('readonly', (s) => s.get('recent'))) ?? []; } catch { return []; }
+}
+export async function addRecent(r: Recent): Promise<Recent[]> {
+  const list = [r, ...(await loadRecent()).filter((x) => x.name !== r.name)].slice(0, RECENT_MAX);
+  await tx('readwrite', (s) => s.put(list, 'recent')).catch(() => {});
+  return list;
+}
+

@@ -19,7 +19,7 @@ export async function exportNow(over: ExportOptions = {}) {
   if (!p || !d) { say('Open a photo first.', true); return null; }
   const c = exportChoice.value;
   ready.value = null; // a new export replaces the last one's button
-  busy.value = 'Exporting…';
+  busy.value = 'Exporting the picture…';
   try {
     const e = await exportPicture(p, d, { width: c.size === 'full' ? undefined : Math.min(c.size, p.image.width), format: c.format, ...over },
       (f) => { progress.value = f; });

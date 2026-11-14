@@ -1,4 +1,5 @@
-// Settings.tsx — the Settings window, opened from the Export section (BUILD.md Phase 6a item 4):
+// Settings.tsx — the Settings window, opened from the Export section (BUILD.md Phase 6a item 4;
+// Phase 6b adds projects and Apply to more photos, Projects.tsx):
 // Copy settings and Paste settings (everything but the photo, onto another photo as one undo
 // step), Save settings as a named preset, the presets to apply in one tap, and the presets
 // saved to or loaded from a file (the browser's list is a convenience: Safari forgets it).
@@ -6,7 +7,8 @@
 import { signal } from '@preact/signals';
 import { useRef } from 'preact/hooks';
 import { copied, copySettings, deletePreset, loadPresetsFile, presets, savePreset, savePresetsFile } from '../io/presets.ts';
-import { cmd, notice, run, say } from '../state.ts';
+import { cmd, notice, progress, run, say } from '../state.ts';
+import { Projects } from './Projects.tsx';
 
 export const settingsOpen = signal(false);
 const name = signal('');
@@ -67,10 +69,12 @@ export function SettingsWindow() {
         <div class="row">
           <button onClick={() => void savePresetsFile()} disabled={presets.value.length === 0} title="Keep your presets in a file: the browser may forget them">Save presets to a file</button>
           <button onClick={() => file.current!.click()} title="Add the presets from a file you saved">Load presets from a file</button>
-          <input ref={file} type="file" accept=".json,application/json" hidden
+          <input ref={file} type="file" accept=".json,application/json" hidden data-input="presets"
             onChange={(e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void load(f); (e.target as HTMLInputElement).value = ''; }} />
         </div>
-        <p class="hint">This browser keeps presets only as long as it likes (Safari forgets them after a week without a visit); a saved file keeps them for good.</p>
+        <Projects close={close} />
+        {progress.value !== null && <p class="said" role="status">Working… {Math.round(100 * progress.value)}%</p>}
+        <p class="hint">This browser keeps presets and recent projects only as long as it likes (Safari forgets them after a week without a visit); saved files keep them for good.</p>
       </div>
     </div>
   );

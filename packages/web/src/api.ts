@@ -7,6 +7,9 @@ import { exportPicture } from './io/export.ts';
 import { exportNow } from './panel/ExportPanel.tsx';
 import { cmd, doc, openFile, photo, run } from './state.ts';
 import { lastMeasure, measureFromSources } from './truerelief.ts';
+import { isProject } from './io/project.ts';
+import { openProject, projectFile } from './projects.ts';
+import { applyToMore } from './batch.ts';
 
 type Fn = (...a: never[]) => unknown;
 const wrap = <F extends Fn>(f: F) => ((...a: Parameters<F>) => {
@@ -31,7 +34,8 @@ export function installApi(): void {
   const api = {
     async open(src: Blob | string, name?: string) {
       src = await blobOf(src, name);
-      await openFile(src, name);
+      if (await isProject(src as Blob & { name?: string })) await openProject(src, name);
+      else await openFile(src, name);
       const p = photo.value;
       if (!p) throw new Error('the photo did not open (see the message on screen)');
       return { width: p.image.width, height: p.image.height, space: p.space, sha256: p.sha256, looks: cmd.looks().map((l) => l.id) };
@@ -69,6 +73,11 @@ export function installApi(): void {
       if (!photo.value || !doc.value) throw new Error('open a photo first');
       return exportPicture(photo.value, doc.value, opts);
     },
+    /** The open photo, its document and measured height as a `.digilight` File (Phase 6b). */
+    saveProject: () => projectFile(),
+    /** Lights and finish of the open photo onto other photos; a zip of the pictures (Phase 6b). */
+    applyToMore: (srcs: (Blob | string)[], opts?: { format?: 'jpeg' | 'png' }) =>
+      Promise.all(srcs.map((s) => blobOf(s))).then((files) => applyToMore(files, opts)),
     undo: wrap(cmd.undo),
     redo: wrap(cmd.redo),
     reset: wrap(cmd.reset),

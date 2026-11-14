@@ -8,9 +8,10 @@ import { installApi } from './api.ts';
 import { Stage } from './canvas/Stage.tsx';
 import { zoomFit, zoomStep } from './canvas/Zoom.tsx';
 import { exportNow, ReadyLine } from './panel/ExportPanel.tsx';
+import { openAny } from './projects.ts';
 import { SettingsWindow } from './panel/Settings.tsx';
 import { Panel } from './panel/Panel.tsx';
-import { before, busy, cmd, notice, openFile, photo, progress, restore, run, say, selected } from './state.ts';
+import { before, busy, cmd, notice, photo, progress, restore, run, say, selected } from './state.ts';
 import { versionLabel } from './version.ts';
 import './style.css';
 
@@ -33,9 +34,9 @@ function App() {
       else return;
       e.preventDefault();
     };
-    const drop = (e: DragEvent) => { e.preventDefault(); const f = e.dataTransfer?.files[0]; if (f) void openFile(f); };
+    const drop = (e: DragEvent) => { e.preventDefault(); const f = e.dataTransfer?.files[0]; if (f) void openAny(f); };
     const over = (e: DragEvent) => e.preventDefault();
-    const paste = (e: ClipboardEvent) => { const f = e.clipboardData?.files[0]; if (f) { e.preventDefault(); void openFile(f); } };
+    const paste = (e: ClipboardEvent) => { const f = e.clipboardData?.files[0]; if (f) { e.preventDefault(); void openAny(f); } };
     window.addEventListener('keydown', key); window.addEventListener('keyup', key);
     window.addEventListener('drop', drop); window.addEventListener('dragover', over);
     window.addEventListener('paste', paste);
@@ -50,9 +51,9 @@ function App() {
     <div class="app">
       <header class="bar">
         <strong class="brand">DigiLight</strong>
-        <button onClick={() => input.current!.click()} title="Open a photo (or drop or paste one)">Open</button>
-        <input ref={input} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" hidden
-          onChange={(e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void openFile(f); (e.target as HTMLInputElement).value = ''; }} />
+        <button onClick={() => input.current!.click()} title="Open a photo or a project (or drop or paste one)">Open</button>
+        <input ref={input} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,.digilight" hidden
+          onChange={(e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void openAny(f); (e.target as HTMLInputElement).value = ''; }} />
         <button disabled={!has} onClick={() => run(() => cmd.undo())} title="Undo (Z)">Undo</button>
         <button disabled={!has} onClick={() => run(() => cmd.redo())} title="Redo (Shift+Z)">Redo</button>
         <button disabled={!has} class={before.value ? 'current' : ''} title="Press and hold to see the photo as it was (B)"
@@ -62,8 +63,8 @@ function App() {
         <button disabled={!has || busy.value !== null} onClick={() => void exportNow()} title="Save the picture with the Export choices">Export</button>
       </header>
       {pr !== null && (
-        <div class="progress" role="progressbar" aria-label="Exporting" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(100 * pr)}>
-          <span>Exporting the picture… {Math.round(100 * pr)}%</span><i style={{ width: `${100 * pr}%` }} />
+        <div class="progress" role="progressbar" aria-label={busy.value ?? 'Working'} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(100 * pr)}>
+          <span>{busy.value ?? 'Working…'} {Math.round(100 * pr)}%</span><i style={{ width: `${100 * pr}%` }} />
         </div>
       )}
       <ReadyLine />

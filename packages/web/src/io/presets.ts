@@ -4,7 +4,7 @@
 
 import { signal } from '@preact/signals';
 import { readSettings, type Settings } from 'core';
-import { canShareFiles } from './export.ts';
+import { offerFile } from './offer.ts';
 import { loadPresets, savePresets, type Preset } from './store.ts';
 
 export type { Preset };
@@ -42,14 +42,7 @@ const FILE_APP = 'DigiLight presets';
 /** The presets as a file to keep (on a phone the share sheet saves it to Files). */
 export async function savePresetsFile(): Promise<void> {
   const text = JSON.stringify({ app: FILE_APP, version: 1, presets: presets.value }, null, 2);
-  const file = new File([text], 'digilight-presets.json', { type: 'application/json' });
-  if (canShareFiles() && navigator.canShare?.({ files: [file] })) {
-    try { await navigator.share({ files: [file] }); return; } catch (e) { if ((e as Error).name === 'AbortError') return; }
-  }
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(file); a.download = file.name;
-  document.body.append(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+  await offerFile(new File([text], 'digilight-presets.json', { type: 'application/json' }));
 }
 
 /** Adds the presets in a file (a name already here is replaced); returns how many. */

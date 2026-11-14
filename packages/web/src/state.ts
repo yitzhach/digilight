@@ -4,7 +4,7 @@
 import { batch, computed, signal } from '@preact/signals';
 import { createCommands, lookOf, type Doc, type LookMatch, type MeasuredHeight } from 'core';
 import { decodePhoto, type Photo } from './io/open.ts';
-import { loadSaved, saveDoc, savePhoto } from './io/store.ts';
+import { loadSaved, saveDoc, saveMeasured, savePhoto } from './io/store.ts';
 import { resetRelief, startRelief } from './relief.ts';
 import { resetTrueRelief } from './truerelief.ts';
 import { kappaFor, setGuardPhoto, setPoolPhoto } from './workers/pool.ts';
@@ -65,8 +65,8 @@ export function run<T>(f: () => T): T | undefined {
 export function preview(d: Doc): void { batch(() => { shown.value = d; live.value = true; }); }
 
 /** Opens a photo file: a neutral document, or `saved` (and its measured height) if it belongs to
- *  this photo. */
-export async function openFile(blob: Blob, name?: string, saved?: Doc | null, measured?: MeasuredHeight | null): Promise<void> {
+ *  this photo. `keep`: autosave the photo (a new photo or a project; not the autosave itself). */
+export async function openFile(blob: Blob, name?: string, saved?: Doc | null, measured?: MeasuredHeight | null, keep = !saved): Promise<void> {
   busy.value = 'Opening the photo…';
   try {
     const p = await decodePhoto(blob, name);
@@ -86,7 +86,7 @@ export async function openFile(blob: Blob, name?: string, saved?: Doc | null, me
     setGuardPhoto(p.image, setPoolPhoto(p.image));
     batch(() => { photo.value = p; kappa.value = 1; lastTap.value = { id: 'original', strength: 1, flip: false }; notice.value = lost ? { text: lost, error: true } : null; });
     sync();
-    if (!saved) void savePhoto(blob, p.name).catch(() => {});
+    if (keep) void savePhoto(blob, p.name).then(() => { if (measured) return saveMeasured(measured); }).catch(() => {});
   } catch (e) {
     say(errorText(e), true);
   } finally {
