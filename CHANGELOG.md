@@ -56,3 +56,6 @@
 
 ## Phase 6a, item 4: the Settings window
 - Copy and Paste settings between photos (one undo step), named presets applied in one tap, presets saved to and loaded from a file (D-060). Look tuning (item 2) and Phase 6a's gate still to do.
+
+## Phase 6b, items 3 to 6: projects
+- Save project and Open project (`.digilight`, also from the Open button), recent projects, old files keep opening (`core/migrate.ts`, a committed project), and Apply to more photos as one zip (D-061). Crop (item 1) and Versions (item 2) still to do.

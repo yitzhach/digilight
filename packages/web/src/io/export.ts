@@ -3,7 +3,7 @@
 // space (a Display P3 photo keeps its profile), with a .json record beside it: the document and
 // the SHA-256 of the photo file, of the picture's RGBA pixels and of the encoded file.
 
-import { outputSize, type Doc } from 'core';
+import { outputSize, type Doc, type Image, type Space } from 'core';
 import { reliefForExport } from '../relief.ts';
 import { kappaFor, renderRows } from '../workers/pool.ts';
 import { canvas2d, imageData } from './colour.ts';
@@ -18,9 +18,19 @@ export interface ExportRecord {
 }
 export interface Exported { blob: Blob; record: ExportRecord; name: string }
 
+/** RGBA8 pixels to a JPEG or PNG file in the photo's colour space (its profile kept). */
+export async function encodePicture(img: Image, space: Space, format: 'jpeg' | 'png', quality = 0.92): Promise<Blob> {
+  const [canvas, g] = canvas2d(img.width, img.height, space);
+  g.putImageData(imageData(img.data, img.width, img.height, space), 0, 0);
+  const type = format === 'png' ? 'image/png' : 'image/jpeg';
+  const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error('The browser could not encode the picture; try a smaller size.'))), type, quality));
+  canvas.width = canvas.height = 0; // free its memory now
+  return blob;
+}
+
 /** Lets the page draw (a message, a bar) before the next step; a hidden tab draws no frames, so
  *  at most 100 ms. */
-const frame = () => new Promise<void>((r) => {
+export const frame = () => new Promise<void>((r) => {
   let done = false;
   const go = () => { if (!done) { done = true; setTimeout(r, 0); } };
   requestAnimationFrame(go); setTimeout(go, 100);
@@ -40,11 +50,7 @@ export async function exportPicture(photo: Photo, doc: Doc, opts: ExportOptions 
   const kappa = await kappaFor(doc); // the guard worker: exactly guardKappa(photo, doc)
   const img = await renderRows(doc, width, kappa, (f) => onProgress(0.85 * f));
   await frame();
-  const [canvas, g] = canvas2d(img.width, img.height, photo.space);
-  g.putImageData(imageData(img.data, img.width, img.height, photo.space), 0, 0);
-  const type = format === 'png' ? 'image/png' : 'image/jpeg';
-  const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error('The browser could not encode the picture; try a smaller size.'))), type, quality));
-  canvas.width = canvas.height = 0; // free its memory now
+  const blob = await encodePicture(img, photo.space, format, quality);
   onProgress(0.95);
   const [pixelsSha256, fileSha256] = await Promise.all([sha256(img.data as Uint8ClampedArray<ArrayBuffer>), sha256(await blob.arrayBuffer())]);
   const base = photo.name.replace(/\.[^.]*$/, '') || 'picture';

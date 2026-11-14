@@ -671,15 +671,15 @@ Read §6, §7, §8. Decisions that apply: D-042, D-043, D-048.
    height, and the app says so first. Side-lit photos line up to the cropped photo.
 2. Versions: "Keep this version" snapshots in a strip; tap to switch, hold to compare (replaces
    v1's batch viewer).
-3. Projects: save and open `.digilight`: a zip, stored without compression (one small writer in
+3. **Done 11-14 (D-061).** Projects: save and open `.digilight`: a zip, stored without compression (one small writer in
    `web/io`, no dependency), of `doc.json`, the photo file as opened and the height PNG with
    `lo` and `hi` (D-042). The file is the keeping place; the list in IndexedDB is recent
    projects only (Safari's seven days), and the app asks for `navigator.storage.persist()`.
-4. Old documents still open. An additive schema change gets defaults; any other gets a step in
+4. **Done 11-14 (D-061).** Old documents still open. An additive schema change gets defaults; any other gets a step in
    `core/migrate.ts` and a test that opens a committed document from before it.
-5. Apply to more photos: drop several, the current lights and finish render onto each (not
+5. **Done 11-14 (D-061).** Apply to more photos: drop several, the current lights and finish render onto each (not
    relief), one photo in memory at a time, download as a zip (item 3's writer).
-6. The Settings window gains **Save project** and **Open project**, and holds item 5.
+6. **Done 11-14 (D-061).** The Settings window gains **Save project** and **Open project**, and holds item 5.
 
 **Gate:** a project saved and reopened exports the same pixel SHA-256, also after a crop; a
 project file committed in this phase opens in every later one; ten photos go through "Apply to

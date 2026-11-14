@@ -64,7 +64,7 @@ test('copy and paste settings onto another photo; a preset in one tap; presets i
   expect(JSON.parse(readFileSync(file, 'utf8')).presets.map((p: any) => p.name)).toEqual(['Dark wall']);
   await settings(page).getByRole('button', { name: 'Delete Dark wall' }).click();
   await expect(settings(page).getByText('No presets yet.')).toBeVisible();
-  await settings(page).locator('input[type=file]').setInputFiles(file);
+  await settings(page).locator('input[data-input="presets"]').setInputFiles(file);
   await expect(settings(page).getByRole('button', { name: 'Dark wall', exact: true })).toBeVisible();
 
   // The browser keeps them across a reload, and Paste still has the copied settings.
