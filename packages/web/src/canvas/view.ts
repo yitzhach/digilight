@@ -18,15 +18,17 @@ export interface Geometry {
   zoom: number;
   /** The picture point at the canvas centre. */
   pan: [number, number];
+  /** tool:wall: the wall round the picture, in picture widths each side (0 or absent: none). */
+  wall?: number;
 }
 
-type Box = Pick<Geometry, 'w' | 'h' | 'aspect'>;
+type Box = Pick<Geometry, 'w' | 'h' | 'aspect' | 'wall'>;
 
 /** CSS pixels per picture width at zoom 1. */
-export const fitScale = (g: Box) => FIT * Math.min(g.w, g.h / g.aspect);
+export const fitScale = (g: Box) => { const m = g.wall ?? 0; return FIT * Math.min(g.w / (1 + 2 * m), g.h / (g.aspect + 2 * m)); }; // m: tool:wall, Fit takes in the wall
 
 /** CSS pixels per picture width zoomed all the way out. */
-export const wideScale = (g: Box) => Math.min(g.w / (1 + 2 * MARGIN), g.h / (g.aspect + 2 * MARGIN));
+export const wideScale = (g: Box) => { const m = MARGIN + (g.wall ?? 0); return Math.min(g.w / (1 + 2 * m), g.h / (g.aspect + 2 * m)); }; // tool:wall: half a width free beyond the wall
 
 export const scaleOf = (g: Geometry) => fitScale(g) * g.zoom;
 

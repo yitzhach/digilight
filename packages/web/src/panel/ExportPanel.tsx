@@ -6,6 +6,7 @@
 import { signal } from '@preact/signals';
 import { canShare, canShareFiles, download, exportPicture, share, type Exported, type ExportOptions } from '../io/export.ts';
 import { busy, doc, notice, photo, progress, say } from '../state.ts';
+import { ExpertFields } from './Expert.tsx';
 import { openSettings } from './Settings.tsx';
 
 /** A finished picture waiting for the person to tap "Save or share". */
@@ -55,6 +56,7 @@ export function ExportPanel() {
           <button key={f} class={`chip${c.format === f ? ' current' : ''}`} data-format={f} onClick={() => (exportChoice.value = { ...c, format: f })}>{f.toUpperCase()}</button>
         ))}
       </div>
+      <ExpertFields prefixes={['wall.']} /* tool:wall */ />
       <button class="primary" data-action="download" disabled={busy.value !== null} onClick={() => void exportNow()}>{canShareFiles() ? 'Export' : 'Download'}</button>
       <button class="settings-open" onClick={openSettings} title="Copy and paste settings between photos, and save presets">Settings…</button>
     </section>

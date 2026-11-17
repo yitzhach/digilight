@@ -1,7 +1,7 @@
 // preview.ts — the interactive picture (BUILD.md Phase 2): core's lighting drawn by WebGL2 in
 // one pass. The reference renderer stays the truth; this imitates it within §5.11.
 
-import { glowMaps, glowTint, guardKappa, prepareFinish, prepareLighting, type Doc, type Finish, type GlowMaps, type Height, type HorizonInput, type Image, type Lighting, type Space } from 'core';
+import { glowMaps, glowTint, wallPaint, guardKappa, prepareFinish, prepareLighting, type Doc, type Finish, type GlowMaps, type Height, type HorizonInput, type Image, type Lighting, type Space } from 'core';
 import { createContext, photoTexture, program, useSpace } from './context.ts';
 import { glowTextures, type GlowTextures } from './glow-gpu.ts';
 import { gpuHorizon, gpuTmaxSupported, readHorizon, uploadHorizon, type ReliefTextures } from './horizon-gpu.ts';
@@ -68,6 +68,7 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
     bounce: loc('u_bounce'), roomSide: loc('u_roomSide'), room: loc('u_room'), // tool:bounce, tool:roomside
     even: loc('u_even'), evenA: loc('u_evenA'), evenB: loc('u_evenB'), evenT: loc('u_evenT'), // tool:even
     glow: loc('u_glow'), glowNear: loc('u_glowNear'), glowFar: loc('u_glowFar'), glowTint: loc('u_glowTint'), glowMix: loc('u_glowMix'), // tool:glow
+    wall: loc('u_wall'), wallA: loc('u_wallA'), wallPaint: loc('u_wallPaint'), wallRoom: loc('u_wallRoom'), // tool:wall
     finish: loc('u_finish'), warm: loc('u_warm'), contrast: loc('u_contrast'), saturation: loc('u_saturation'),
     vignette: loc('u_vignette'), grain: loc('u_grain'), vig: loc('u_vig'), hasCurve: loc('u_hasCurve'), curve: loc('u_curve'),
   };
@@ -87,7 +88,7 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
     // kappa goes in as its uniform; with Texture on but its maps not ready, the Light layer only
     const on = doc.relief.mode !== 'off' && relief ? doc : { ...doc, relief: { ...doc.relief, mode: 'off' as const } };
     lighting = prepareLighting(on, aspect, 1, on.relief.mode !== 'off' || null);
-    lampData = packLamps(lighting.lamps);
+    lampData = packLamps([...lighting.lamps, ...lighting.suns]); // tool:wall: the suns folded into the room light follow, for the wall
     fin = prepareFinish(doc, aspect);
   }
 
@@ -146,6 +147,13 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
       gl.uniform1f(U.protect, doc!.tone.highlightProtect);
       gl.uniform1i(U.lamps, lighting.lamps.length);
       gl.uniform4fv(U.lamp, lampData);
+      const wl = doc!.wall; // tool:wall
+      gl.uniform1i(U.wall, wl.on ? 1 : 0);
+      if (wl.on) {
+        const pt = wallPaint(doc!), rm = lighting.room;
+        gl.uniform4f(U.wallA, wl.standoff, wl.shadow, wl.margin, lighting.lamps.length + lighting.suns.length);
+        gl.uniform3f(U.wallPaint, pt[0], pt[1], pt[2]); gl.uniform3f(U.wallRoom, rm[0], rm[1], rm[2]);
+      }
       const ev = lighting.even; // tool:even
       gl.uniform1i(U.even, ev ? 1 : 0);
       if (ev) { gl.uniform4f(U.evenA, ev.cx, ev.cy, ev.kx, ev.ky); gl.uniform3f(U.evenB, ev.h, ev.k, ev.inv); gl.uniform3f(U.evenT, ev.T[0], ev.T[1], ev.T[2]); }

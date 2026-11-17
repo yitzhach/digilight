@@ -2,8 +2,8 @@
 
 Written 11-17 after an audit of DigiLight against other relighting tools (D-062). It lists the
 tools that audit found missing, says how every one of them is built so that it can be taken out
-again, and gives a build spec for each. Built: T6, T8, T3a, T3b, T4 (11-17), T2's reference (11-17);
-the rest are for new chats.
+again, and gives a build spec for each. Built: T6, T8, T3a, T3b, T4, T2 (11-17); the rest wait on
+Isaac (photos, or his word).
 
 **How to use it.** From 11-17 Isaac runs every tool on **Opus 5.5** (his call; the effort for
 each is in section 3). One tool at a time, in section 3's order. A chat may go on to the next
@@ -117,7 +117,7 @@ never replace, move or filter the photo's pixels.
 | T8 | Glow | **built 11-17** (D-064) | done | his judgement |
 | T3a | Colour filter on a light | **built 11-17** (D-066) | done | his judgement: keep, tune or remove |
 | T3b | Light patterns: window, blinds, leaves | **built 11-17** (D-067) | done | his judgement: keep, tune or remove |
-| T2 | The wall: light pool, drop shadow | **reference built 11-17** (D-070); preview and app: next | Opus 5.5, high, two chats | nothing: decided 11-17 (D-068) |
+| T2 | The wall: light pool, drop shadow | **built 11-17** (D-070, D-071) | done | his judgement, and the calls of D-068 (question 9) |
 | T4 | Even out the photo | **built 11-17** (D-069) | done | his judgement: keep, tune or remove |
 | T7 | 16-bit export | to build if wanted | Opus 5.5, medium | does a lab or customer want it? |
 | T1 | Gloss map | to build | Opus 5.5, high (hard: see its spec) | side-lit photos of two glossy pieces |
@@ -219,13 +219,25 @@ minute. On Isaac's panel photo (11-17, a hard cast shadow across the lower left)
 dark side but cannot take out the shadow's sharp edge: a smooth correction cannot. That needs a
 different tool (section 6, question 8).
 
-### T2 — The wall (BUILD.md §5.12.7): the reference
+### T2 — The wall (BUILD.md §5.12.7)
 
-Settings, a group `wall` (on, margin, tone, warmth, standoff, shadow). Files:
-`core/src/tools/wall.ts` (`wallSize`, `wallPixels`, `renderWithWall`); hooks `tool:wall` in
-`core/src/fields.ts`, `schema.ts`, `settings.ts`, `light.ts` (the suns folded into the room light
-are kept for the wall's shadow), `index.ts`. Tests: `core/test/tool-wall.test.ts`. Not yet in the
-app: the second chat adds the shader, parity, the panel's place, Fit and the export.
+Settings, a group `wall` in the Export section's expert list: Wall (on), Wall around the piece,
+Wall brightness, Wall colour, Distance from the wall, Shadow strength. Copy settings and presets
+carry it. Files: `core/src/tools/wall.ts` (`wallSize`, `wallPaint`, `wallPixels`,
+`renderWithWall`); hooks `tool:wall` in `core/src/fields.ts`, `schema.ts`, `settings.ts`,
+`light.ts` (the suns folded into the room light are kept for the wall's shadow), `index.ts`,
+`gl/src/shaders/light.glsl.ts` (`wallLightAt`, the branch outside the piece, grain's cell through
+`int`), `gl/src/preview.ts`, `web/src/workers/pool.ts` and `render.worker.ts` (the export's rows
+are the whole picture), `web/src/panel/ExportPanel.tsx`, `web/src/canvas/view.ts` and `Stage.tsx`
+(Fit takes in the wall). Tests: `core/test/tool-wall.test.ts`, `web/test/view.test.ts`; parity
+and the app in `e2e/tools.spec.ts`.
+
+What to judge: Gallery and Spotlight on the door and the lintel, Wall on. The lamp's pool should
+spill onto the wall and the piece throw a soft shadow away from the lamp; Distance from the wall
+widens it, a lamp's Softness blurs it. The exported file is the piece with its margin. Known
+limits (D-071): the piece is a flat panel with square edges (no frame, no thickness lit on its
+sides); the look thumbnails show the piece alone; `render` for an agent gives the piece alone
+(the export gives the whole).
 
 ---
 
@@ -436,7 +448,7 @@ From the audit, not yet answered:
 4. Would artists take four to eight side-lit shots, or is one extra photo the limit? (T5)
 5. Is the output mainly for screens, prints or both? (T7)
 6. Each tool built: keep, tune (how) or remove? Glow, Bounce light, Room light from one side,
-   Colour filter, Light patterns (and the Edit pattern box), Even out the photo.
+   Colour filter, Light patterns (and the Edit pattern box), Even out the photo, the wall.
 7. Grain at full is now about four times stronger (D-068): right, or a different top?
 8. A hard shadow in the photo (his panel, 11-17): worth a tool that lifts a shadow he paints or
    that is found from its edge? It would be a light multiplier from a mask, never a repaint.

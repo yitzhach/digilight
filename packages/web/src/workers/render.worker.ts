@@ -3,7 +3,7 @@
 // maps (shared memory when the page is cross-origin isolated, a copy otherwise).
 
 import {
-  aoFromTable, channelRows, estimateHeight, gauss, guardKappa, measuredHHat, normalise, slopes, rawRows, resampleRegion, horizonInput, horizonLayer, horizonTmax, K, LOOKS, defaultDoc, render, withLook,
+  aoFromTable, channelRows, estimateHeight, gauss, guardKappa, measuredHHat, normalise, slopes, rawRows, resampleRegion, horizonInput, horizonLayer, horizonTmax, K, LOOKS, defaultDoc, render, renderWithWall, withLook,
   type Doc, type Height, type HorizonInput, type Image, type ReliefMaps,
 } from 'core';
 import type { Reply, Request } from './protocol.ts';
@@ -50,7 +50,8 @@ self.onmessage = (e: MessageEvent<Request>) => {
     switch (m.type) {
       case 'render': {
         if (m.doc.relief.mode !== 'off' && !maps) throw new Error('Texture is still being prepared');
-        const img = render(photo, m.doc, { width: m.width, region: m.region, kappa: m.kappa, ...(maps ? { relief: maps } : {}) });
+        const img = (m.doc.wall.on ? renderWithWall : render)(photo, m.doc, { width: m.width, // tool:wall: the region is in the whole picture's pixels
+ region: m.region, kappa: m.kappa, ...(maps ? { relief: maps } : {}) });
         post({ type: 'pixels', id: m.id, data: img.data }, [img.data.buffer]);
         break;
       }

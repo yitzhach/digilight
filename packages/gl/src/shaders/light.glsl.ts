@@ -4,7 +4,7 @@
 // the suns) arrive already prepared by core's prepareLighting (colours carry the white-adapt
 // factor and Brightness), the finish by core's prepareFinish.
 
-import { GRAIN_CELLS, GRAIN_SHIFT, ROOM_WRAP } from 'core';
+import { GRAIN_CELLS, GRAIN_SHIFT, ROOM_WRAP, WALL_EDGE } from 'core'; // WALL_EDGE: tool:wall
 import { PATTERN } from './pattern.glsl.ts'; // tool:pattern
 
 /** Most lights a document holds (§6), so the uniform arrays are this long. */
@@ -51,6 +51,10 @@ uniform bool u_glow;      // tool:glow (5.12.3): Glow is on and its maps are her
 uniform sampler2D u_glowNear, u_glowFar; // RGB16F: the light that stands out, blurred near and far
 uniform vec3 u_glowTint;  // finish.glow * mix(white, halation, glowWarmth)
 uniform float u_glowMix;  // finish.glowSpread
+uniform bool u_wall;      // tool:wall (5.12.7): the wall is on
+uniform vec4 u_wallA;     // tool:wall: standoff, shadow, margin (picture widths), the lights it gets (u_lamp's first n)
+uniform vec3 u_wallPaint; // tool:wall: the wall's paint, linear
+uniform vec3 u_wallRoom;  // tool:wall: the room light alone, white-adapted
 uniform bool u_finish;   // Finish is not neutral (5.9)
 uniform vec3 u_warm;     // warmth's colour, luma 1 ((1, 1, 1) at warmth 0)
 uniform float u_contrast, u_saturation, u_vignette, u_grain;
@@ -151,6 +155,32 @@ vec3 lightingAt(vec2 P, vec3 paint, out vec3 S) { // paint: the photo's linear c
   return E;
 }
 
+vec3 wallLightAt(vec2 P) { // tool:wall (5.12.7): the wall at z = -standoff, no relief, the piece's shadow
+  vec3 E = u_wallRoom;
+  float st = u_wallA.x, ha = 0.5 * u_aspect;
+  for (int i = 0; i < ${MAX_LAMPS}; i++) {
+    if (float(i) >= u_wallA.w) break;
+    vec4 a = u_lamp[i * ${LAMP_VEC4S}], b = u_lamp[i * ${LAMP_VEC4S} + 1], s = u_lamp[i * ${LAMP_VEC4S} + 2], c = u_lamp[i * ${LAMP_VEC4S} + 3];
+    float e, pw = max(c.z * st / a.z, ${WALL_EDGE});
+    vec2 X;
+    if (s.w > 0.5) { e = b.z; X = P + a.xy * (st / a.z); }
+    else {
+      vec3 D = vec3(a.x - P.x, a.y - P.y, a.z + st);
+      float d = length(D), q = a.w / d;
+      e = b.z * (1.0 + (q * q - 1.0) * b.y) * min(D.z / d / b.x, 8.0);
+      if (b.w > 0.5) e *= smoothstep0(c.x, c.y, -dot(D, s.xyz) / d);
+      X = P + D.xy * (st / D.z);
+    }
+    vec4 pu = u_lamp[i * ${LAMP_VEC4S} + 5]; // tool:pattern
+    if (pu.w > 0.5) e *= patternFactor(pu, u_lamp[i * ${LAMP_VEC4S} + 6], u_lamp[i * ${LAMP_VEC4S} + 7].xy, s.w > 0.5, P, vec4(a.xy, a.z + st, a.w), s.xyz);
+    vec2 r = abs(X - vec2(0.5, ha)) - vec2(0.5, ha);
+    float sd = length(max(r, 0.0)) + min(max(r.x, r.y), 0.0);
+    e *= 1.0 - u_wallA.y * (1.0 - smoothstep0(-pw, pw, sd));
+    E += e * u_lamp[i * ${LAMP_VEC4S} + 4].rgb;
+  }
+  return E;
+}
+
 vec3 toneMap(vec3 c, vec3 E, vec3 S) {
   vec3 lit = c * E + S;
   float Y = luma(c), Ylit = luma(lit);
@@ -178,7 +208,7 @@ uint pcg(uint v) {
   return (w >> 22u) ^ w;
 }
 float grainAt(vec2 P) { // core's grainAt: GRAIN_CELLS cells across, shifted GRAIN_SHIFT of a cell
-  uvec2 c = uvec2(floor(P * ${GRAIN_CELLS}.0 + ${GRAIN_SHIFT}));
+  uvec2 c = uvec2(ivec2(floor(P * ${GRAIN_CELLS}.0 + ${GRAIN_SHIFT}))); // through int: left of or above the piece wraps as core's does (tool:wall)
   return float(pcg(c.x + pcg(c.y))) / 4294967296.0;
 }
 vec3 finish(vec3 c, vec2 P) { // linear in, display-encoded out
@@ -198,7 +228,15 @@ void main() {
   vec2 f = vec2(gl_FragCoord.x, u_target.y - gl_FragCoord.y);
   vec2 P = u_centre + (f - 0.5 * u_target) / u_scale;
   vec2 uv = vec2(P.x, P.y / u_aspect);
-  if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) { outColour = vec4(0.0); return; }
+  if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) {
+    float m = u_wallA.z; // tool:wall: inside the margin, the wall
+    if (!u_wall || P.x < -m || P.y < -m || P.x > 1.0 + m || P.y > u_aspect + m) { outColour = vec4(0.0); return; }
+    vec3 S = vec3(0.0);
+    if (u_glow) S = u_glowTint * mix(texture(u_glowNear, uv).rgb, texture(u_glowFar, uv).rgb, u_glowMix); // tool:glow: edges clamped
+    vec3 lin = toneMap(u_wallPaint, wallLightAt(P) * u_kappa, S);
+    outColour = vec4(u_finish ? finish(lin, P) : encode(lin), 1.0);
+    return;
+  }
   vec4 px = texture(u_photo, uv);
   if (u_unit) { outColour = px; return; }
   vec3 S, c = decode(px.rgb);

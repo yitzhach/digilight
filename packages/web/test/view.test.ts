@@ -24,6 +24,14 @@ describe('view', () => {
     expect(x0).toBeGreaterThanOrEqual(MARGIN * s - 1e-9);
     expect(y0).toBeGreaterThanOrEqual(MARGIN * s - 1e-9);
   });
+  it('with a wall, Fit takes in the piece and its wall (tool:wall)', () => {
+    const w: Geometry = { ...g, wall: 0.25 };
+    const [x0, y0] = toScreen(w, -0.25, -0.25 / 1.25), [x1, y1] = toScreen(w, 1.25, 1 + 0.25 / 1.25);
+    expect(Math.min(x0, y0, 1000 - x1, 800 - y1)).toBeGreaterThan(-1e-9);
+    expect(y0).toBeCloseTo(0.05 * 800);
+    expect(minZoom(w)).toBeLessThan(1);
+    expect(minZoom({ ...g, wall: 1 })).toBeLessThan(1); // a wall wider than the lamps' margin
+  });
   it('maps screen to picture and back', () => {
     const z = { ...g, zoom: 3, pan: [0.3, 0.7] as [number, number] };
     const [u, v] = toPicture(z, ...toScreen(z, -0.4, 1.6));

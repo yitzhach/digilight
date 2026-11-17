@@ -5,7 +5,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { estimatedRelief, glowMaps, guardKappa, neutralDoc, parseDoc, render, TOOLS, withLook, type Doc, type Image } from 'core';
+import { estimatedRelief, glowMaps, guardKappa, neutralDoc, parseDoc, render, renderWithWall, TOOLS, wallSize, withLook, type Doc, type Image } from 'core';
 import { loadFixture } from '../packages/core/scripts/jpeg.ts';
 import { encodePng } from './png.ts';
 
@@ -83,6 +83,31 @@ test('parity: colour filter', async ({ page }) => {
   for (const [name, doc] of Object.entries(docs)) {
     const kappa = guardKappa(photo, doc);
     await check(page, name, doc, kappa, render(photo, doc, { width: WIDTH, kappa }));
+  }
+});
+
+// tool:wall (§5.12.7): the wall drawn round the piece, the canvas sized to the whole picture and
+// the view set so its pixels are the reference's (W pixels a picture width, centred).
+test('parity: the wall', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() => (window as any).harness.reliefCPU());
+  const base = neutralDoc({ width: small.width, height: small.height, space: 'srgb', sha256: photo.sha256 });
+  const wall = (d: Doc, w: object = {}) => parseDoc({ ...d, wall: { on: true, ...w } });
+  const lit = withLook(base, 'gallery');
+  const docs: Record<string, Doc> = {
+    'spotlight on the wall': wall(withLook(base, 'spotlight')),
+    'gallery, a sun, a window, warm wall, finish': wall(parseDoc({ ...lit, lights: [...lit.lights,
+      { id: 's', kind: 'sun', azimuth: 200, elevation: 20, intensity: 0.4, size: 0.05 }, { id: 'w', pos: [1.3, -0.2, 0.5], intensity: 0.6, pattern: 'window', size: 0.3 }],
+    finish: { grain: 0.5, vignette: 0.4, contrast: 0.2 } }), { warmth: 0.4, tone: 0.65, standoff: 0.06, margin: 0.4 }),
+    'dramatic with Texture, a sun, glow': wall(parseDoc({ ...withLook(base, 'dramatic'), relief: { mode: 'estimated' }, finish: { glow: 0.7 },
+      lights: [...withLook(base, 'dramatic').lights, { id: 's', kind: 'sun', azimuth: 30, elevation: 35, intensity: 0.3 }] }), { shadow: 1 }),
+  };
+  const maps = estimatedRelief(small), a = small.height / small.width;
+  for (const [name, doc] of Object.entries(docs)) {
+    const kappa = guardKappa(small, doc), s = wallSize(doc, small.width, small.height), m = doc.finish.glow > 0 ? glowMaps(small, doc, kappa) : null;
+    const zoom = small.width / Math.min(s.width, s.height / a);
+    const glow = m ? { width: m.width, height: m.height, near: b64(m.near), far: b64(m.far) } : undefined;
+    await check(page, name, doc, kappa, renderWithWall(small, doc, { kappa, relief: maps, ...(m ? { glow: m } : {}) }), { size: [s.width, s.height], view: { zoom }, glow });
   }
 });
 
@@ -222,5 +247,39 @@ test('app: the tools show under Expert controls, glow reaches the picture, the e
   const rec = JSON.parse(files.find((f) => f.name.endsWith('.json'))!.bytes.toString());
   expect(parseDoc(rec.document).finish.glow).toBe(0.8);
   expect(rec.picture.pixelsSha256).toBe(sha(render(shot, parseDoc(rec.document)).data));
+  expect(errors).toEqual([]);
+});
+
+// tool:wall: the wall's settings sit in Export's expert list; the picture shows the wall; the
+// export is the whole picture, piece and wall, from the reference.
+test('app: the wall in the panel, on the picture and in the export', async ({ page }) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  const shot = render(photo, full, { width: 600 }), png = encodePng(shot);
+  await page.goto('http://localhost:5180/');
+  await page.locator('input[type=file]').setInputFiles({ name: 'lintel.png', mimeType: 'image/png', buffer: png });
+  await expect(page.locator('[data-look="spotlight"]')).toBeVisible();
+  const dl = <T>(f: string, ...a: unknown[]) => page.evaluate(([n, args]) => (window as any).digilight[n as string](...(args as unknown[])), [f, a] as const) as Promise<T>;
+  const exportSection = page.locator('section', { has: page.getByRole('heading', { name: 'Export' }) });
+  await page.getByRole('checkbox', { name: 'Expert controls' }).check();
+  for (const p of TOOLS.find((t) => t.id === 'wall')!.paths.filter((q) => q !== 'wall.on')) await expect(exportSection.locator(`[id="s-${p}"]`)).toHaveCount(1);
+  await page.locator('[data-look="spotlight"]').click();
+  const picture = async () => { await page.waitForTimeout(400); return page.locator('.stage canvas').screenshot(); };
+  const plain = await picture();
+  await exportSection.getByRole('checkbox', { name: 'Wall', exact: true }).check();
+  expect((await dl<Doc>('getDoc')).wall.on).toBe(true);
+  await expect.poll(async () => (await picture()).equals(plain), { timeout: 10_000 }).toBe(false);
+  await page.locator('[data-format="png"]').click();
+  const downloads: import('@playwright/test').Download[] = [];
+  const two = new Promise<void>((done) => page.on('download', (d) => { downloads.push(d); if (downloads.length === 2) done(); }));
+  await page.locator('[data-action="download"]').click();
+  await two;
+  const files = await Promise.all(downloads.map(async (d) => ({ name: d.suggestedFilename(), bytes: readFileSync((await d.path())!) })));
+  const rec = JSON.parse(files.find((f) => f.name.endsWith('.json'))!.bytes.toString()), doc = parseDoc(rec.document);
+  const want = renderWithWall(shot, doc), size = wallSize(doc, shot.width, shot.height);
+  expect([rec.picture.width, rec.picture.height]).toEqual([size.width, size.height]);
+  expect(size.width).toBe(shot.width + 2 * Math.round(0.25 * shot.width));
+  expect(rec.picture.pixelsSha256).toBe(createHash('sha256').update(want.data).digest('hex'));
   expect(errors).toEqual([]);
 });

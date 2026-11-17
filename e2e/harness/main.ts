@@ -40,7 +40,9 @@ const api = {
     return { width: h.width, height: h.height, frames, ms, tmax: [gpu.tmax, cpu.tmax], table: cmp(gpu.table, cpu.table), ao: cmp(gpu.ao, cpu.ao) };
   },
   /** `glow` (tool:glow): Glow's maps as made in Node (floats as base64), so the preview adds the reference's own. */
-  draw(doc: Doc, kappa: number, opts: { scale?: number; view?: Partial<View>; glow?: { width: number; height: number; near: string; far: string } } = {}) {
+  /** `size` (tool:wall): the canvas's size for this draw, when it is not the photo's. */
+  draw(doc: Doc, kappa: number, opts: { scale?: number; view?: Partial<View>; glow?: { width: number; height: number; near: string; far: string }; size?: [number, number] } = {}) {
+    canvas.width = opts.size?.[0] ?? img!.width; canvas.height = opts.size?.[1] ?? img!.height; // tool:wall
     const p = preview!, g = opts.glow, f32 = (b: string) => new Float32Array(toBytes(b).buffer);
     p.setDoc(doc, { kappa, ...(g ? { glow: { width: g.width, height: g.height, near: f32(g.near), far: f32(g.far), key: '' } } : {}) });
     p.setScale(opts.scale ?? 1);

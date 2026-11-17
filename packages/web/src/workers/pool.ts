@@ -2,7 +2,7 @@
 // the page is cross-origin isolated (all workers read one copy), else as one copy to one worker.
 
 import type { Blurred, Channels, Doc, GlowMaps, Height, HorizonInput, Image, MeasuredHeight } from 'core';
-import { BLURS, K, outputSize, reliefSize, thumbnail } from 'core';
+import { BLURS, K, outputSize, reliefSize, thumbnail, wallSize } from 'core'; // wallSize: tool:wall
 import type { Reply, Request } from './protocol.ts';
 
 /** The guard judges on a thumbnail of this long side (core guard.ts GUARD_SIZE, §5.7). */
@@ -59,9 +59,9 @@ export function setPoolPhoto(p: Image): Image | null {
 }
 
 /** The reference picture at `width`, rows split across the workers; `onRows` hears the share
- *  of rows done after each band. */
+ *  of rows done after each band. With the wall on, the picture is the piece and its wall (tool:wall). */
 export async function renderRows(doc: Doc, width: number, kappa: number, onRows?: (done: number) => void): Promise<Image> {
-  const ws = start(), { width: W, height: H } = outputSize(doc.photo, width);
+  const ws = start(), piece = outputSize(doc.photo, width), { width: W, height: H } = wallSize(doc, piece.width, piece.height); // tool:wall
   const out = new Uint8ClampedArray(W * H * 4);
   // More bands than workers, so a slow band does not hold the rest.
   const bands = Math.min(H, ws.length * 4), rowsEach = Math.ceil(H / bands);
@@ -70,7 +70,7 @@ export async function renderRows(doc: Doc, width: number, kappa: number, onRows?
     for (let y; (y = next * rowsEach) < H; ) {
       next++;
       const h = Math.min(rowsEach, H - y), id = nextId++;
-      const r = await ask(w, { type: 'render', id, doc, width: W, kappa, region: { x: 0, y, width: W, height: h } });
+      const r = await ask(w, { type: 'render', id, doc, width: piece.width, kappa, region: { x: 0, y, width: W, height: h } });
       if (r.type === 'pixels') out.set(r.data, y * W * 4);
       done += h; onRows?.(done / H);
     }
