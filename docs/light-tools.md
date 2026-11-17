@@ -2,7 +2,7 @@
 
 Written 11-17 after an audit of DigiLight against other relighting tools (D-062). It lists the
 tools that audit found missing, says how every one of them is built so that it can be taken out
-again, and gives a build spec for each. Two are being built (T6, T8); the rest are for new chats.
+again, and gives a build spec for each. Two are built (T6, T8); the rest are for new chats.
 
 **How to use it.** One tool per chat, on the model its section names. Read CLAUDE.md, STATUS.md,
 BUILD.md §1 to §4 and §5.12, then sections 1 to 3 here and the one tool. BUILD.md's rules (§3)
@@ -48,21 +48,43 @@ picture, document or test that does not use it.
 4. **One file per package.** `core/src/tools/<id>.ts` holds the tool's maths. Where the
    renderer must call it (`light.ts`, `tone.ts`, `render.ts`, the shader, `preview.ts`), the
    call is a **hook**: a few lines, each marked with the comment `tool:<id>`, guarded so that
-   the default costs nothing. `grep -rn "tool:<id>"` must find every line outside the tool's
-   own files.
-5. **Listed in `core/src/tools/index.ts`** (`TOOLS`): its id, label, setting paths.
-   `core/test/tools.test.ts` checks every listed tool: its settings exist, are expert, and a
-   document at their defaults is unchanged by them.
+   the default costs nothing. `grep -rn "tool:<id>" packages e2e` must find every hook. (T6's
+   two tools, `bounce` and `roomside`, share one file; each has its own marks.)
+5. **Listed in `core/src/tools/index.ts`** (`TOOLS`): its id, label, setting paths, and `off`,
+   the values at which it does nothing. `core/test/tools.test.ts` checks every listed tool: its
+   settings exist, are expert, default to `off`, and its hooks are marked.
 6. **Its own tests** in `core/test/tool-<id>.test.ts`: off changes nothing (bytes); each
-   setting moves the picture the way its label says; one golden hash with it on (`goldens.json`,
-   key `tool-<id>`). And one parity document with it on in `e2e/tools.spec.ts` (§5.11).
+   setting moves the picture the way its label says; one golden hash with it on
+   (`expectGolden('<id>', picture)` from `core/test/tool-golden.ts`; the hashes are in
+   `tool-goldens.json`, apart from `goldens.json`; `UPDATE_GOLDENS=1` writes one). And a block
+   in `e2e/tools.spec.ts`, marked `tool:<id>`: parity documents with it on (§5.11).
 7. **A row in section 3** and an entry in `DECISIONS.md` and `CHANGELOG.md`.
 
-**To remove a tool:** delete its files and every line `grep "tool:<id>"` finds; delete its
-fields and move their paths to `RETIRED` in `core/src/tools/index.ts` (documents, presets and
-projects that still carry them then open as before: the settings are dropped on reading);
-delete its tests, golden and parity document; replace its §5.12 subsection by one line saying
-it was removed and why; mark it removed in section 3; log the decision. Nothing else changes.
+**To remove a tool:** delete its files and every line or block `grep -rn "tool:<id>" packages
+e2e` finds, then run `pnpm typecheck`, which names whatever still leans on it (an import, a
+signal read); delete its fields and its line in `TOOLS`, and add the fields' paths to `RETIRED` in
+`core/src/tools/index.ts` (`parseDoc` drops retired settings from whatever it reads, so
+documents, presets and projects that still carry them open as before); delete its test file,
+its key in `tool-goldens.json` and its block in `e2e/tools.spec.ts`; replace its §5.12
+subsection by one line saying it was removed and why; mark it removed in section 3; log the
+decision. Nothing else changes, and no older golden moves.
+
+**What building the first two taught** (read before writing a tool):
+
+- Keep the arithmetic of the off path exactly as it was, in its order. A golden that moves
+  means the tool leaks when off.
+- A new setting in a group breaks any test that compares the whole group with `toEqual`. Two
+  were loosened to `toMatchObject` (`core/test/schema.test.ts`, `e2e/finish.spec.ts`); do the
+  same, never delete the check.
+- A new field on a light breaks `looks.ts` `withLook` and `lookOf` (they build and compare a
+  light field by field). The look tests fail at once: T3a's spec has the fix.
+- In the shader's lamp loop the names `a`, `b`, `s`, `c`, `col`, `l`, `e`, `w`, `f` are taken.
+- A tool file may be imported by `light.ts`, `tone.ts` or `render.ts`: it must not call
+  anything from them while it loads (constants only), or the import order breaks.
+- Maps that both renderers read are made by `core` on the CPU and handed to the preview as
+  textures (Glow does this): parity is then exact and the tool stays one file to delete.
+- Try the idea on the fixtures before the shader. Glow's first rule (only light over white
+  glows) was right in physics and did nothing on real looks; ten minutes of renders showed it.
 
 **A tool that Isaac keeps** stays as it is. Making one simple-tier, or letting a look use one,
 is a separate decision of his (looks change only with him, §6).
@@ -75,8 +97,8 @@ never replace, move or filter the photo's pixels.
 
 | id | tool | state | model | waits on Isaac |
 |---|---|---|---|---|
-| T6 | Softer shadows: bounce light, room light from one side | being built, 11-17 | Fable 5.2 | his judgement: keep, tune or remove |
-| T8 | Glow | being built, 11-17 | Fable 5.2 | his judgement |
+| T6 | Softer shadows: bounce light, room light from one side | **built 11-17** (D-063) | Fable 5.2 | his judgement: keep, tune or remove |
+| T8 | Glow | **built 11-17** (D-064) | Fable 5.2 | his judgement |
 | T3a | Colour filter on a light | to build | Opus 5.5, medium | nothing |
 | T3b | Light patterns: window, blinds, leaves | to build | Opus 5.5, high | nothing |
 | T2 | The wall: light pool, drop shadow | to build, after Phase 6b's crop | Opus 5.5, high, two chats | wall colours; frame or not |
@@ -95,26 +117,33 @@ T1 and T5 when their photos exist. T7 and T9 only on Isaac's word.
 
 ### T6 — Softer shadows (BUILD.md §5.12.1, §5.12.2)
 
-Settings, all in Texture's expert list (they act only with Texture on):
-`relief.bounce` (Bounce light), `relief.roomSide` (Room light from one side),
+Two tools, three settings, all in Texture's expert list (they act only with Texture on):
+`relief.bounce` (Bounce light); `relief.roomSide` (Room light from one side) and
 `relief.roomFrom` (Room light comes from). Files: `core/src/tools/bounce.ts`; hooks
-`tool:bounce` and `tool:roomside` in `core/src/light.ts`, `tone.ts`, `gl/src/shaders/light.glsl.ts`
-and `preview.ts`.
+`tool:bounce` and `tool:roomside` in `core/src/fields.ts`, `light.ts`, `tone.ts`,
+`gl/src/shaders/light.glsl.ts` and `gl/src/preview.ts`. Tests: `core/test/tool-bounce.test.ts`.
 
-What to judge: on a piece with True Relief under a raking lamp, raise Bounce light. Hollows in
-pale paint should lighten and warm; dark paint should hardly move; a cast shadow on open ground
-should stay dark. Room light from one side should model the surface inside the shadows.
+What to judge: on a piece with True Relief under a raking lamp, with Shadows high, raise
+Bounce light. Hollows in pale paint should lighten and warm; dark paint should hardly move; a
+cast shadow on open ground should stay dark. Room light from one side should model the surface
+where no lamp reaches. Seen on the door (D-063): right, and subtle. If Isaac cannot see it at
+all on his pieces, it has not earned its place.
 
 ### T8 — Glow (BUILD.md §5.12.3)
 
 Settings in Finish's expert list: `finish.glow`, `finish.glowSpread`, `finish.glowWarmth`.
-Files: `core/src/tools/glow.ts`; hooks `tool:glow` in `core/src/render.ts`, `tone.ts`,
-`gl/src/shaders/light.glsl.ts`, `gl/src/preview.ts`, and in the app `web/src/state.ts`,
-`workers/guard.worker.ts`, `workers/pool.ts`, `canvas/Stage.tsx`.
+Files: `core/src/tools/glow.ts`, `gl/src/glow-gpu.ts`; hooks `tool:glow` in `core/src/fields.ts`,
+`render.ts`, `tone.ts`, `gl/src/shaders/light.glsl.ts`, `gl/src/preview.ts`, and in the app
+`web/src/state.ts`, `workers/guard.worker.ts`, `workers/pool.ts`, `canvas/Stage.tsx`; the
+parity harness (`e2e/harness/main.ts`) hands the preview the maps. Tests:
+`core/test/tool-glow.test.ts`.
 
-What to judge: with a spotlight on a pale piece, a little Glow should make the pool read as
-light. Too much is a haze. It is the one tool that softens the picture (never the art's own
-pixels, section 2), so it is the first to remove if it does not convince.
+What to judge: with a spotlight or a dramatic look, raise Glow to 30 to 60. The lamp's pool
+should bloom and read as light; Spread carries it further; Warmth turns it toward film's
+red-orange. Too much is a haze. It is the one tool that softens the picture (never the art's
+own pixels, section 2), so it is the first to remove if it does not convince. Known limits
+(D-064): the glow follows the lights a moment after a drag; highlights that only Texture
+makes do not glow; it reaches about an eighth of the picture at most.
 
 ---
 

@@ -4,6 +4,7 @@
 
 import { z } from 'zod';
 import { AMBIENT, FINISH, LIGHT, RELIEF, TONE, type Doc, type Field, type PhotoInfo, type Spec, type Tier, type TupleField } from './fields.ts';
+import { dropRetired } from './tools/index.ts';
 
 export * from './fields.ts';
 
@@ -46,9 +47,10 @@ export const docSchema = z.strictObject({
   if (new Set(ids).size !== ids.length) ctx.addIssue({ code: 'custom', path: ['lights'], message: 'light ids must be different' });
 });
 
-/** A valid document (defaults filled in), or an Error that says what is wrong and where. */
+/** A valid document (defaults filled in), or an Error that says what is wrong and where. The
+ *  settings of light tools that were removed are dropped first (tools/index.ts RETIRED). */
 export function parseDoc(input: unknown): Doc {
-  const r = docSchema.safeParse(input);
+  const r = docSchema.safeParse(dropRetired(input));
   if (r.success) return r.data as unknown as Doc;
   const msg = r.error.issues.map((i) => `${i.path.join('.') || 'document'}: ${i.message}`).join('; ');
   throw new Error(`Invalid document: ${msg}`);

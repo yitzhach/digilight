@@ -4,7 +4,7 @@
 // the suns) arrive already prepared by core's prepareLighting (colours carry the white-adapt
 // factor and Brightness), the finish by core's prepareFinish.
 
-import { GRAIN_CELLS, GRAIN_SHIFT } from 'core';
+import { GRAIN_CELLS, GRAIN_SHIFT, ROOM_WRAP } from 'core';
 
 /** Most lights a document holds (§6), so the uniform arrays are this long. */
 export const MAX_LAMPS = 8;
@@ -39,6 +39,13 @@ uniform highp sampler2DArray u_horizon; // R8 x 32: the horizon table (5.6)
 uniform sampler2D u_aoTex;           // R8: hollows
 uniform float u_rAspect; // relief width / height
 uniform float u_tmax, u_depth, u_shadows, u_ao, u_sheen, u_sharp;
+uniform float u_bounce;   // tool:bounce (5.12.1)
+uniform float u_roomSide; // tool:roomside (5.12.2)
+uniform vec3 u_room;      // tool:roomside: toward the room light's side
+uniform bool u_glow;      // tool:glow (5.12.3): Glow is on and its maps are here
+uniform sampler2D u_glowNear, u_glowFar; // RGB16F: the light that stands out, blurred near and far
+uniform vec3 u_glowTint;  // finish.glow * mix(white, halation, glowWarmth)
+uniform float u_glowMix;  // finish.glowSpread
 uniform bool u_finish;   // Finish is not neutral (5.9)
 uniform vec3 u_warm;     // warmth's colour, luma 1 ((1, 1, 1) at warmth 0)
 uniform float u_contrast, u_saturation, u_vignette, u_grain;
@@ -70,15 +77,19 @@ float horizonAt(vec2 uv, float f) { // f: direction in layers, [0, 32)
   return ta + (tb - ta) * t;
 }
 
-vec3 lightingAt(vec2 P, out vec3 S) {
+vec3 lightingAt(vec2 P, vec3 paint, out vec3 S) { // paint: the photo's linear colour at P (tool:bounce)
   vec3 E = u_base, n = vec3(0.0, 0.0, 1.0);
   vec2 ruv = vec2(P.x, P.y * u_rAspect);
   S = vec3(0.0);
   if (u_relief) {
     vec2 pq = texture(u_slopes, ruv).rg;
     float bo = texture(u_aoTex, ruv).r, x = bo / (bo < 1.0 ? 1.0 - bo : 1e-12), xd = 2.0 * u_depth * x;
-    E *= 1.0 - u_ao * xd / (1.0 + xd);
+    float V = 1.0 - u_ao * xd / (1.0 + xd);
     n = normalize(vec3(-u_depth * pq, 1.0));
+    vec3 A = vec3(V);
+    if (u_bounce > 0.0) A = V / (1.0 - u_bounce * paint * (1.0 - V)); // tool:bounce
+    if (u_roomSide > 0.0) A *= 1.0 + (min(4.0, max(0.0, dot(n, u_room) + ${ROOM_WRAP}) / (u_room.z + ${ROOM_WRAP})) - 1.0) * u_roomSide; // tool:roomside
+    E *= A;
   }
   for (int i = 0; i < ${MAX_LAMPS}; i++) {
     if (i >= u_lamps) break;
@@ -110,6 +121,12 @@ vec3 lightingAt(vec2 P, out vec3 S) {
       float T = u_depth * horizonAt(ruv, f);
       float pw = max(omega, 0.004) * (1.0 + tanE * tanE);
       float sh = 1.0 - u_shadows * (1.0 - smoothstep0(-pw, pw, tanE - T));
+      if (u_bounce > 0.0) { // tool:bounce: the far side's wall, lit, throws light back
+        float fo = f + 16.0; if (fo >= 32.0) fo -= 32.0;
+        float To = u_depth * horizonAt(ruv, fo);
+        float wall = min(4.0, (0.7071067811865476 * (length(l.xy) + l.z) + w) / (l.z + w));
+        E += u_bounce * 0.5 * (1.0 - inversesqrt(1.0 + To * To)) * wall * e * col * paint;
+      }
       if (u_sheen > 0.0) {
         float cs = max(dot(n, normalize(l + vec3(0.0, 0.0, 1.0))), 0.0);
         if (cs > 0.0 && lam > 0.0) S += u_sheen * (e / lam) * sh * pow(cs, u_sharp) * col;
@@ -171,11 +188,12 @@ void main() {
   if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) { outColour = vec4(0.0); return; }
   vec4 px = texture(u_photo, uv);
   if (u_unit) { outColour = px; return; }
-  vec3 S;
-  vec3 E = lightingAt(P, S) * u_kappa;
+  vec3 S, c = decode(px.rgb);
+  vec3 E = lightingAt(P, c, S) * u_kappa;
   S *= u_kappa;
+  if (u_glow) S += u_glowTint * mix(texture(u_glowNear, uv).rgb, texture(u_glowFar, uv).rgb, u_glowMix); // tool:glow (its maps carry kappa)
   bool same = all(equal(E, vec3(1.0))) && all(equal(S, vec3(0.0)));
   if (same && !u_finish) { outColour = px; return; }
-  vec3 lin = same ? decode(px.rgb) : toneMap(decode(px.rgb), E, S);
+  vec3 lin = same ? c : toneMap(c, E, S);
   outColour = vec4(u_finish ? finish(lin, P) : encode(lin), px.a);
 }`;

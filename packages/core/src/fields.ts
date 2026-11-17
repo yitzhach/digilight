@@ -52,6 +52,11 @@ export const RELIEF = {
   ao: num(0, 1, 0.01, 0.3, 'expert', 'Hollows', 'How much less light reaches into hollows'),
   sheen: num(0, 1, 0.01, 0, 'expert', 'Sheen', 'A glossy highlight on raised parts'),
   sheenSharpness: num(2, 8, 0.1, 5, 'expert', 'Sheen sharpness', 'Higher gives a smaller, sharper highlight'),
+  // tool:bounce (BUILD.md §5.12.1)
+  bounce: num(0, 1, 0.01, 0, 'expert', 'Bounce light', 'Light bouncing off the lit side of a hollow into its shadow; pale paint bounces more'),
+  // tool:roomside (§5.12.2)
+  roomSide: num(0, 1, 0.01, 0, 'expert', 'Room light from one side', 'How much of the room light comes from one side, so the surface shows in it'),
+  roomFrom: num(0, 360, 1, 90, 'expert', 'Room light comes from', '0 right, 90 top, 180 left, 270 bottom'),
 } satisfies Spec;
 
 export const TONE = {
@@ -68,6 +73,10 @@ export const FINISH = {
   vignette: num(0, 1, 0.01, 0, 'simple', 'Vignette', 'Darken the corners'),
   grain: num(0, 1, 0.01, 0, 'expert', 'Grain', 'Film grain'),
   curve: { type: 'curve', min: 0, max: 1, default: null, tier: 'expert', label: 'Curve', help: 'A tone curve: 256 output values, 0 to 1' } as CurveField,
+  // tool:glow (§5.12.3)
+  glow: num(0, 1, 0.01, 0, 'expert', 'Glow', 'Strongly lit parts spill a soft light around them, as through a lens'),
+  glowSpread: num(0, 1, 0.01, 0.4, 'expert', 'Glow spread', 'How far the glow reaches'),
+  glowWarmth: num(0, 1, 0.01, 0, 'expert', 'Glow warmth', '0 keeps the light\'s colour; higher turns the glow red-orange, as film does'),
 } satisfies Spec;
 
 type Num3 = [number, number, number];
@@ -81,9 +90,15 @@ export interface Doc {
   photo: { width: number; height: number; space: 'srgb' | 'display-p3'; sha256: string; widthMm?: number };
   ambient: { level: number; kelvin: number };
   lights: Light[];
-  relief: { mode: 'off' | 'estimated' | 'measured'; depth: number; shadows: number; ao: number; sheen: number; sheenSharpness: number };
+  relief: {
+    mode: 'off' | 'estimated' | 'measured'; depth: number; shadows: number; ao: number; sheen: number; sheenSharpness: number;
+    bounce: number; roomSide: number; roomFrom: number; // tool:bounce, tool:roomside
+  };
   tone: { protectWhites: boolean; highlightProtect: number; whiteAdapt: number };
-  finish: { exposure: number; contrast: number; warmth: number; saturation: number; vignette: number; grain: number; curve?: number[] };
+  finish: {
+    exposure: number; contrast: number; warmth: number; saturation: number; vignette: number; grain: number; curve?: number[];
+    glow: number; glowSpread: number; glowWarmth: number; // tool:glow
+  };
 }
 export type PhotoInfo = Doc['photo'];
 

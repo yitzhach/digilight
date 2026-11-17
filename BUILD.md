@@ -180,7 +180,7 @@ E   = kappa * E                                                              // 
 
 ```
 c   = photo pixel, linear;  Y = luma(c)
-lit = c * E + sheen terms
+lit = c * E + sheen terms (+ Glow, §5.12.3)
 g   = luma(lit) / Y                       // if Y < 1e-6: out = clamp(lit, 0, 1), skip the rest
 Yl  = min(Y * g, 1)                       // plain multiplication
 Yp  = g <= 1 ? Y * g
@@ -280,6 +280,69 @@ The WebGL preview implements §5.3 to §5.9 in GLSL with float32 and the same ta
 parity documents (Phase 2) at 1024 px: 99% of channel values within 2 levels, none beyond 6.
 Exports, the command line and the MCP server always use the reference.
 
+### 5.12 Light tools (expert trials; each changes nothing at its default)
+
+Rules and state: `docs/light-tools.md`. Each subsection is one tool, which can be removed with
+its subsection. `c` is the photo's linear colour at `P`.
+
+**5.12.1 Bounce light** (`relief.bounce`, with relief on; T6, D-063). Light is thrown back into
+a hollow's shadow by its lit far wall, and room light reaches further into hollows in pale
+paint. The photo's own colour stands for the paint that does the bouncing, so pale paint
+bounces more than dark, and the bounce takes the paint's colour.
+
+```
+room:   V    = 1 - relief.ao * occl(P)                           // §5.4's hollows factor
+        E    = ambient * V / (1 - bounce * c * (1 - V))          // per channel, in place of ambient * V
+each light, added to its contribution (e = intensity * fall * lam * spot, before rel and sh):
+        Topp = relief.depth * horizonAt(P, -l.x, -l.y)           // the horizon on the far side from the light
+        F    = 0.5 * (1 - 1 / sqrt(1 + Topp^2))                  // the share of the sky a lit wall that high fills
+        wall = min(4, (0.70711 * (hypot(l.x, l.y) + l.z) + w) / (l.z + w))   // a 45 degree wall facing the light, as `rel`
+        E   += bounce * F * wall * e * colour(kelvin) * c
+```
+
+On open flat ground `occl` and `Topp` are 0 and nothing changes. `horizonAt(P, -l.x, -l.y)` is
+the layer 16 on from the light's own (`f + 16`, wrapped), the same share between layers.
+
+**5.12.2 Room light from one side** (`relief.roomSide`, `relief.roomFrom`, with relief on; T6,
+D-063). Room light is never even: more of it comes from a window or the ceiling. The side is a
+big soft source at `d = direction(roomFrom, 35 degrees)` (§5.1), wrapping round by 0.5:
+
+```
+side = min(4, max(dot(n, d) + 0.5, 0) / (d.z + 0.5))              // 1 on a flat surface
+E    = ambient * mix(1, side, roomSide) * (the hollows factor of §5.4 or §5.12.1)
+```
+
+It throws no shadow (the hollows factor stands for that) and is not a light: the white balance
+`Wc` and the guard do not change.
+
+**5.12.3 Glow** (`finish.glow`, `finish.glowSpread`, `finish.glowWarmth`; T8, D-064). The parts
+of the lit picture that stand out spill a soft light around them, as a lens does. It is added
+light, like sheen: it joins `lit` in §5.5, so the whites it reaches stay protected, and the
+photo's own pixels are never blurred. Two maps are made per document (they depend on the light,
+not on Glow's three settings):
+
+```
+T    = the guard's thumbnail (§5.7) area-averaged again to long side 256: w x h
+L    = c * E at each pixel of T      // linear, before §5.5; relief off as the guard judges; kappa and Brightness in E
+m    = mean of luma(L) over T
+s    = L * smoothstep(0.8 m, 2.4 m, luma(L))                      // what stands out; nothing if m = 0
+near = gauss(s, 0.012 w),  far = gauss(s, 0.06 w)                 // per channel; sigma in map pixels (relief/blur.ts)
+```
+
+At a picture point, with `uv = (x, y / a)`, both maps are read bilinearly on the stored floats,
+edges clamped (texel centres at `((i + 0.5)/w, (j + 0.5)/h)`):
+
+```
+G    = mix(near(uv), far(uv), glowSpread)
+tint = mix((1, 1, 1), H, glowWarmth),  H = (1, 0.35, 0.1) / luma(1, 0.35, 0.1)     // film halation
+lit += glow * tint * G                                             // §5.5, beside the sheen terms
+```
+
+Because the threshold is relative to the picture's own mean, an even picture hardly glows, a
+pale and a dark picture glow alike, and Brightness does not change which parts glow. The guard
+(§5.7) does not count Glow. The preview is given the same two maps as textures (RGB16F), made
+by the guard's worker for what is shown; while a control is held it draws with the last ones.
+
 ---
 
 ## 6. The document
@@ -295,12 +358,15 @@ Doc {
   lights:  Light[]                         // 0..8; the simple interface offers up to 4
   relief:  { mode: 'off' | 'estimated' | 'measured' = 'off' (S),
              depth: 0..0.03 = 0.004 (S "Depth"),   shadows: 0..1 = 0.6 (S "Shadows"),
-             ao: 0..1 = 0.3 (E),  sheen: 0..1 = 0 (E),  sheenSharpness: 2..8 = 5 (E) }
+             ao: 0..1 = 0.3 (E),  sheen: 0..1 = 0 (E),  sheenSharpness: 2..8 = 5 (E),
+             bounce: 0..1 = 0 (E "Bounce light"),                       light tools, §5.12.1, §5.12.2
+             roomSide: 0..1 = 0 (E "Room light from one side"),  roomFrom: 0..360 = 90 (E) }
   tone:    { protectWhites: boolean = true (E),  highlightProtect: 0..1 = 1 (E),
              whiteAdapt: 0..1 = 0.3 (E) }
   finish:  { exposure: -2..2 = 0 (S "Brightness"),  contrast: -1..1 = 0 (S),
              warmth: -1..1 = 0 (S),  saturation: -1..1 = 0 (S),  vignette: 0..1 = 0 (S),
-             grain: 0..1 = 0 (E),  curve?: number[256] (E) }
+             grain: 0..1 = 0 (E),  curve?: number[256] (E),
+             glow: 0..1 = 0 (E "Glow"),  glowSpread: 0..1 = 0.4 (E),  glowWarmth: 0..1 = 0 (E) }   light tool, §5.12.3
 }
 Light {
   id: string,  on: boolean = true,  kind: 'lamp' | 'sun' = 'lamp'

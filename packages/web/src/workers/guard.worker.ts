@@ -2,16 +2,18 @@
 // once and the guard's factor follows. It needs only the guard's 512 px thumbnail of the photo,
 // which is its own guard thumbnail, so the factor is exactly guardKappa(photo, doc).
 
-import { guardKappa, thumbnail, type Doc, type Image } from 'core';
+import { glowMaps, guardKappa, thumbnail, type Doc, type Image } from 'core';
 
 const GUARD_SIZE = 512; // core guard.ts
 
 let thumb: Image | null = null;
-self.onmessage = (e: MessageEvent<{ photo?: Image; thumb?: Image; id?: number; doc?: Doc }>) => {
+self.onmessage = (e: MessageEvent<{ photo?: Image; thumb?: Image; id?: number; doc?: Doc; glowKappa?: number }>) => {
   const m = e.data;
   if (m.photo) { thumb = thumbnail(m.photo, GUARD_SIZE); return; }
   if (m.thumb) { thumb = m.thumb; return; }
   try {
+    // tool:glow: Glow's maps come from the same thumbnail, so they are exactly glowMaps(photo, doc, kappa).
+    if (m.glowKappa !== undefined) { self.postMessage({ id: m.id, glow: glowMaps(thumb!, m.doc!, m.glowKappa) }); return; }
     self.postMessage({ id: m.id, kappa: guardKappa(thumb!, m.doc!) });
   } catch (err) {
     self.postMessage({ id: m.id, error: err instanceof Error ? err.message : String(err) });

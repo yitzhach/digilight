@@ -10,6 +10,7 @@ import { estimatedRelief, type ReliefMaps } from './relief/index.ts';
 import { crop, resampleRegion, type Image } from './resample.ts';
 import type { Doc } from './schema.ts';
 import { shade } from './tone.ts';
+import { prepareGlow, type GlowMaps } from './tools/glow.ts';
 
 export type { Image } from './resample.ts';
 export interface Region { x: number; y: number; width: number; height: number }
@@ -22,6 +23,8 @@ export interface RenderOptions {
   kappa?: number;
   /** Relief maps for this photo (relief on). Estimated ones are made here if not given. */
   relief?: ReliefMaps;
+  /** Glow's maps, if already made (glowMaps); made here otherwise (tool:glow). */
+  glow?: GlowMaps | null;
 }
 
 /** Output size for a width (default the photo's own). Never wider than the photo: the art is
@@ -32,7 +35,7 @@ export function outputSize(photo: { width: number; height: number }, width?: num
   return { width, height: Math.max(1, Math.round((width * photo.height) / photo.width)) };
 }
 
-const FINISH_NEUTRAL = { exposure: 0, contrast: 0, warmth: 0, saturation: 0, vignette: 0, grain: 0 } as const;
+const FINISH_NEUTRAL = { exposure: 0, contrast: 0, warmth: 0, saturation: 0, vignette: 0, grain: 0, glow: 0 /* tool:glow */ } as const;
 
 /** True when the document leaves every pixel as photographed (§5.5 identity). */
 export function isNeutral(doc: Doc): boolean {
@@ -54,7 +57,8 @@ export function render(photo: Image, doc: Doc, opts: RenderOptions = {}): Image 
   const src = W === photo.width ? crop(photo, r.x, r.y, r.width, r.height) : resampleRegion(photo, W, H, r.x, r.y, r.width, r.height);
   if (isNeutral(doc)) return src;
   const kappa = opts.kappa ?? guardKappa(photo, doc);
-  return shade(src, W, r.x, r.y, prepareLighting(doc, H / W, kappa, reliefFor(photo, doc, opts.relief)), doc.tone.highlightProtect, prepareFinish(doc, H / W));
+  const glow = prepareGlow(photo, doc, kappa, H / W, opts.glow); // tool:glow
+  return shade(src, W, r.x, r.y, prepareLighting(doc, H / W, kappa, reliefFor(photo, doc, opts.relief)), doc.tone.highlightProtect, prepareFinish(doc, H / W), glow);
 }
 
 /** The relief maps a render of this document uses (null with relief off). */
