@@ -5,8 +5,7 @@
 The foot of the page says which update it is; quote that line when something looks wrong.
 
 ## Done
-- Phases 0 to 4: workspace, `core` engine, `gl` preview, `web` app, Texture (estimated); deployed.
-- Phase 5 (D-040 to D-048): True Relief measured from side-lit photos, in core and in the app;
+- Phases 0 to 4: workspace, engine, preview, app, Texture (estimated); deployed. Phase 5 (D-040 to D-048): True Relief measured from side-lit photos, in core and in the app;
   `pnpm gate:relief`: door 0.78 / 0.87, lintel 0.68 / 0.85, lamps 0.80 to 0.87.
 - Review round 4 (D-047), audit (D-049, D-050), Phase 5b (D-051 to D-054), Phase 6a (D-055 to
   D-060), Phase 6b items 3 to 6 (D-061): see CHANGELOG.md.
@@ -15,8 +14,7 @@ The foot of the page says which update it is; quote that line when something loo
   out the photo, the wall (D-072). 150 unit, 44 e2e tests; 190.9 of 250 KB.
 
 ## Waiting on Isaac
-- **Look tuning (6a item 2, D-073):** review round, Spotlight and Dramatic, now / A / B on the door
-  and lintel: https://claude.ai/artifact/JnySRuX73Eao3ioLbC6E7M. Pick one each, or say what is wrong.
+- **Look tuning (D-073):** pick a Spotlight and a Dramatic: https://claude.ai/artifact/JnySRuX73Eao3ioLbC6E7M
 - **Light tools (11-17):** Expert controls on. Texture measured, a raking lamp, Shadows high:
   Bounce light, Room light from one side. Finish, with Spotlight: Glow, Glow spread, Glow
   warmth. Colour filter; Pattern and Edit pattern; Even out (Lights). Grain at full. Wall
