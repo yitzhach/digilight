@@ -4,6 +4,7 @@
 
 import { finishPixel, type Finish } from './finish.ts';
 import { lightingAt, luma, type Lighting } from './light.ts';
+import { glowAt, type Glow } from './tools/glow.ts';
 import type { Image } from './resample.ts';
 import { decodeTable as DEC, encode } from './srgb.ts';
 
@@ -32,19 +33,22 @@ export function toneMap(cr: number, cg: number, cb: number, E: Float64Array, pro
 
 /**
  * Lights `src`, which is the region at (ox, oy) of a picture W pixels wide (§5.1: pixel (i, j)
- * is at x = (i + 0.5) / W, y = (j + 0.5) / W), then finishes it (F; null for none). Returns new
- * RGBA8; alpha is the source's.
+ * is at x = (i + 0.5) / W, y = (j + 0.5) / W), then finishes it (F; null for none). G: Glow's
+ * added light (tool:glow; null for none). Returns new RGBA8; alpha is the source's.
  */
-export function shade(src: Image, W: number, ox: number, oy: number, L: Lighting, protect: number, F: Finish | null = null): Image {
+export function shade(src: Image, W: number, ox: number, oy: number, L: Lighting, protect: number, F: Finish | null = null, G: Glow | null = null): Image {
   const { width: w, height: h, data: s } = src;
   const out = new Uint8ClampedArray(s.length);
-  if (L.unit && !F) { out.set(s); return { data: out, width: w, height: h }; }
-  const E = new Float64Array(3), c = new Float64Array(3), S = L.relief && L.relief.sheen > 0 ? new Float64Array(3) : undefined;
+  if (L.unit && !F && !G) { out.set(s); return { data: out, width: w, height: h }; }
+  const E = new Float64Array(3), c = new Float64Array(3), S = (L.relief && L.relief.sheen > 0) || G ? new Float64Array(3) : undefined; // G: tool:glow
+  const paint = L.relief && L.relief.bounce > 0 ? new Float64Array(3) : undefined; // tool:bounce: the photo's colour there
   for (let j = 0; j < h; j++) {
     const y = (oy + j + 0.5) / W;
     for (let i = 0; i < w; i++) {
       const p = (j * w + i) * 4, x = (ox + i + 0.5) / W;
-      lightingAt(L, x, y, E, S);
+      if (paint) { paint[0] = DEC[s[p]!]!; paint[1] = DEC[s[p + 1]!]!; paint[2] = DEC[s[p + 2]!]!; } // tool:bounce
+      lightingAt(L, x, y, E, S, paint);
+      if (G) glowAt(G, x, y, S!); // tool:glow: light spilled from the strongly lit parts
       out[p + 3] = s[p + 3]!;
       if (E[0] === 1 && E[1] === 1 && E[2] === 1 && (!S || (S[0] === 0 && S[1] === 0 && S[2] === 0))) {
         if (F) finishPixel(F, DEC[s[p]!]!, DEC[s[p + 1]!]!, DEC[s[p + 2]!]!, x, y, out, p);

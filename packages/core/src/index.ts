@@ -13,6 +13,10 @@ export { DOC_LATEST, migrate } from './migrate.ts';
 export { readSettings, settingsOf, SETTINGS_APP, withSettings, type Settings } from './settings.ts';
 export { describe, neutralDoc, parseDoc, docSchema, type Setting } from './schema.ts';
 export { defaultDoc, defaultLight, type Doc, type Light, type PhotoInfo } from './fields.ts';
+// Light tools (§5.12): trials, each removable in one commit.
+export { dropRetired, RETIRED, TOOLS, type Tool } from './tools/index.ts';
+export { ROOM_ELEVATION, ROOM_WRAP } from './tools/bounce.ts';
+export { glowKey, glowMaps, glowTint, type GlowMaps } from './tools/glow.ts';
 
 /** Document format version (BUILD.md §6). */
 export const DOC_VERSION = 2;

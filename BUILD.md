@@ -21,10 +21,12 @@ picks a look or moves lamps, and saves a picture that looks lit that way.
 **Promises** (every design choice serves these; a change that breaks one is wrong):
 
 1. **The art is never repainted.** Every output pixel is the photo's own pixel multiplied by
-   computed light. The lighting never generates, blurs or sharpens anything. With no light
-   changed, the output is the photo, bit for bit. Finish (§5.9) changes tone and colour one
-   pixel at a time, and only when the artist moves it. The photo is resampled in two places
-   only, both the artist's choice: a smaller export, and Crop and straighten (Phase 6b).
+   computed light. The lighting never generates anything, and never blurs or sharpens the
+   art's own pixels. With no light changed, the output is the photo, bit for bit. Finish
+   (§5.9) changes tone and colour one pixel at a time, and only when the artist moves it. A
+   light tool (§5.12) may add light on top, soft light included (Glow), never replace, move or
+   filter a pixel of the photo (D-062). The photo is resampled in two places only, both the
+   artist's choice: a smaller export, and Crop and straighten (Phase 6b).
 2. **It works on any photo.** The Light layer needs no knowledge of the surface, so it cannot
    produce artifacts. Relief is a second, optional layer.
 3. **It is fast on a 2014 Retina 5K iMac** (macOS Big Sur 11.7.10, Radeon R9 M290X 2 GB,
@@ -64,6 +66,8 @@ export.
   label. Expert controls are generated from the schema, never hand-built.
 - **`core` is pure.** No DOM, no Node APIs, no `Math.sin/cos/tan/atan/atan2/pow/exp/log*` (use
   `dmath.ts`, §5.10). A test greps for them.
+- **Light tools are trials** (§5.12, `docs/light-tools.md`): expert tier, off by default to the
+  byte, one file per package with its hooks marked `tool:<id>`, removable in one commit (D-062).
 - Files stay under 300 lines; one job per file.
 - TypeScript strict. `pnpm typecheck && pnpm test` must pass before any commit; check exit codes.
 - Never test against client data. Fixtures are Isaac's own photos (`fixtures/`).
@@ -86,10 +90,12 @@ digilight/
       src/  schema.ts  dmath.ts  srgb.ts  kelvin.ts  geometry.ts  light.ts  tone.ts  guard.ts
             render.ts  finish.ts  looks.ts  metrics.ts  commands.ts  resample.ts
             relief/  estimate.ts  horizon.ts  measure.ts  lineup.ts  axis.ts  measured.ts  (+ parts, D-034, D-040)
+            tools/   index.ts (the list)  bounce.ts  glow.ts  (light tools, §5.12)
       test/
     gl/     WebGL2 preview:  context.ts  preview.ts  horizon-gpu.ts  shaders/*.glsl.ts
     web/    the app:  main.tsx  state.ts  canvas/*  panel/*  io/*  workers/*
     mcp/    Node:  server.ts  cli.ts  image-io.ts        (Phase 7)
+  docs/     bakeoff.md  light-tools.md (the light tools: rules, state, a build spec for each)
   fixtures/ photos copied from v1 (testdata/photos, samples) + README
   bench/    relief-score.ts (v1 tools/realref/score.py in TypeScript), bakeoff/ (python, Phase 10)
   e2e/      Playwright: smoke, parity (preview against reference), bench page
@@ -174,7 +180,7 @@ E   = kappa * E                                                              // 
 
 ```
 c   = photo pixel, linear;  Y = luma(c)
-lit = c * E + sheen terms
+lit = c * E + sheen terms (+ Glow, §5.12.3)
 g   = luma(lit) / Y                       // if Y < 1e-6: out = clamp(lit, 0, 1), skip the rest
 Yl  = min(Y * g, 1)                       // plain multiplication
 Yp  = g <= 1 ? Y * g
@@ -274,6 +280,69 @@ The WebGL preview implements §5.3 to §5.9 in GLSL with float32 and the same ta
 parity documents (Phase 2) at 1024 px: 99% of channel values within 2 levels, none beyond 6.
 Exports, the command line and the MCP server always use the reference.
 
+### 5.12 Light tools (expert trials; each changes nothing at its default)
+
+Rules and state: `docs/light-tools.md`. Each subsection is one tool, which can be removed with
+its subsection. `c` is the photo's linear colour at `P`.
+
+**5.12.1 Bounce light** (`relief.bounce`, with relief on; T6, D-063). Light is thrown back into
+a hollow's shadow by its lit far wall, and room light reaches further into hollows in pale
+paint. The photo's own colour stands for the paint that does the bouncing, so pale paint
+bounces more than dark, and the bounce takes the paint's colour.
+
+```
+room:   V    = 1 - relief.ao * occl(P)                           // §5.4's hollows factor
+        E    = ambient * V / (1 - bounce * c * (1 - V))          // per channel, in place of ambient * V
+each light, added to its contribution (e = intensity * fall * lam * spot, before rel and sh):
+        Topp = relief.depth * horizonAt(P, -l.x, -l.y)           // the horizon on the far side from the light
+        F    = 0.5 * (1 - 1 / sqrt(1 + Topp^2))                  // the share of the sky a lit wall that high fills
+        wall = min(4, (0.70711 * (hypot(l.x, l.y) + l.z) + w) / (l.z + w))   // a 45 degree wall facing the light, as `rel`
+        E   += bounce * F * wall * e * colour(kelvin) * c
+```
+
+On open flat ground `occl` and `Topp` are 0 and nothing changes. `horizonAt(P, -l.x, -l.y)` is
+the layer 16 on from the light's own (`f + 16`, wrapped), the same share between layers.
+
+**5.12.2 Room light from one side** (`relief.roomSide`, `relief.roomFrom`, with relief on; T6,
+D-063). Room light is never even: more of it comes from a window or the ceiling. The side is a
+big soft source at `d = direction(roomFrom, 35 degrees)` (§5.1), wrapping round by 0.5:
+
+```
+side = min(4, max(dot(n, d) + 0.5, 0) / (d.z + 0.5))              // 1 on a flat surface
+E    = ambient * mix(1, side, roomSide) * (the hollows factor of §5.4 or §5.12.1)
+```
+
+It throws no shadow (the hollows factor stands for that) and is not a light: the white balance
+`Wc` and the guard do not change.
+
+**5.12.3 Glow** (`finish.glow`, `finish.glowSpread`, `finish.glowWarmth`; T8, D-064). The parts
+of the lit picture that stand out spill a soft light around them, as a lens does. It is added
+light, like sheen: it joins `lit` in §5.5, so the whites it reaches stay protected, and the
+photo's own pixels are never blurred. Two maps are made per document (they depend on the light,
+not on Glow's three settings):
+
+```
+T    = the guard's thumbnail (§5.7) area-averaged again to long side 256: w x h
+L    = c * E at each pixel of T      // linear, before §5.5; relief off as the guard judges; kappa and Brightness in E
+m    = mean of luma(L) over T
+s    = L * smoothstep(0.8 m, 2.4 m, luma(L))                      // what stands out; nothing if m = 0
+near = gauss(s, 0.012 w),  far = gauss(s, 0.06 w)                 // per channel; sigma in map pixels (relief/blur.ts)
+```
+
+At a picture point, with `uv = (x, y / a)`, both maps are read bilinearly on the stored floats,
+edges clamped (texel centres at `((i + 0.5)/w, (j + 0.5)/h)`):
+
+```
+G    = mix(near(uv), far(uv), glowSpread)
+tint = mix((1, 1, 1), H, glowWarmth),  H = (1, 0.35, 0.1) / luma(1, 0.35, 0.1)     // film halation
+lit += glow * tint * G                                             // §5.5, beside the sheen terms
+```
+
+Because the threshold is relative to the picture's own mean, an even picture hardly glows, a
+pale and a dark picture glow alike, and Brightness does not change which parts glow. The guard
+(§5.7) does not count Glow. The preview is given the same two maps as textures (RGB16F), made
+by the guard's worker for what is shown; while a control is held it draws with the last ones.
+
 ---
 
 ## 6. The document
@@ -289,12 +358,15 @@ Doc {
   lights:  Light[]                         // 0..8; the simple interface offers up to 4
   relief:  { mode: 'off' | 'estimated' | 'measured' = 'off' (S),
              depth: 0..0.03 = 0.004 (S "Depth"),   shadows: 0..1 = 0.6 (S "Shadows"),
-             ao: 0..1 = 0.3 (E),  sheen: 0..1 = 0 (E),  sheenSharpness: 2..8 = 5 (E) }
+             ao: 0..1 = 0.3 (E),  sheen: 0..1 = 0 (E),  sheenSharpness: 2..8 = 5 (E),
+             bounce: 0..1 = 0 (E "Bounce light"),                       light tools, §5.12.1, §5.12.2
+             roomSide: 0..1 = 0 (E "Room light from one side"),  roomFrom: 0..360 = 90 (E) }
   tone:    { protectWhites: boolean = true (E),  highlightProtect: 0..1 = 1 (E),
              whiteAdapt: 0..1 = 0.3 (E) }
   finish:  { exposure: -2..2 = 0 (S "Brightness"),  contrast: -1..1 = 0 (S),
              warmth: -1..1 = 0 (S),  saturation: -1..1 = 0 (S),  vignette: 0..1 = 0 (S),
-             grain: 0..1 = 0 (E),  curve?: number[256] (E) }
+             grain: 0..1 = 0 (E),  curve?: number[256] (E),
+             glow: 0..1 = 0 (E "Glow"),  glowSpread: 0..1 = 0.4 (E),  glowWarmth: 0..1 = 0 (E) }   light tool, §5.12.3
 }
 Light {
   id: string,  on: boolean = true,  kind: 'lamp' | 'sun' = 'lamp'
@@ -750,10 +822,23 @@ only, its licence is research-only; fal PATINA needs a paid key and Isaac's OK).
 fixture pieces **and** Isaac prefers it by eye. Per answer 2c it would run in the browser where
 it can and on a server otherwise.
 
+### Light tools (beside the phases; from the audit of 11-17, D-062)
+
+Expert settings that make the light itself better, each a trial that can be removed in one
+commit. The rules, the state of each and a build spec for each are in `docs/light-tools.md`;
+the maths of those built is §5.12. One tool per chat, in any gap between phases; a tool never
+blocks a phase. Built: T6 softer shadows, T8 Glow. To build, on Opus 5.5: T3a colour filter,
+T3b light patterns, T2 the wall, T4 even out the photo, T7 16-bit export, and (hard: high
+effort, the gate agreed first) T1 gloss map, T5 more side-lit shots, T9 the portrait experiment.
+Isaac runs them all on Opus 5.5 (11-17, D-065).
+
+**Gate, per tool:** its tests and parity pass with every older golden untouched; Isaac tries
+it and says keep, tune or remove.
+
 ### Later (not in 2.0)
 
-A wall behind the piece with the light's pool and the piece's own drop shadow; window, blinds
-and leaf patterns on a light; 16-bit and TIFF export; Photoshop or Lightroom plugin. From the
+A wall behind the piece, light patterns and 16-bit export are now light tools T2, T3b and T7
+(`docs/light-tools.md`). TIFF export; Photoshop or Lightroom plugin. From the
 audit (D-049): a curve editor; a suggested quadrilateral for Crop; print size written into the
 exported file (from `photo.widthMm`); smaller exports averaged in linear light (they average
 the 8-bit values, as v1 did, so fine bright detail comes out a little dark; full size is exact).
@@ -809,6 +894,8 @@ address until Isaac says 2.0 has replaced it.
 | 8, 9 Hosted, sign-in, assistant | Opus 5.5, medium, after a written plan | touches the platform and money |
 | 8b Ready for a first customer | Sonnet 5.5 | pages and words |
 | **10 Trained model** | **Fable 5.2, high (or ultracode)** | research with an honest gate |
+| Light tools T2, T3a, T3b, T4, T7 | Opus 5.5: high for T2 and T3b, medium for the rest | a written spec each (`docs/light-tools.md`); T2 and T3b change both renderers |
+| Light tools T1, T5, T9 | Opus 5.5, high (Isaac, D-065; first marked for Fable 5.2) | they change how the surface is measured, or are research: agree the gate first |
 
 ## 14. Session prompt
 

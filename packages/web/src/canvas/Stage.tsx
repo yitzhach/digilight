@@ -6,7 +6,7 @@ import { neutralDoc } from 'core';
 import { createPreview, type Preview } from 'gl';
 import { useEffect, useRef } from 'preact/hooks';
 import { gpuReady, reliefInput } from '../relief.ts';
-import { before, kappa, live, photo, say, shown } from '../state.ts';
+import { before, glow, kappa, live, photo, say, shown } from '../state.ts';
 import { Handles } from './Handles.tsx';
 import { createScale, SETTLE_MS } from './scale.ts';
 import { clampPan, minZoom, previewZoom, type Geometry } from './view.ts';
@@ -33,7 +33,7 @@ let settling = false, settleTimer = 0;
 function apply(p: Preview, q: number): void {
   const d = shown.value, g = geo.value;
   if (!d) return;
-  p.setDoc(before.value ? neutralDoc(d.photo) : d, { kappa: before.value ? 1 : kappa.value });
+  p.setDoc(before.value ? neutralDoc(d.photo) : d, { kappa: before.value ? 1 : kappa.value, glow: glow.value }); // glow: tool:glow
   p.setView({ zoom: previewZoom(g), pan: g.pan });
   p.setScale(q);
 }
@@ -87,7 +87,7 @@ export function Stage() {
         p.setPhoto(ph.image, ph.space);
       }
       // Read every signal the picture depends on, so any change redraws it.
-      void shown.value; void before.value; void kappa.value; void geo.value;
+      void shown.value; void before.value; void kappa.value; void geo.value; void glow.value;
       const isLive = live.value;
       if (wasLive && !isLive) {
         settling = true;

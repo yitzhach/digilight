@@ -4,8 +4,10 @@
 
 import { DEG, dcos, dexp2, dpow, dsin } from './dmath.ts';
 import { colour, type RGB } from './kelvin.ts';
+import { K } from './relief/horizon.ts';
 import { layerOf, ReliefSampler, type ReliefMaps } from './relief/sample.ts';
 import type { Doc, Light } from './schema.ts';
+import { openness, ROOM_ELEVATION, roomLight, wallLight, wallShare } from './tools/bounce.ts';
 
 export const luma = (r: number, g: number, b: number): number => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
@@ -29,7 +31,11 @@ interface Lamp {
   intensity: number; r: number; g: number; b: number; // colour times the document's factor
   k0: number; kt: number; // a sun's horizon layer
 }
-interface Relief { s: ReliefSampler | null; depth: number; shadows: number; ao: number; sheen: number; sharp: number }
+interface Relief {
+  s: ReliefSampler | null; depth: number; shadows: number; ao: number; sheen: number; sharp: number;
+  bounce: number;                         // tool:bounce (§5.12.1)
+  roomSide: number; room: RGB | null;     // tool:roomside (§5.12.2): the side's direction, null when 0
+}
 
 export interface Lighting {
   /** Ambient (and, without relief, every sun: constant over the picture), times the factor. */
@@ -59,7 +65,10 @@ export function prepareLighting(doc: Doc, a: number, kappa: number, maps?: Relie
   const f = [0, 1, 2].map((c) => k / (wl > 0 ? 1 + (Wc[c]! / wl - 1) * wa : 1)) as RGB;
 
   const relief = R.mode !== 'off' && maps
-    ? { s: maps === true ? null : new ReliefSampler(maps), depth: R.depth, shadows: R.shadows, ao: R.ao, sheen: R.sheen, sharp: dexp2(R.sheenSharpness) }
+    ? {
+      s: maps === true ? null : new ReliefSampler(maps), depth: R.depth, shadows: R.shadows, ao: R.ao, sheen: R.sheen, sharp: dexp2(R.sheenSharpness),
+      bounce: R.bounce, roomSide: R.roomSide, room: R.roomSide > 0 ? direction(R.roomFrom, ROOM_ELEVATION) : null, // tool:bounce, tool:roomside
+    }
     : null;
   const base: RGB = [amb[0] * f[0], amb[1] * f[1], amb[2] * f[2]];
   const lamps: Lamp[] = [];
@@ -95,17 +104,22 @@ function prepareSun(l: Light, col: RGB): Lamp {
   };
 }
 
-/** E at picture point (x, y) into out[0..2]; with relief, sheen (added light) into spec[0..2]. */
-export function lightingAt(L: Lighting, x: number, y: number, out: Float64Array, spec?: Float64Array): void {
+/** E at picture point (x, y) into out[0..2]; with relief, sheen (added light) into spec[0..2].
+ *  `c`: the photo's linear colour there, which Bounce light needs (tool:bounce). */
+export function lightingAt(L: Lighting, x: number, y: number, out: Float64Array, spec?: Float64Array, c?: ArrayLike<number>): void {
   let r = L.base[0], g = L.base[1], b = L.base[2];
   const R = L.relief as (Relief & { s: ReliefSampler }) | null;
   let nx = 0, ny = 0, nz = 1, sr = 0, sg = 0, sb = 0;
+  const bounce = R && c && R.bounce > 0 ? R.bounce : 0; // tool:bounce
   if (R) {
     R.s.set(x, y);
     const a = 1 - R.ao * R.s.occl(R.depth);
-    r *= a; g *= a; b *= a;
     const px = -R.depth * R.s.p, py = -R.depth * R.s.q, inv = 1 / Math.sqrt(px * px + py * py + 1);
     nx = px * inv; ny = py * inv; nz = inv;
+    let ar = a, ag = a, ab = a;
+    if (bounce > 0) { ar = openness(a, c![0]!, bounce); ag = openness(a, c![1]!, bounce); ab = openness(a, c![2]!, bounce); } // tool:bounce
+    if (R.room) { const k = 1 + (roomLight(nx, ny, nz, R.room) - 1) * R.roomSide; ar *= k; ag *= k; ab *= k; } // tool:roomside
+    r *= ar; g *= ag; b *= ab;
   }
   for (const p of L.lamps) {
     let lx: number, ly: number, lz: number, e: number, omega: number, lam = 1;
@@ -125,9 +139,16 @@ export function lightingAt(L: Lighting, x: number, y: number, out: Float64Array,
       const w = Math.min(omega, 0.5);
       const rel = Math.min(4, Math.max(0, nx * lx + ny * ly + nz * lz + w) / (lz + w));
       const tanE = lz / Math.max(Math.sqrt(lx * lx + ly * ly), 1e-6);
-      const T = R.depth * (p.sun ? R.s.horizonAt(p.k0, p.kt) : R.s.horizon(lx, ly));
+      let k0 = p.k0, kt = p.kt; // the light's layer in the horizon table (a sun's is worked out once)
+      if (!p.sun) { const lay = layerOf(lx, ly); k0 = lay[0]; kt = lay[1]; }
+      const T = R.depth * R.s.horizonAt(k0, kt);
       const pw = Math.max(omega, 0.004) * (1 + tanE * tanE);
       const sh = 1 - R.shadows * (1 - smoothstep(-pw, pw, tanE - T));
+      if (bounce > 0) { // tool:bounce: the far side's wall, lit, throws light back (e is still the flat ground's)
+        const Topp = R.depth * R.s.horizonAt((k0 + K / 2) % K, kt);
+        const eb = bounce * wallShare(Topp) * wallLight(Math.sqrt(lx * lx + ly * ly), lz, w) * e;
+        r += eb * p.r * c![0]!; g += eb * p.g * c![1]!; b += eb * p.b * c![2]!;
+      }
       if (R.sheen > 0) { // intensity * fall * spot is e / lam
         const hx = lx, hy = ly, hz = lz + 1, hl = Math.sqrt(hx * hx + hy * hy + hz * hz);
         const c = Math.max((nx * hx + ny * hy + nz * hz) / hl, 0);

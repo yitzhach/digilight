@@ -8,7 +8,8 @@ test('a new document is neutral and complete', () => {
   expect(d.ambient).toEqual({ level: 1, kelvin: 6500 });
   expect(d.lights).toEqual([]);
   expect(d.relief.mode).toBe('off');
-  expect(d.finish).toEqual({ exposure: 0, contrast: 0, warmth: 0, saturation: 0, vignette: 0, grain: 0 });
+  // toMatchObject: a light tool (§5.12) may add settings to a group; tools.test.ts checks those.
+  expect(d.finish).toMatchObject({ exposure: 0, contrast: 0, warmth: 0, saturation: 0, vignette: 0, grain: 0 });
   expect(d.tone).toEqual({ protectWhites: true, highlightProtect: 1, whiteAdapt: 0.3 });
 });
 

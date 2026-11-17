@@ -24,7 +24,8 @@ test('Finish: the sliders set the document, undo steps back, the export is the r
   const finish = page.locator('section', { has: page.getByRole('heading', { name: 'Finish' }) });
   for (const [label, t] of [['Brightness', '25'], ['Contrast', '40'], ['Warmth', '-30'], ['Saturation', '20'], ['Vignette', '60']] as const)
     await finish.getByLabel(label).fill(t);
-  expect((await getDoc()).finish).toEqual({ exposure: 0.5, contrast: 0.4, warmth: -0.3, saturation: 0.2, vignette: 0.6, grain: 0 });
+  // toMatchObject: a light tool (§5.12) may add settings to Finish; e2e/tools.spec.ts checks those.
+  expect((await getDoc()).finish).toMatchObject({ exposure: 0.5, contrast: 0.4, warmth: -0.3, saturation: 0.2, vignette: 0.6, grain: 0 });
   await page.evaluate(() => (window as any).digilight.undo());
   expect((await getDoc()).finish.vignette).toBe(0);
   await page.evaluate(() => (window as any).digilight.redo());

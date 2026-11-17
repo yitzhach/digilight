@@ -1,7 +1,7 @@
 // pool.ts — a few render workers. The photo goes to each once per photo: as shared memory when
 // the page is cross-origin isolated (all workers read one copy), else as one copy to one worker.
 
-import type { Blurred, Channels, Doc, Height, HorizonInput, Image, MeasuredHeight } from 'core';
+import type { Blurred, Channels, Doc, GlowMaps, Height, HorizonInput, Image, MeasuredHeight } from 'core';
 import { BLURS, K, outputSize, reliefSize, thumbnail } from 'core';
 import type { Reply, Request } from './protocol.ts';
 
@@ -170,12 +170,15 @@ export function lookThumbs(doc: Doc, width: number, flip: boolean, onThumb: (loo
 
 let guard: Worker | null = null, guardId = 0;
 const guardWaiting = new Map<number, (k: number) => void>();
+const glowWaiting = new Map<number, (m: GlowMaps | null) => void>(); // tool:glow
 
 /** Gives the guard worker the photo (call once per photo): the shared photo, from which it makes
  *  its 512 px thumbnail itself, or else the thumbnail made here. */
 export function setGuardPhoto(p: Image, sharedPhoto: Image | null): void {
   guard ??= new Worker(new URL('./guard.worker.ts', import.meta.url), { type: 'module' });
-  guard.onmessage = (e: MessageEvent<{ id: number; kappa?: number; error?: string }>) => {
+  guard.onmessage = (e: MessageEvent<{ id: number; kappa?: number; glow?: GlowMaps; error?: string }>) => {
+    const glowDone = glowWaiting.get(e.data.id); // tool:glow
+    if (glowDone) { glowWaiting.delete(e.data.id); glowDone(e.data.glow ?? null); return; } // tool:glow
     const done = guardWaiting.get(e.data.id);
     guardWaiting.delete(e.data.id);
     done?.(e.data.kappa ?? 1);
@@ -189,4 +192,10 @@ export function setGuardPhoto(p: Image, sharedPhoto: Image | null): void {
 export function kappaFor(doc: Doc): Promise<number> {
   const id = ++guardId;
   return new Promise((resolve) => { guardWaiting.set(id, resolve); guard!.postMessage({ id, doc }); });
+}
+
+/** tool:glow — glowMaps(photo, doc, kappa), made by the guard worker (null if it could not). */
+export function glowFor(doc: Doc, kappa: number): Promise<GlowMaps | null> {
+  const id = ++guardId;
+  return new Promise((resolve) => { glowWaiting.set(id, resolve); guard!.postMessage({ id, doc, glowKappa: kappa }); });
 }

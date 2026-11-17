@@ -1,13 +1,13 @@
 // state.ts — the app's state as signals. The document changes only through `cmd` (core's
 // commands, BUILD.md §3); `preview` shows a not-yet-committed document while a control is held.
 
-import { batch, computed, signal } from '@preact/signals';
-import { createCommands, lookOf, type Doc, type LookMatch, type MeasuredHeight } from 'core';
+import { batch, computed, effect, signal } from '@preact/signals';
+import { createCommands, glowKey, lookOf, type Doc, type GlowMaps, type LookMatch, type MeasuredHeight } from 'core';
 import { decodePhoto, type Photo } from './io/open.ts';
 import { loadSaved, saveDoc, saveMeasured, savePhoto } from './io/store.ts';
 import { resetRelief, startRelief } from './relief.ts';
 import { resetTrueRelief } from './truerelief.ts';
-import { kappaFor, setGuardPhoto, setPoolPhoto } from './workers/pool.ts';
+import { glowFor, kappaFor, setGuardPhoto, setPoolPhoto } from './workers/pool.ts';
 
 export const cmd = createCommands();
 
@@ -19,6 +19,8 @@ export const shown = signal<Doc | null>(null);
 /** A control is held: draw at a reduced scale and keep the guard's last factor (§9). */
 export const live = signal(false);
 export const kappa = signal(1);
+/** tool:glow — Glow's maps for the picture shown, or null (Glow off, or not made yet). */
+export const glow = signal<GlowMaps | null>(null);
 export const selected = signal<string | null>(null);
 export const expert = signal(false);
 export const before = signal(false);
@@ -34,6 +36,23 @@ export const look = computed(() => (doc.value ? lookOf(doc.value, lastTap.value)
 
 export function say(text: string, error = false): void { notice.value = { text, error }; }
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+// tool:glow — the maps follow what is shown, made by the guard's worker one request at a time;
+// the picture is drawn with the last ones until the next arrive (as with the guard's factor).
+let glowBusy = false, glowFailed = '';
+const glowTick = signal(0);
+effect(() => {
+  void glowTick.value;
+  const d = shown.value, k = kappa.value, ph = photo.value, cur = glow.peek();
+  if (!d || !ph || !(d.finish.glow > 0)) { if (cur) glow.value = null; return; }
+  const key = glowKey(d, k);
+  if (glowBusy || cur?.key === key || glowFailed === key) return;
+  glowBusy = true;
+  void glowFor(d, k).then((m) => {
+    glowBusy = false; glowFailed = m ? '' : key; // a failure is not asked for again until the light changes
+    batch(() => { if (photo.peek() === ph) glow.value = m; glowTick.value++; });
+  });
+});
 
 let saveTimer = 0;
 function sync(): void {
@@ -84,7 +103,7 @@ export async function openFile(blob: Blob, name?: string, saved?: Doc | null, me
       }
     }
     setGuardPhoto(p.image, setPoolPhoto(p.image));
-    batch(() => { photo.value = p; kappa.value = 1; lastTap.value = { id: 'original', strength: 1, flip: false }; notice.value = lost ? { text: lost, error: true } : null; });
+    batch(() => { photo.value = p; kappa.value = 1; glow.value = null; lastTap.value = { id: 'original', strength: 1, flip: false }; notice.value = lost ? { text: lost, error: true } : null; });
     sync();
     if (keep) void savePhoto(blob, p.name).then(() => { if (measured) return saveMeasured(measured); }).catch(() => {});
   } catch (e) {

@@ -39,9 +39,10 @@ const api = {
     };
     return { width: h.width, height: h.height, frames, ms, tmax: [gpu.tmax, cpu.tmax], table: cmp(gpu.table, cpu.table), ao: cmp(gpu.ao, cpu.ao) };
   },
-  draw(doc: Doc, kappa: number, opts: { scale?: number; view?: Partial<View> } = {}) {
-    const p = preview!;
-    p.setDoc(doc, { kappa });
+  /** `glow` (tool:glow): Glow's maps as made in Node (floats as base64), so the preview adds the reference's own. */
+  draw(doc: Doc, kappa: number, opts: { scale?: number; view?: Partial<View>; glow?: { width: number; height: number; near: string; far: string } } = {}) {
+    const p = preview!, g = opts.glow, f32 = (b: string) => new Float32Array(toBytes(b).buffer);
+    p.setDoc(doc, { kappa, ...(g ? { glow: { width: g.width, height: g.height, near: f32(g.near), far: f32(g.far), key: '' } } : {}) });
     p.setScale(opts.scale ?? 1);
     p.setView({ zoom: 1, pan: [0.5, 0.5], ...opts.view });
     const gl = canvas.getContext('webgl2')!;

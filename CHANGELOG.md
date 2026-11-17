@@ -59,3 +59,10 @@
 
 ## Phase 6b, items 3 to 6: projects
 - Save project and Open project (`.digilight`, also from the Open button), recent projects, old files keep opening (`core/migrate.ts`, a committed project), and Apply to more photos as one zip (D-061). Crop (item 1) and Versions (item 2) still to do.
+
+## Light tools: the audit, softer shadows, Glow
+- An audit against other relighting tools and what it found missing; `docs/light-tools.md` is the handoff: the rules for a tool that can be removed in one commit, and a build spec for each tool still to build (D-062).
+- Softer shadows (expert, in Texture): Bounce light, Room light from one side (D-063).
+- Glow (expert, in Finish): Glow, Glow spread, Glow warmth (D-064).
+- Both are off by default and change no picture until used; parity and goldens for each.
+

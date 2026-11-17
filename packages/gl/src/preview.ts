@@ -1,8 +1,9 @@
 // preview.ts — the interactive picture (BUILD.md Phase 2): core's lighting drawn by WebGL2 in
 // one pass. The reference renderer stays the truth; this imitates it within §5.11.
 
-import { guardKappa, prepareFinish, prepareLighting, type Doc, type Finish, type Height, type HorizonInput, type Image, type Lighting, type Space } from 'core';
+import { glowMaps, glowTint, guardKappa, prepareFinish, prepareLighting, type Doc, type Finish, type GlowMaps, type Height, type HorizonInput, type Image, type Lighting, type Space } from 'core';
 import { createContext, photoTexture, program, useSpace } from './context.ts';
+import { glowTextures, type GlowTextures } from './glow-gpu.ts';
 import { gpuHorizon, gpuTmaxSupported, readHorizon, uploadHorizon, type ReliefTextures } from './horizon-gpu.ts';
 import { FRAGMENT, LAMP_VEC4S, MAX_LAMPS, VERTEX } from './shaders/light.glsl.ts';
 
@@ -16,8 +17,9 @@ export interface View {
 export interface Preview {
   /** The photo (RGBA8, as decoded) and its colour space. */
   setPhoto(photo: Image, space?: Space): void;
-  /** The document; `kappa` from guardKappa if already known (computed here otherwise). */
-  setDoc(doc: Doc, opts?: { kappa?: number }): void;
+  /** The document; `kappa` from guardKappa if already known (computed here otherwise). `glow`:
+   *  Glow's maps if already made, null to draw without until they are (made here if left out). */
+  setDoc(doc: Doc, opts?: { kappa?: number; glow?: GlowMaps | null }): void;
   setView(view: Partial<View>): void;
   /** Draw at a reduced scale q (0 < q <= 1) while the pointer is down (§9). */
   setScale(q: number): void;
@@ -62,6 +64,8 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
     protect: loc('u_protect'), lamps: loc('u_lamps'), lamp: loc('u_lamp'),
     relief: loc('u_relief'), slopes: loc('u_slopes'), horizon: loc('u_horizon'), aoTex: loc('u_aoTex'), rAspect: loc('u_rAspect'),
     tmax: loc('u_tmax'), depth: loc('u_depth'), shadows: loc('u_shadows'), ao: loc('u_ao'), sheen: loc('u_sheen'), sharp: loc('u_sharp'),
+    bounce: loc('u_bounce'), roomSide: loc('u_roomSide'), room: loc('u_room'), // tool:bounce, tool:roomside
+    glow: loc('u_glow'), glowNear: loc('u_glowNear'), glowFar: loc('u_glowFar'), glowTint: loc('u_glowTint'), glowMix: loc('u_glowMix'), // tool:glow
     finish: loc('u_finish'), warm: loc('u_warm'), contrast: loc('u_contrast'), saturation: loc('u_saturation'),
     vignette: loc('u_vignette'), grain: loc('u_grain'), vig: loc('u_vig'), hasCurve: loc('u_hasCurve'), curve: loc('u_curve'),
   };
@@ -73,6 +77,7 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
   let photo: Image | null = null, tex: WebGLTexture | null = null, aspect = 1;
   let doc: Doc | null = null, lighting: Lighting | null = null, lampData = packLamps([]), kappa = 1, fin: Finish | null = null;
   let view: View = { zoom: 1, pan: [0.5, 0.5] }, q = 1;
+  let glow: GlowTextures | null = null; // tool:glow
   let fbo: WebGLFramebuffer | null = null, fboTex: WebGLTexture | null = null, fboW = 0, fboH = 0;
 
   function relight(): void {
@@ -114,7 +119,16 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
       gl.uniform1f(U.aspect, aspect);
       gl.uniform1f(U.scale, view.zoom * Math.min(tw, th / aspect));
       gl.uniform2f(U.centre, view.pan[0], view.pan[1] * aspect);
-      gl.uniform1i(U.unit, lighting.unit && kappa === 1 && !fin ? 1 : 0);
+      const glowing = glow !== null && doc!.finish.glow > 0; // tool:glow
+      gl.uniform1i(U.unit, lighting.unit && kappa === 1 && !fin && !glowing ? 1 : 0);
+      gl.uniform1i(U.glow, glowing ? 1 : 0); gl.uniform1i(U.glowNear, 4); gl.uniform1i(U.glowFar, 5); // tool:glow
+      if (glowing) { // tool:glow
+        const t = glowTint(doc!);
+        gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, glow!.near);
+        gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, glow!.far);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.uniform3f(U.glowTint, t[0], t[1], t[2]); gl.uniform1f(U.glowMix, doc!.finish.glowSpread);
+      }
       gl.uniform1i(U.finish, fin ? 1 : 0);
       if (fin) {
         const w = fin.warm ?? [1, 1, 1];
@@ -140,6 +154,8 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
         gl.uniform1f(U.rAspect, relief.width / relief.height);
         gl.uniform1f(U.tmax, relief.tmax); gl.uniform1f(U.depth, R.depth); gl.uniform1f(U.shadows, R.shadows);
         gl.uniform1f(U.ao, R.ao); gl.uniform1f(U.sheen, R.sheen); gl.uniform1f(U.sharp, 2 ** R.sheenSharpness);
+        const room = lighting.relief!.room ?? [0, 0, 1]; // tool:roomside
+        gl.uniform1f(U.bounce, R.bounce); gl.uniform1f(U.roomSide, R.roomSide); gl.uniform3f(U.room, room[0], room[1], room[2]); // tool:bounce, tool:roomside
       }
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
@@ -162,6 +178,8 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
       doc = d;
       if (!photo) aspect = d.photo.height / d.photo.width;
       kappa = opts.kappa ?? (photo && d.tone.protectWhites ? guardKappa(photo, d) : 1);
+      const maps = !(d.finish.glow > 0) ? null : opts.glow !== undefined ? opts.glow : photo ? glowMaps(photo, d, kappa) : null; // tool:glow
+      glow = glowTextures(gl, maps, glow); // tool:glow
       relight();
     },
     setView(v) { view = { ...view, ...v }; },
