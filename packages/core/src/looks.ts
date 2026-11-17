@@ -1,7 +1,7 @@
 // looks.ts — the one-tap starting points (BUILD.md §6, Looks). A look sets `ambient` and
 // `lights` only. Strength s mixes toward neutral; flip mirrors every u about 0.5.
 
-import { LIGHT, type Doc, type Light } from './fields.ts';
+import { defaultLight, type Doc, type Light } from './fields.ts';
 
 export interface Look {
   id: string; label: string;
@@ -38,10 +38,10 @@ export function withLook(doc: Doc, id: string, { strength = 1, flip = false }: L
   if (!look) throw new Error(`no look "${id}"; the looks are ${LOOKS.map((l) => l.id).join(', ')}`);
   if (!(strength >= 0 && strength <= 1)) throw new Error('strength must be from 0 to 1');
   const s = strength;
-  const lights: Light[] = look.lights.map((l, i) => ({
+  // defaultLight: a light setting the look does not name (a tool's included) is at its default
+  const lights: Light[] = look.lights.map((l, i) => defaultLight({
     id: `light-${i + 1}`, on: true, kind: 'lamp',
     pos: [flipU(l.pos[0], flip), l.pos[1], l.pos[2]], aim: [flipU(l.aim[0], flip), l.aim[1]],
-    azimuth: LIGHT.azimuth.default, elevation: LIGHT.elevation.default,
     intensity: l.intensity * s, kelvin: l.kelvin, cone: l.cone, edge: l.edge, falloff: l.falloff, size: l.size,
   }));
   return {
