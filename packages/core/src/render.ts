@@ -3,6 +3,7 @@
 // independent: any region gives exactly the pixels a whole render has there, so callers can
 // split the work across workers (pass the same `kappa` to each).
 
+import { prepareEven } from './tools/even.ts'; // tool:even
 import { prepareFinish } from './finish.ts';
 import { guardKappa } from './guard.ts';
 import { prepareLighting } from './light.ts';
@@ -42,6 +43,7 @@ export function isNeutral(doc: Doc): boolean {
   const f = doc.finish;
   return doc.ambient.level === 1 && doc.ambient.kelvin === 6500 && doc.relief.mode === 'off'
     && !doc.lights.some((l) => l.on && l.intensity > 0)
+    && !prepareEven(doc.prepare, 1) // tool:even
     && f.curve === undefined && (Object.keys(FINISH_NEUTRAL) as (keyof typeof FINISH_NEUTRAL)[]).every((k) => f[k] === 0);
 }
 

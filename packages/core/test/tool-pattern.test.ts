@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
-import { neutralDoc, parseDoc, render, withLook, type Doc, type Image } from '../src/index.ts';
+import { defaultLight, neutralDoc, parseDoc, render, withLook, type Doc, type Image } from '../src/index.ts';
 import { lightingAt, prepareLighting } from '../src/light.ts';
-import { lampBasis, patternAt, PATTERN_FLOOR, type Pattern } from '../src/tools/pattern.ts';
+import { dragPattern, lampBasis, patternAt, patternExtent, patternPlane, PATTERN_FLOOR, shapeToPlane, type Pattern, type PatternHandle } from '../src/tools/pattern.ts';
 import { expectGolden } from './tool-golden.ts';
 
 // tool:pattern (BUILD.md §5.12.5): the shadow of a window, blinds or leaves in a light.
@@ -65,7 +65,7 @@ for (const pattern of SHAPES) {
 test('up in the pattern is up in the picture, and right is right, for a lamp above and one at the side', () => {
   for (const [L, A] of [[[0.5, -0.35 * a, 0.9], [0.5, 0.45 * a]], [[-0.8, 0.35 * a, 0.8], [0.5, 0.5 * a]]] as const) {
     const ex = A[0] - L[0], ey = A[1] - L[1], r0 = Math.hypot(ex, ey, L[2]), s = [ex / r0, ey / r0, -L[2] / r0] as const;
-    const B = lampBasis('window', 1, 0, 0, s);
+    const B = lampBasis(defaultLight({ id: 'x', pattern: 'window', patternSize: 1 }), s);
     const pq = (x: number, y: number) => {
       const D = [x - L[0], y - L[1], -L[2]], t = r0 / (D[0]! * s[0] + D[1]! * s[1] + D[2]! * s[2]);
       return [t * (D[0]! * B.U[0] + D[1]! * B.U[1] + D[2]! * B.U[2]), t * (D[0]! * B.V[0] + D[1]! * B.V[1] + D[2]! * B.V[2])];
@@ -113,4 +113,48 @@ test('a sun with a pattern is not folded into the room light: it varies over the
   const flat = light(sun('none'));
   expect(Math.max(...flat) - Math.min(...flat)).toBe(0);
   expectGolden('pattern-sun', render(photo, parseDoc({ ...sun('leaves'), lights: [{ ...sun('leaves').lights[0]!, patternTurn: 30, patternSize: 0.8 }] })));
+});
+
+// The frame the handles use (D-068): the box drawn on the picture is where the shapes are.
+const shaped = defaultLight({ id: 'p', pos: [0.1, -0.2, 0.7], aim: [0.55, 0.45], pattern: 'window', patternSize: 0.4,
+  patternTurn: 25, patternStretch: 1.6, patternSkew: 0.3, patternX: 0.1, patternY: -0.05 });
+
+test('the frame: a shape point drawn on the picture is that shape point in the lamp\'s pattern, and back', () => {
+  const plane = patternPlane(shaped, a);
+  const L = [shaped.pos[0], shaped.pos[1] * a, shaped.pos[2]], A = [shaped.aim[0], shaped.aim[1] * a];
+  const r0 = Math.hypot(A[0]! - L[0]!, A[1]! - L[1]!, L[2]!), s = [(A[0]! - L[0]!) / r0, (A[1]! - L[1]!) / r0, -L[2]! / r0] as const;
+  const B = lampBasis(shaped, s);
+  for (const [sp, sq] of [[0, 0], [0.5, 0.75], [-0.5, 0.75], [0.5, -0.75], [0.3, -0.2]] as const) {
+    const [x, y] = plane.toPicture(...shapeToPlane(shaped, sp, sq))!;
+    const D = [x - L[0]!, y - L[1]!, -L[2]!], t = r0 / (D[0]! * s[0] + D[1]! * s[1] + D[2]! * s[2]);
+    expect(t * (D[0]! * B.U[0] + D[1]! * B.U[1] + D[2]! * B.U[2]) - B.C[0]).toBeCloseTo(sp, 9);
+    expect(t * (D[0]! * B.V[0] + D[1]! * B.V[1] + D[2]! * B.V[2]) - B.C[1]).toBeCloseTo(sq, 9);
+    const back = plane.toPlane(x, y)!, there = shapeToPlane(shaped, sp, sq);
+    expect(back[0]).toBeCloseTo(there[0], 9); expect(back[1]).toBeCloseTo(there[1], 9);
+  }
+  const sun = patternPlane({ ...shaped, kind: 'sun' }, a);
+  expect(sun.toPicture(...sun.toPlane(0.2, 0.6)!)).toEqual([0.2, 0.6]);
+});
+
+test('the handles: a drag to where a handle already is changes nothing; move, scale, stretch and slant go their way', () => {
+  const [ex, ey] = patternExtent('window');
+  const keep = (h: PatternHandle, sp: number, sq: number) => {
+    const p = shapeToPlane(shaped, sp, sq), out = dragPattern(shaped, h, p, p);
+    for (const [k, v] of Object.entries(out)) expect(v, `${h} ${k}`).toBeCloseTo((shaped as unknown as Record<string, number>)[k]!, 3);
+  };
+  keep('move', 0, 0); keep('scale', ex, ey); keep('stretch', ex, 0); keep('top', 0, ey);
+  expect(dragPattern(shaped, 'move', [0, 0], [0.2, 0.1])).toEqual({ patternX: 0.3, patternY: 0.05 });
+  expect(dragPattern(shaped, 'scale', shapeToPlane(shaped, ex, ey), shapeToPlane({ ...shaped, patternSize: 0.8 }, ex, ey)).patternSize).toBeCloseTo(0.8, 3);
+  expect(dragPattern(shaped, 'stretch', [0, 0], shapeToPlane({ ...shaped, patternStretch: 2.5 }, ex, 0)).patternStretch).toBeCloseTo(2.5, 3);
+  const top = dragPattern(shaped, 'top', [0, 0], shapeToPlane({ ...shaped, patternSkew: -0.4 }, 0, ey));
+  expect(top.patternSkew).toBeCloseTo(-0.4, 3); expect(top.patternSize).toBeCloseTo(0.4, 3);
+  expect(dragPattern(shaped, 'stretch', [0, 0], [-5, 0]).patternStretch).toBe(0.25); // held to the range
+});
+
+test('stretch, slant and shift each move the picture; at their defaults they are the pattern as it was', () => {
+  const base = draw(lit({ pattern: 'window' }));
+  expect(same(draw(lit({ pattern: 'window', patternStretch: 1, patternSkew: 0, patternX: 0, patternY: 0 })), base)).toBe(true);
+  for (const p of [{ patternStretch: 1.5 }, { patternSkew: 0.4 }, { patternX: 0.2 }, { patternY: 0.2 }])
+    expect(same(draw(lit({ pattern: 'window', ...p })), base), JSON.stringify(p)).toBe(false);
+  expectGolden('pattern-shaped', render(photo, parseDoc({ ...lit(), lights: [{ ...shaped, intensity: 0.8 }] })));
 });

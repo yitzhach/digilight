@@ -71,3 +71,7 @@
 
 ## Light tools: light patterns (T3b)
 - Pattern (window, blinds, leaves), Pattern size, softness and turn on each light (expert): the shadow of a window, blinds or leaves in a light; off by default, parity and goldens (D-067).
+
+## Light tools: Isaac's notes (11-17), even out the photo (T4)
+- Colour strips under Filter colour and Green to magenta; grain about four times stronger at full; Edit pattern: a box on the picture to move, scale, stretch and slant a light's pattern, with four new pattern settings (D-068).
+- Even out the photo (expert, Lights section): one side, which side, corners, green to magenta; off by default, parity and a golden (D-069).

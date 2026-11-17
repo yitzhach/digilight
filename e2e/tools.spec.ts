@@ -97,6 +97,8 @@ test('parity: light patterns', async ({ page }) => {
     'gallery, small window turned 25': pat('gallery', { pattern: 'window', patternSize: 0.25, patternTurn: 25, patternSoft: 0.6 }),
     'spotlight, leaves, large': pat('spotlight', { pattern: 'leaves', patternSize: 1.5, patternSoft: 1 }),
     'sun, blinds turned -60': parseDoc({ ...full, ambient: { level: 0.4 }, lights: [{ id: 's', kind: 'sun', intensity: 0.7, pattern: 'blinds', patternTurn: -60 }] }),
+    'gallery, window moved, stretched, slanted': pat('gallery', { pattern: 'window', patternX: 0.15, patternY: -0.1, patternStretch: 1.7, patternSkew: 0.35, patternTurn: 12 }),
+    'sun, leaves moved and stretched': parseDoc({ ...full, ambient: { level: 0.4 }, lights: [{ id: 's', kind: 'sun', intensity: 0.7, pattern: 'leaves', patternX: -0.3, patternStretch: 0.5, patternSkew: -0.6 }] }),
   };
   for (const [name, doc] of Object.entries(docs)) {
     const kappa = guardKappa(photo, doc);
@@ -108,6 +110,49 @@ test('parity: light patterns', async ({ page }) => {
   const tex = parseDoc({ ...pat('raking-left', { pattern: 'leaves', patternSize: 0.3 }, base), relief: { mode: 'estimated', depth: 0.006, sheen: 0.4 } });
   const kappa = guardKappa(small, tex);
   await check(page, 'raking left, leaves, texture and sheen', tex, kappa, render(small, tex, { kappa, relief: estimatedRelief(small) }));
+});
+
+// tool:even (§5.12.6): the correction in the shader against the reference, alone, with lights, with Texture.
+test('parity: even out the photo', async ({ page }) => {
+  await open(page);
+  const ev = (d: Doc, prepare: object) => parseDoc({ ...d, prepare });
+  const docs: Record<string, Doc> = {
+    'even, no lights': ev(full, { tilt: 0.4, tiltFrom: 200, corners: 0.3 }),
+    'even and tint, spotlight': ev(withLook(full, 'spotlight'), { tilt: -0.3, tiltFrom: 45, corners: -0.4, tint: 0.8 }),
+    'tint only, soft window': ev(withLook(full, 'soft-window'), { tint: -1 }),
+  };
+  for (const [name, doc] of Object.entries(docs)) {
+    const kappa = guardKappa(photo, doc);
+    await check(page, name, doc, kappa, render(photo, doc, { width: WIDTH, kappa }));
+  }
+  await page.evaluate(() => (window as any).harness.reliefCPU());
+  const base = neutralDoc({ width: small.width, height: small.height, space: 'srgb', sha256: photo.sha256 });
+  const tex = parseDoc({ ...withLook(base, 'raking-top'), relief: { mode: 'estimated', depth: 0.006 }, prepare: { tilt: 0.3, tiltFrom: 300, corners: 0.2 } });
+  const kappa = guardKappa(small, tex);
+  await check(page, 'raking top, texture, even', tex, kappa, render(small, tex, { kappa, relief: estimatedRelief(small) }));
+});
+
+// tool:pattern: the box on the picture moves the pattern; one undo step takes it back (D-068).
+test('app: a pattern\'s box on the picture moves it', async ({ page }) => {
+  const shot = render(photo, full, { width: 600 });
+  await page.goto('http://localhost:5180/');
+  await page.locator('input[type=file]').setInputFiles({ name: 'lintel.png', mimeType: 'image/png', buffer: encodePng(shot) });
+  const dl = <T>(f: string, ...a: unknown[]) => page.evaluate(([n, args]) => (window as any).digilight[n as string](...(args as unknown[])), [f, a] as const) as Promise<T>;
+  await page.locator('[data-look="soft-window"]').click();
+  await page.getByRole('checkbox', { name: 'Expert controls' }).check();
+  await page.locator('label.select', { hasText: 'Pattern' }).locator('select').selectOption('window');
+  await expect(page.locator('.pattern-box')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Edit pattern' }).click();
+  const box = await page.locator('.pattern-box polygon').boundingBox();
+  expect(box).not.toBeNull();
+  const cx = box!.x + box!.width / 2, cy = box!.y + box!.height / 2;
+  await page.mouse.move(cx, cy); await page.mouse.down(); await page.mouse.move(cx + 40, cy - 30, { steps: 5 }); await page.mouse.up();
+  const l = (await dl<Doc>('getDoc')).lights[0]!;
+  expect(l.patternX).toBeGreaterThan(0.02); expect(l.patternY).toBeGreaterThan(0.02); // right and up
+  await dl('undo');
+  expect((await dl<Doc>('getDoc')).lights[0]!.patternX).toBe(0);
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(page.locator('.pattern-box')).toHaveCount(0);
 });
 
 // The app itself: the panel builds a tool's controls from the schema (no interface code); Glow's
@@ -148,6 +193,8 @@ test('app: the tools show under Expert controls, glow reaches the picture, the e
     if (s.type === 'enum') await expect(section('Lights').locator('label.select', { hasText: s.label })).toHaveCount(1); // tool:pattern
     else await expect(slider('Lights', p)).toHaveCount(1);
   }
+  for (const p of TOOLS.flatMap((t) => t.paths).filter((q) => q.startsWith('prepare.'))) await expect(slider('Lights', p)).toHaveCount(1); // tool:even
+  await expect(section('Lights').locator('[id="s-lights.0.gelHue"] ~ .track.hue')).toHaveCount(1); // tool:gel: the colour strip
   await slider('Lights', 'lights.0.gel').fill('0.4');
   expect((await dl<Doc>('getDoc')).lights[0]!.gel).toBe(0.4);
   await dl('reset');

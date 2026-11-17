@@ -85,7 +85,7 @@ export function finishPixel(F: Finish, cr: number, cg: number, cb: number, x: nu
     r *= v; g *= v; b *= v;
   }
   if (F.grain > 0) {
-    const n = F.grain * 0.08 * (grainAt(x, y) - 0.5);
+    const n = F.grain * 0.3 * (grainAt(x, y) - 0.5);
     r += n; g += n; b += n;
   }
   out[p] = toByte(r); out[p + 1] = toByte(g); out[p + 2] = toByte(b);

@@ -27,9 +27,11 @@ interface SliderProps {
   min: number; max: number; step: number;
   toValue?: (t: number) => number; fromValue?: (v: number) => number;
   format?: (t: number) => string;
+  /** A colour strip under the slider (style.css .track). */
+  track?: string;
 }
 
-export function Slider({ path, label, help, min, max, step, toValue = (t) => t, fromValue = (v) => v, format }: SliderProps) {
+export function Slider({ path, label, help, min, max, step, toValue = (t) => t, fromValue = (v) => v, format, track }: SliderProps) {
   const d = shown.value!;
   const t = Math.min(max, Math.max(min, fromValue(readPath(d, path) as number)));
   const value = (e: Event) => toValue(Number((e.target as HTMLInputElement).value));
@@ -40,6 +42,7 @@ export function Slider({ path, label, help, min, max, step, toValue = (t) => t, 
       <input id={id} type="range" min={min} max={max} step={step} value={t}
         onInput={(e) => preview(withPath(shown.value!, path, value(e)))}
         onChange={(e) => run(() => cmd.set(path, value(e)))} />
+      {track && <div class={`track ${track}`} aria-hidden="true" />}
     </div>
   );
 }
