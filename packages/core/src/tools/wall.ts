@@ -17,6 +17,8 @@ import { patternFactor } from './pattern.ts'; // tool:pattern: a light's pattern
 
 /** The narrowest half-width of the shadow's edge, in picture widths. */
 export const WALL_EDGE = 0.002;
+/** How much further out the shadow's edge fades at Shadow softness 1, in picture widths. */
+export const WALL_SOFT = 0.1;
 
 /** The picture's size and the margin, for a piece W x H pixels (§5.12.7). */
 export function wallSize(doc: Doc, W: number, H: number): { width: number; height: number; margin: number } {
@@ -43,7 +45,7 @@ export function toPiece(x: number, y: number, a: number): number {
 
 /** E on the wall at (x, y), z = -standoff, into out[0..2] (L from prepareLighting with relief off). */
 export function wallLightAt(L: Lighting, doc: Doc, a: number, x: number, y: number, out: Float64Array): void {
-  const s = doc.wall.standoff, k = doc.wall.shadow;
+  const s = doc.wall.standoff, k = doc.wall.shadow, soft = WALL_SOFT * doc.wall.soft;
   let r = L.room[0], g = L.room[1], b = L.room[2];
   const each = (p: Lamp) => {
     let e: number, Xx: number, Xy: number, pw: number;
@@ -59,7 +61,7 @@ export function wallLightAt(L: Lighting, doc: Doc, a: number, x: number, y: numb
       Xx = x + dx * t; Xy = y + dy * t; pw = Math.max((p.size * s) / p.Lz, WALL_EDGE);
     }
     if (p.pat) e *= patternFactor(p.pat, p.sun, x, y, p.Lx, p.Ly, p.Lz + s, p.r0, p.sx, p.sy, p.sz); // tool:pattern
-    if (k > 0) e *= 1 - k * (1 - smoothstep(-pw, pw, toPiece(Xx, Xy, a)));
+    if (k > 0) e *= 1 - k * (1 - smoothstep(-pw, pw + soft, toPiece(Xx, Xy, a))); // soft: the edge fades further out (tool:wall)
     r += e * p.r; g += e * p.g; b += e * p.b;
   };
   for (const p of L.lamps) each(p);

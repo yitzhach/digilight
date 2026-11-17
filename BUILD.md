@@ -416,7 +416,7 @@ E  = E * g * T                                        // per channel, at the end
 document is neutral as before. Sheen is not changed (it is not the photo's light). The settings
 belong to the photo: Copy settings and presets leave them out.
 
-**5.12.7 The wall** (`wall.on`, `margin`, `tone`, `warmth`, `standoff`, `shadow`; T2). The piece
+**5.12.7 The wall** (`wall.on`, `margin`, `tone`, `warmth`, `standoff`, `shadow`, `soft`; T2). The piece
 hangs on a wall: the light spills past its edge and the piece throws a soft shadow. The wall is
 the plane `z = -standoff`; the piece's face stays `z = 0`, and it is drawn exactly as with the
 wall off. The wall is a margin of `mp = round(margin * W)` pixels on each side of a piece `W x H`
@@ -435,7 +435,7 @@ each light that is on (suns included, never folded into the room light here):
         e    *= the light's pattern at Q (§5.12.5, with D = Q - L), when it has one
         qx = |X.x - 0.5| - 0.5,  qy = |X.y - a/2| - a/2
         d  = hypot(max(qx, 0), max(qy, 0)) + min(max(qx, qy), 0)          // to the piece's edge, negative inside
-        e  *= 1 - wall.shadow * (1 - smoothstep(-pw, pw, d))
+        e  *= 1 - wall.shadow * (1 - smoothstep(-pw, pw + 0.1 * wall.soft, d))   // soft: the edge fades further out
         E  += e * colour                                                  // the light's colour (§5.8, §5.12.4)
 E     = E / mix((1,1,1), Wc / luma(Wc), whiteAdapt) * kappa * 2^exposure  // §5.4, §5.9: the piece's Wc and kappa
 lit   = paint * E (+ Glow at Q, §5.12.3, its maps read with edges clamped)

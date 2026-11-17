@@ -3,10 +3,11 @@
 // space (a Display P3 photo keeps its profile), with a .json record beside it: the document and
 // the SHA-256 of the photo file, of the picture's RGBA pixels and of the encoded file.
 
-import { outputSize, type Doc, type Image, type Space } from 'core';
+import { outputSize, wallSize, type Doc, type Image, type Space } from 'core';
 import { reliefForExport } from '../relief.ts';
 import { kappaFor, renderRows } from '../workers/pool.ts';
 import { canvas2d, imageData } from './colour.ts';
+import { canvasFits, fitWidth } from './fit.ts';
 import type { Photo } from './open.ts';
 import { sha256 } from './open.ts';
 
@@ -16,7 +17,7 @@ export interface ExportRecord {
   photo: { name: string; sha256: string; width: number; height: number; space: string };
   picture: { width: number; height: number; format: 'jpeg' | 'png'; quality?: number; pixelsSha256: string; fileSha256: string };
 }
-export interface Exported { blob: Blob; record: ExportRecord; name: string }
+export interface Exported { blob: Blob; record: ExportRecord; name: string; /** The width asked for, when the browser could only save a smaller one. */ reduced?: number }
 
 /** RGBA8 pixels to a JPEG or PNG file in the photo's colour space (its profile kept). */
 export async function encodePicture(img: Image, space: Space, format: 'jpeg' | 'png', quality = 0.92): Promise<Blob> {
@@ -42,8 +43,10 @@ export async function exportPicture(photo: Photo, doc: Doc, opts: ExportOptions 
   const format = opts.format ?? 'jpeg', quality = opts.quality ?? 0.92;
   if (format !== 'jpeg' && format !== 'png') throw new Error('format must be "jpeg" or "png"');
   if (!(quality > 0 && quality <= 1)) throw new Error('quality must be over 0 and at most 1');
-  const width = opts.width ?? photo.image.width;
-  outputSize(doc.photo, width); // checks the width: never over the photo's
+  const asked = opts.width ?? photo.image.width;
+  outputSize(doc.photo, asked); // checks the width: never over the photo's
+  const pictureSize = (w: number) => { const s = outputSize(doc.photo, w); return wallSize(doc, s.width, s.height); }; // wallSize: tool:wall
+  const width = fitWidth(asked, pictureSize, canvasFits); // a picture the browser can save
   onProgress(0);
   await frame();
   if (doc.relief.mode !== 'off') await reliefForExport(() => {});
@@ -55,6 +58,7 @@ export async function exportPicture(photo: Photo, doc: Doc, opts: ExportOptions 
   const [pixelsSha256, fileSha256] = await Promise.all([sha256(img.data as Uint8ClampedArray<ArrayBuffer>), sha256(await blob.arrayBuffer())]);
   const base = photo.name.replace(/\.[^.]*$/, '') || 'picture';
   return {
+    ...(width < asked ? { reduced: asked } : {}),
     blob, name: `${base}-digilight.${format === 'png' ? 'png' : 'jpg'}`,
     record: {
       app: 'DigiLight 2', exported: new Date().toISOString(), document: doc,

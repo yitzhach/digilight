@@ -97,6 +97,15 @@ test('the shadow lies on the side away from the lamp and widens with standoff an
   expect(shadowWidth({ standoff: 0 }).n).toBeLessThanOrEqual(1);
 });
 
+test('Shadow softness: the edge fades further out, and the shadow stays as dark at the piece', () => {
+  const photo = flat(153), mp = 40, j = mp + H / 2;
+  const r = (soft: number, shadow = 0.8) => renderWithWall(photo, withWall(fromLeft(), { standoff: 0.03, shadow, soft }));
+  const lit = r(0, 0), hard = r(0), soft = r(1);
+  const reach = (img: Image) => { let n = 0; for (let i = mp + W; i < 2 * mp + W; i++) if (at(lit, i, j) - at(img, i, j) > 2) n++; return n; };
+  expect(reach(soft)).toBeGreaterThan(reach(hard) + 8);
+  expect(at(lit, mp + W, j) - at(soft, mp + W, j)).toBeGreaterThan(0.6 * (at(lit, mp + W, j) - at(hard, mp + W, j)));
+});
+
 test('a sun throws the shadow too, away from where it comes from', () => {
   const photo = flat(153), mp = 40, j = mp + H / 2;
   const sun = (shadow: number) => renderWithWall(photo, withWall(parseDoc({ ...base, ambient: { level: 0.4 },

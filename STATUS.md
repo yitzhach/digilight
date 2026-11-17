@@ -10,15 +10,15 @@ The foot of the page says which update it is; quote that line when something loo
   `pnpm gate:relief`: door 0.78 / 0.87, lintel 0.68 / 0.85, lamps 0.80 to 0.87.
 - Review round 4 (D-047), audit (D-049, D-050), Phase 5b (D-051 to D-054), Phase 6a (D-055 to
   D-060), Phase 6b items 3 to 6 (D-061): see CHANGELOG.md.
-- Light tools (D-062 to D-071): `docs/light-tools.md` (rules, a spec for each). Built, expert,
+- Light tools (D-062 to D-072): `docs/light-tools.md` (rules, a spec for each). Built, expert,
   off by default: softer shadows, Glow, colour filter, light patterns with Edit pattern, even
-  out the photo, the wall. 148 unit, 44 e2e tests; 190.5 of 250 KB.
+  out the photo, the wall (D-072). 150 unit, 44 e2e tests; 190.9 of 250 KB.
 
 ## Waiting on Isaac
 - **Light tools (11-17):** Expert controls on. Texture measured, a raking lamp, Shadows high:
   Bounce light, Room light from one side. Finish, with Spotlight: Glow, Glow spread, Glow
   warmth. Colour filter; Pattern and Edit pattern; Even out (Lights). Grain at full. Wall
-  (Export). Each: keep, tune or remove; 9 questions: `docs/light-tools.md` section 6.
+  (Export). Each: keep, tune or remove; 10 questions: `docs/light-tools.md` section 6.
 - **Projects (11-14, D-061):** Settings…: Save project, open it again, the recent list; Choose
   photos… under Apply to more photos (ten on the iMac is 6b's gate).
 - **Settings window (11-13, D-060):** copy and paste between photos, a preset in one tap, presets

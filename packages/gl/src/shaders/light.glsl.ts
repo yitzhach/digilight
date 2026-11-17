@@ -55,6 +55,7 @@ uniform bool u_wall;      // tool:wall (5.12.7): the wall is on
 uniform vec4 u_wallA;     // tool:wall: standoff, shadow, margin (picture widths), the lights it gets (u_lamp's first n)
 uniform vec3 u_wallPaint; // tool:wall: the wall's paint, linear
 uniform vec3 u_wallRoom;  // tool:wall: the room light alone, white-adapted
+uniform float u_wallSoft; // tool:wall: how much further out the shadow's edge fades
 uniform bool u_finish;   // Finish is not neutral (5.9)
 uniform vec3 u_warm;     // warmth's colour, luma 1 ((1, 1, 1) at warmth 0)
 uniform float u_contrast, u_saturation, u_vignette, u_grain;
@@ -175,7 +176,7 @@ vec3 wallLightAt(vec2 P) { // tool:wall (5.12.7): the wall at z = -standoff, no 
     if (pu.w > 0.5) e *= patternFactor(pu, u_lamp[i * ${LAMP_VEC4S} + 6], u_lamp[i * ${LAMP_VEC4S} + 7].xy, s.w > 0.5, P, vec4(a.xy, a.z + st, a.w), s.xyz);
     vec2 r = abs(X - vec2(0.5, ha)) - vec2(0.5, ha);
     float sd = length(max(r, 0.0)) + min(max(r.x, r.y), 0.0);
-    e *= 1.0 - u_wallA.y * (1.0 - smoothstep0(-pw, pw, sd));
+    e *= 1.0 - u_wallA.y * (1.0 - smoothstep0(-pw, pw + u_wallSoft, sd));
     E += e * u_lamp[i * ${LAMP_VEC4S} + 4].rgb;
   }
   return E;
