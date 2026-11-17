@@ -66,3 +66,5 @@
 - Glow (expert, in Finish): Glow, Glow spread, Glow warmth (D-064).
 - Both are off by default and change no picture until used; parity and goldens for each.
 
+## Light tools: colour filter (T3a)
+- Colour filter and Filter colour on each light (expert): a coloured lamp, as a filter in front of it; off by default, parity and a golden (D-066).
