@@ -43,6 +43,9 @@ export const LIGHT = {
   edge: num(0, 1, 0.01, 0.6, 'expert', 'Spot edge', 'How soft the edge of the spot is'),
   falloff: num(0, 1, 0.01, 1, 'expert', 'Falloff', 'How much the light fades with distance (1 is natural)'),
   size: num(0, 1, 0.01, 0.05, 'expert', 'Softness', 'Size of the light: bigger gives softer shadows'),
+  // tool:gel (§5.12.4)
+  gel: num(0, 1, 0.01, 0, 'expert', 'Colour filter', 'A coloured filter over this light; 0 is none'),
+  gelHue: num(0, 360, 1, 30, 'expert', 'Filter colour', '0 red, 60 yellow, 120 green, 180 cyan, 240 blue, 300 magenta'),
 } satisfies Spec;
 
 export const RELIEF = {
@@ -84,6 +87,7 @@ export interface Light {
   id: string; on: boolean; kind: 'lamp' | 'sun'; pos: Num3; aim: [number, number];
   azimuth: number; elevation: number; intensity: number; kelvin: number;
   cone: number; edge: number; falloff: number; size: number;
+  gel: number; gelHue: number; // tool:gel
 }
 export interface Doc {
   version: 2;

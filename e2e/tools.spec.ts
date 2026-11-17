@@ -70,6 +70,22 @@ test('parity: glow', async ({ page }) => {
   }
 });
 
+// tool:gel (§5.12.4): colours reach the preview prepared, so the shader is unchanged.
+test('parity: colour filter', async ({ page }) => {
+  await open(page);
+  const base = withLook(full, 'gallery'), lamp = base.lights[0]!;
+  const docs: Record<string, Doc> = {
+    'gallery, amber filter 0.7': parseDoc({ ...base, lights: [{ ...lamp, gel: 0.7, gelHue: 35 }] }),
+    'gallery, full blue filter': parseDoc({ ...base, lights: [{ ...lamp, gel: 1, gelHue: 240 }] }),
+    'red lamp, green sun, finish': parseDoc({ ...base, lights: [{ ...lamp, gel: 0.6, gelHue: 0 }, { id: 'b', kind: 'sun', intensity: 0.4, gel: 0.5, gelHue: 120 }],
+      finish: { contrast: 0.3, warmth: -0.4 } }),
+  };
+  for (const [name, doc] of Object.entries(docs)) {
+    const kappa = guardKappa(photo, doc);
+    await check(page, name, doc, kappa, render(photo, doc, { width: WIDTH, kappa }));
+  }
+});
+
 // The app itself: the panel builds a tool's controls from the schema (no interface code); Glow's
 // maps reach the picture through the guard's worker (tool:glow); the export is the reference's.
 test('app: the tools show under Expert controls, glow reaches the picture, the export is the reference', async ({ page }) => {
@@ -100,6 +116,11 @@ test('app: the tools show under Expert controls, glow reaches the picture, the e
   for (const p of paths('relief.')) await expect(slider('Texture', p)).toHaveCount(1);
   await slider('Texture', 'relief.bounce').fill('0.5');
   expect((await dl<Doc>('getDoc')).relief.bounce).toBe(0.5);
+  // A light's tools show under that light (tool:gel).
+  await page.locator('[data-look="spotlight"]').click();
+  for (const p of TOOLS.flatMap((t) => t.paths).filter((q) => q.startsWith('lights.'))) await expect(slider('Lights', p)).toHaveCount(1);
+  await slider('Lights', 'lights.0.gel').fill('0.4');
+  expect((await dl<Doc>('getDoc')).lights[0]!.gel).toBe(0.4);
   await dl('reset');
 
   // Glow: the picture changes once the worker's maps arrive.

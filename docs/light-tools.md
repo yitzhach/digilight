@@ -110,7 +110,7 @@ never replace, move or filter the photo's pixels.
 |---|---|---|---|---|
 | T6 | Softer shadows: bounce light, room light from one side | **built 11-17** (D-063) | done | his judgement: keep, tune or remove |
 | T8 | Glow | **built 11-17** (D-064) | done | his judgement |
-| T3a | Colour filter on a light | to build | Opus 5.5, medium | nothing |
+| T3a | Colour filter on a light | **built 11-17** (D-066) | done | his judgement: keep, tune or remove |
 | T3b | Light patterns: window, blinds, leaves | to build | Opus 5.5, high | nothing |
 | T2 | The wall: light pool, drop shadow | to build, after Phase 6b's crop | Opus 5.5, high, two chats | wall colours; frame or not |
 | T4 | Even out the photo | to build | Opus 5.5, medium | one unevenly lit photo of his |
@@ -119,7 +119,7 @@ never replace, move or filter the photo's pixels.
 | T5 | More side-lit shots | to build | Opus 5.5, high (hard) | one piece lit from 6 to 8 sides |
 | T9 | Scene: portraits and general photos | experiment first | Opus 5.5, high | scope and hosting (section 6) |
 
-Order: T3a, T3b, T2 (these change how the product looks without Texture; T2 after the crop),
+Order: T3b, T2 (these change how the product looks without Texture; T2 after the crop),
 T4, then T1 and T5 when their photos exist. T7 and T9 only on Isaac's word.
 
 T1, T5 and T9 were first marked for Fable 5.2: they change `relief/measure.ts`, the hardest code
@@ -163,6 +163,18 @@ red-orange. Too much is a haze. It is the one tool that softens the picture (nev
 own pixels, section 2), so it is the first to remove if it does not convince. Known limits
 (D-064): the glow follows the lights a moment after a drag; highlights that only Texture
 makes do not glow; it reaches about an eighth of the picture at most.
+
+### T3a — Colour filter (BUILD.md §5.12.4)
+
+Settings in each light's expert list: `lights.i.gel` (Colour filter), `lights.i.gelHue`
+(Filter colour). File: `core/src/tools/gel.ts`; hooks `tool:gel` in `core/src/fields.ts` and
+`light.ts` (where the light's colour is made). Nothing in the shader. Tests:
+`core/test/tool-gel.test.ts`.
+
+What to judge: add a second light from one side, give it Colour filter 0.8 and a blue, on two
+pieces. It should read as a coloured lamp, not a tint over the picture. Camera white balance
+(30% by default) leans the whole picture a little against the filter, as a camera would; set
+it to 0 to see the filter at full strength. A strong filter dims its lamp.
 
 ---
 

@@ -343,6 +343,19 @@ pale and a dark picture glow alike, and Brightness does not change which parts g
 (§5.7) does not count Glow. The preview is given the same two maps as textures (RGB16F), made
 by the guard's worker for what is shown; while a control is held it draws with the last ones.
 
+**5.12.4 Colour filter** (`lights.i.gel`, `lights.i.gelHue`; T3a). A coloured light is a lamp
+with a filter in front of it, and a filter only removes light. The hue, in linear RGB:
+
+```
+hue(h) = ( clamp(|h/60 - 3| - 1, 0, 1),  clamp(2 - |h/60 - 2|, 0, 1),  clamp(2 - |h/60 - 4|, 0, 1) )
+colour = colour(kelvin) * mix((1, 1, 1), hue(gelHue), gel)       // per channel
+```
+
+That colour stands for `colour(kelvin)` wherever §5.3, §5.4 and §5.8 use a light's colour,
+the white balance `Wc` included. It is not renormalised: a strong filter dims the lamp, as a
+real one does. At `gel = 0` the factor is exactly 1 and is not applied. Colours reach the
+preview prepared, so the shader does not change.
+
 ---
 
 ## 6. The document
@@ -827,7 +840,7 @@ it can and on a server otherwise.
 Expert settings that make the light itself better, each a trial that can be removed in one
 commit. The rules, the state of each and a build spec for each are in `docs/light-tools.md`;
 the maths of those built is §5.12. One tool per chat, in any gap between phases; a tool never
-blocks a phase. Built: T6 softer shadows, T8 Glow. To build, on Opus 5.5: T3a colour filter,
+blocks a phase. Built: T6 softer shadows, T8 Glow, T3a colour filter. To build, on Opus 5.5:
 T3b light patterns, T2 the wall, T4 even out the photo, T7 16-bit export, and (hard: high
 effort, the gate agreed first) T1 gloss map, T5 more side-lit shots, T9 the portrait experiment.
 Isaac runs them all on Opus 5.5 (11-17, D-065).

@@ -8,6 +8,7 @@ import { K } from './relief/horizon.ts';
 import { layerOf, ReliefSampler, type ReliefMaps } from './relief/sample.ts';
 import type { Doc, Light } from './schema.ts';
 import { openness, ROOM_ELEVATION, roomLight, wallLight, wallShare } from './tools/bounce.ts';
+import { filtered } from './tools/gel.ts'; // tool:gel
 
 export const luma = (r: number, g: number, b: number): number => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
@@ -57,7 +58,7 @@ export function prepareLighting(doc: Doc, a: number, kappa: number, maps?: Relie
   const on = doc.lights.filter((l) => l.on);
   const amb = colour(doc.ambient.kelvin, space).map((c) => c * doc.ambient.level) as RGB;
   const Wc: RGB = [amb[0], amb[1], amb[2]];
-  const cols = on.map((l) => colour(l.kelvin, space));
+  const cols = on.map((l) => filtered(colour(l.kelvin, space), l.gel, l.gelHue)); // tool:gel (§5.12.4)
   on.forEach((l, i) => { for (let c = 0; c < 3; c++) Wc[c]! += l.intensity * cols[i]![c]!; });
   const wl = luma(Wc[0], Wc[1], Wc[2]), wa = doc.tone.whiteAdapt;
   // Finish's Brightness is light (§5.9): it scales E, and sheen with it, as kappa does.
