@@ -12,8 +12,7 @@ The foot of the page says which update it is; quote that line when something loo
   D-060), Phase 6b items 3 to 6 (D-061): see CHANGELOG.md.
 - Light tools (D-062 to D-072): `docs/light-tools.md` (rules, a spec for each). Built, expert,
   off by default: softer shadows, Glow, colour filter, light patterns with Edit pattern, even
-  out the photo, the wall (Shadow softness, and an export that fits the browser: D-072).
-  150 unit, 44 e2e tests; 190.9 of 250 KB.
+  out the photo, the wall (D-072). 150 unit, 44 e2e tests; 190.9 of 250 KB.
 
 ## Waiting on Isaac
 - **Light tools (11-17):** Expert controls on. Texture measured, a raking lamp, Shadows high:
