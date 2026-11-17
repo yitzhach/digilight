@@ -222,7 +222,7 @@ different tool (section 6, question 8).
 ### T2 — The wall (BUILD.md §5.12.7)
 
 Settings, a group `wall` in the Export section's expert list: Wall (on), Wall around the piece,
-Wall brightness, Wall colour, Distance from the wall, Shadow strength. Copy settings and presets
+Wall brightness, Wall colour, Distance from the wall, Shadow strength, Shadow softness (D-072). Copy settings and presets
 carry it. Files: `core/src/tools/wall.ts` (`wallSize`, `wallPaint`, `wallPixels`,
 `renderWithWall`); hooks `tool:wall` in `core/src/fields.ts`, `schema.ts`, `settings.ts`,
 `light.ts` (the suns folded into the room light are kept for the wall's shadow), `index.ts`,
@@ -234,7 +234,7 @@ and the app in `e2e/tools.spec.ts`.
 
 What to judge: Gallery and Spotlight on the door and the lintel, Wall on. The lamp's pool should
 spill onto the wall and the piece throw a soft shadow away from the lamp; Distance from the wall
-widens it, a lamp's Softness blurs it. The exported file is the piece with its margin. Known
+widens it, Shadow softness fades its edge out further. The exported file is the piece with its margin. Known
 limits (D-071): the piece is a flat panel with square edges (no frame, no thickness lit on its
 sides); the look thumbnails show the piece alone; `render` for an agent gives the piece alone
 (the export gives the whole).
@@ -453,6 +453,8 @@ From the audit, not yet answered:
 8. A hard shadow in the photo (his panel, 11-17): worth a tool that lifts a shadow he paints or
    that is found from its edge? It would be a light multiplier from a mask, never a repaint.
 9. T2's calls made for him (D-068): one wall colour (brightness and warmth), no frame. Right?
+10. The slow export with no share option (11-17): on which device and browser, with the Wall on?
+    Did a red line under the top bar say why? (D-072 guards the likeliest cause.)
 
 Answered 11-17: expert-only additions that add light are fine (gloss, wall, glow), each
 removable; build now, before the first customer.

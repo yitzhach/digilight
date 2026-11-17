@@ -24,12 +24,13 @@ export async function exportNow(over: ExportOptions = {}) {
   try {
     const e = await exportPicture(p, d, { width: c.size === 'full' ? undefined : Math.min(c.size, p.image.width), format: c.format, ...over },
       (f) => { progress.value = f; });
+    const smaller = e.reduced ? ` This browser cannot save a picture this large at ${e.reduced} px, so it is ${e.record.picture.width} x ${e.record.picture.height}.` : '';
     if (canShare(e)) {
       ready.value = e; // its line under the top bar says so
-      notice.value = null;
+      if (smaller) say(smaller.trim()); else notice.value = null;
     } else {
       download(e);
-      say(`Saved ${e.name} (${e.record.picture.width} x ${e.record.picture.height}) and its record to your downloads.`);
+      say(`Saved ${e.name} (${e.record.picture.width} x ${e.record.picture.height}) and its record to your downloads.${smaller}`);
     }
     return e;
   } catch (err) {

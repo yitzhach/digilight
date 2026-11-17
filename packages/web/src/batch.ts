@@ -4,7 +4,8 @@
 // workers take each photo in turn and get the open photo back at the end (Texture's maps in the
 // workers are made again when next needed).
 
-import { neutralDoc, withSettings } from 'core';
+import { neutralDoc, outputSize, wallSize, withSettings } from 'core';
+import { canvasFits, fitWidth } from './io/fit.ts';
 import { encodePicture, frame } from './io/export.ts';
 import { decodePhoto } from './io/open.ts';
 import { writeZip, type Entry } from './io/zip.ts';
@@ -30,7 +31,8 @@ export async function applyToMore(files: Blob[], opts: { format?: 'jpeg' | 'png'
         const doc = withSettings(neutralDoc({ width: p.image.width, height: p.image.height, space: p.space, sha256: p.sha256 }), settings, false);
         setGuardPhoto(p.image, setPoolPhoto(p.image));
         const kappa = await kappaFor(doc);
-        const img = await renderRows(doc, p.image.width, kappa, (f) => onProgress((i + 0.9 * f) / files.length, name));
+        const width = fitWidth(p.image.width, (w) => { const o = outputSize(doc.photo, w); return wallSize(doc, o.width, o.height); }, canvasFits); // a picture the browser can save (tool:wall makes it larger)
+        const img = await renderRows(doc, width, kappa, (f) => onProgress((i + 0.9 * f) / files.length, name));
         const blob = await encodePicture(img, p.space, format);
         let out = `${name.replace(/\.[^.]*$/, '') || 'picture'}-digilight.${format === 'png' ? 'png' : 'jpg'}`;
         for (let n = 2; used.has(out); n++) out = out.replace(/(-\d+)?(\.\w+)$/, `-${n}$2`);

@@ -17,7 +17,7 @@ export { defaultDoc, defaultLight, type Doc, type Light, type PhotoInfo } from '
 export { dropRetired, RETIRED, TOOLS, type Tool } from './tools/index.ts';
 export { ROOM_ELEVATION, ROOM_WRAP } from './tools/bounce.ts';
 export { dragPattern, PATTERN_EDGE, PATTERN_FLOOR, patternExtent, patternPlane, PATTERNS, shapeToPlane, type PatternHandle, type Pt } from './tools/pattern.ts'; // tool:pattern
-export { renderWithWall, WALL_EDGE, wallPaint, wallPixels, wallSize } from './tools/wall.ts'; // tool:wall
+export { renderWithWall, WALL_EDGE, WALL_SOFT, wallPaint, wallPixels, wallSize } from './tools/wall.ts'; // tool:wall
 export { glowKey, glowMaps, glowTint, type GlowMaps } from './tools/glow.ts';
 
 /** Document format version (BUILD.md §6). */

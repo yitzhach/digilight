@@ -98,7 +98,7 @@ test('parity: the wall', async ({ page }) => {
     'spotlight on the wall': wall(withLook(base, 'spotlight')),
     'gallery, a sun, a window, warm wall, finish': wall(parseDoc({ ...lit, lights: [...lit.lights,
       { id: 's', kind: 'sun', azimuth: 200, elevation: 20, intensity: 0.4, size: 0.05 }, { id: 'w', pos: [1.3, -0.2, 0.5], intensity: 0.6, pattern: 'window', size: 0.3 }],
-    finish: { grain: 0.5, vignette: 0.4, contrast: 0.2 } }), { warmth: 0.4, tone: 0.65, standoff: 0.06, margin: 0.4 }),
+    finish: { grain: 0.5, vignette: 0.4, contrast: 0.2 } }), { warmth: 0.4, tone: 0.65, standoff: 0.06, margin: 0.4, soft: 0.7 }),
     'dramatic with Texture, a sun, glow': wall(parseDoc({ ...withLook(base, 'dramatic'), relief: { mode: 'estimated' }, finish: { glow: 0.7 },
       lights: [...withLook(base, 'dramatic').lights, { id: 's', kind: 'sun', azimuth: 30, elevation: 35, intensity: 0.3 }] }), { shadow: 1 }),
   };

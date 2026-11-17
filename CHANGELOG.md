@@ -79,3 +79,4 @@
 ## Light tools: the wall (T2)
 - The wall (expert): the piece on a wall of one colour, the light spilling past its edge and the piece's soft shadow; `renderWithWall` in `core`, tests and a golden (D-070).
 - The wall in the preview (parity within 1 level), in Export's expert list, in Fit and in the exported file (D-071).
+- Shadow softness on the wall; an export too large for the browser is saved at the largest width it can hold, and says so (D-072).
