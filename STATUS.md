@@ -17,8 +17,8 @@ The foot of the page says which update it is; quote that line when something loo
 ## Waiting on Isaac
 - **Light tools (11-17):** Expert controls on. Texture measured, a raking lamp, Shadows high:
   Bounce light, Room light from one side. Finish, with Spotlight: Glow, Glow spread, Glow
-  warmth. Colour filter; Pattern and Edit pattern; Even out (Lights). Grain at full. Wall
-  (Export). Each: keep, tune or remove; 10 questions: `docs/light-tools.md` section 6.
+  warmth. Colour filter; Pattern and Edit pattern; Even out (Lights). Grain at full (the wall:
+  kept, D-073). Each: keep, tune or remove; 10 questions: `docs/light-tools.md` section 6.
 - **Projects (11-14, D-061):** Settings…: Save project, open it again, the recent list; Choose
   photos… under Apply to more photos (ten on the iMac is 6b's gate).
 - **Settings window (11-13, D-060):** copy and paste between photos, a preset in one tap, presets
