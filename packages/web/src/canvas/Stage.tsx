@@ -86,6 +86,8 @@ export function Stage() {
         lastPhoto = shownPhoto = ph;
         p.setPhoto(ph.image, ph.space);
       }
+      const sd = shown.value, wm = sd && sd.wall.on ? sd.wall.margin : 0, g0 = geo.peek(); // tool:wall: Fit takes in the wall
+      if ((g0.wall ?? 0) !== wm) { const g1 = { ...g0, wall: wm }; geo.value = clampPan({ ...g1, zoom: Math.max(g1.zoom, minZoom(g1)) }); }
       // Read every signal the picture depends on, so any change redraws it.
       void shown.value; void before.value; void kappa.value; void geo.value; void glow.value;
       const isLive = live.value;

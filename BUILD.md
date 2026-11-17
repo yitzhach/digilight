@@ -449,7 +449,10 @@ the way, so the shadow lies on the side away from the light and widens with `siz
 were the wall's paint, so the light runs on across the edge. The guard (§5.7) judges the piece
 only; Even out (§5.12.6) is the photo's light and does not reach the wall; without relief there
 is no sheen, bounce or room light from one side on it. At `wall.on = false` nothing is computed
-and the picture is the piece alone.
+and the picture is the piece alone. The preview draws the wall where it drew nothing outside the
+piece, out to `margin` picture widths, with the same prepared lights (the folded suns after the
+lamps); Fit takes in the piece and its wall. Grain's cell is taken through a signed integer, so
+points left of or above the piece wrap as the reference's do.
 
 ---
 
