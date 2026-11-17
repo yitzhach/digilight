@@ -14,7 +14,7 @@ The foot of the page says which update it is; quote that line when something loo
   out the photo, the wall (D-072). 150 unit, 44 e2e tests; 190.9 of 250 KB.
 
 ## Waiting on Isaac
-- **Look tuning (D-073):** pick a Spotlight and a Dramatic: https://claude.ai/artifact/JnySRuX73Eao3ioLbC6E7M
+- **Look tuning (D-073, D-074), round 2:** mark a Spotlight and a Dramatic: https://claude.ai/artifact/JnySRuX73Eao3ioLbC6E7M
 - **Light tools (11-17):** Expert controls on. Texture measured, a raking lamp, Shadows high:
   Bounce light, Room light from one side. Finish, with Spotlight: Glow, Glow spread, Glow
   warmth. Colour filter; Pattern and Edit pattern; Even out (Lights). Grain at full. Wall
@@ -29,7 +29,7 @@ The foot of the page says which update it is; quote that line when something loo
 `pnpm gate:relief` (3 min), `pnpm dev`. Never run `playwright install`. Review notes: ArtifactData.
 
 ## Next: new chats on Opus 5.5, repository `yitzhach/digilight` only, one at a time
-1. **Medium.** 6a item 2: read round `phase6a-1`'s notes (ArtifactData), set §6, `looks.ts`, goldens; 6a's gate.
+1. **Medium.** 6a item 2: read round `phase6a-2`'s notes (ArtifactData), set §6, `looks.ts`, goldens; 6a's gate.
 2. Phase 6b item 1, crop (**high**: the warp in `core`), item 2, Versions (**medium**), the gate.
 3. Light tools: the rest wait on Isaac (T1, T5 photos; T7, T9 his word). Prompt: light-tools.md.
 ```

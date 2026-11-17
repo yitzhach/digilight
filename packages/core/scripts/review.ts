@@ -11,20 +11,20 @@ import { encodeJpeg, loadFixture } from './jpeg.ts';
 // Rounds 1 to 3 (phase1-looks-*): every look. Round 4 (phase4-1): looks after D-033 and Texture.
 // Round 6a-1 (phase6a-1): Phase 6a item 2, from D-047: Spotlight less flat on the lintel, Dramatic
 // more contrast, by lights only (lower room light, a brighter, narrower lamp). Each as it is now,
-// then two candidates; his pick goes into BUILD.md §6 and the goldens.
+// then two candidates; his pick goes into BUILD.md §6 and the goldens. Round 6a-2 (phase6a-2): from
+// round 1's notes (A and B too much spot; Dramatic's right corner too dark): a wider beam each.
 const ROUND = {
-  id: 'phase6a-1', title: 'Spotlight and Dramatic review',
-  about: 'You said Spotlight looks a little muted and flat on the lintel, and Dramatic wants more contrast. Each is shown as it is now, then A (a step darker room, a brighter, narrower lamp) and B (a further step). Pick one for each, or say what is still wrong.',
-  generalHelp: 'Overall: which Spotlight and which Dramatic? Anything else about the looks?',
+  id: 'phase6a-2', title: 'Spotlight and Dramatic, round 2',
+  about: 'From your notes: Spotlight A and B had too much spot, so C keeps today\'s wide beam and only darkens the room a little and brightens the lamp. Dramatic A was closest but the right corner went too dark, so C widens the beam and lifts the room a touch. Mark the one you want for each.',
+  generalHelp: 'Overall: Spotlight now or C? Dramatic now, A or C?',
 };
 type Cand = { look: string; tag: string; amb?: number; lamp?: Record<string, number>; note: string };
 const CANDS: Cand[] = [
   { look: 'spotlight', tag: 'now', note: 'As it is now: room light 0.35, lamp 0.6, cone 32°' },
-  { look: 'spotlight', tag: 'A', amb: 0.25, lamp: { intensity: 0.75, cone: 28 }, note: 'A: room light 0.25, lamp 0.75, cone 28°' },
-  { look: 'spotlight', tag: 'B', amb: 0.2, lamp: { intensity: 0.8, cone: 26 }, note: 'B: room light 0.2, lamp 0.8, cone 26°' },
+  { look: 'spotlight', tag: 'C', amb: 0.28, lamp: { intensity: 0.68, cone: 32 }, note: 'C: room light 0.28, lamp 0.68, cone 32° (beam as now)' },
   { look: 'dramatic', tag: 'now', note: 'As it is now: room light 0.25, lamp 0.55, cone 30°' },
-  { look: 'dramatic', tag: 'A', amb: 0.1, lamp: { intensity: 0.8, cone: 24 }, note: 'A: room light 0.1, lamp 0.8, cone 24°' },
-  { look: 'dramatic', tag: 'B', amb: 0.06, lamp: { intensity: 0.9, cone: 22 }, note: 'B: room light 0.06, lamp 0.9, cone 22°' },
+  { look: 'dramatic', tag: 'A', amb: 0.1, lamp: { intensity: 0.8, cone: 24 }, note: 'A from round 1: room light 0.1, lamp 0.8, cone 24°' },
+  { look: 'dramatic', tag: 'C', amb: 0.14, lamp: { intensity: 0.75, cone: 30 }, note: 'C: room light 0.14, lamp 0.75, cone 30° (beam as now)' },
 ];
 // Earlier notes, if saved with ArtifactData list (out_dir out/notes): shown under each picture.
 const prevDir = new URL('../out/notes/notes/', import.meta.url), prev: Record<string, string> = {};
