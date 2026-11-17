@@ -48,7 +48,8 @@ export function packLamps(lamps: readonly Lamp[]): Float32Array {
   const u = new Float32Array(MAX_LAMPS * LAMP_VEC4S * 4);
   lamps.forEach((p, i) => {
     u.set([p.Lx, p.Ly, p.Lz, p.r0, p.l0z, p.falloff, p.intensity, p.spot ? 1 : 0,
-      p.sx, p.sy, p.sz, p.sun ? 1 : 0, p.cosOuter, p.cosInner, p.size, p.k0 + p.kt, p.r, p.g, p.b, 0], i * LAMP_VEC4S * 4);
+      p.sx, p.sy, p.sz, p.sun ? 1 : 0, p.cosOuter, p.cosInner, p.size, p.k0 + p.kt, p.r, p.g, p.b, 0,
+      ...(p.pat ? [...p.pat.U, p.pat.kind, ...p.pat.V, p.pat.soft] : [])], i * LAMP_VEC4S * 4); // tool:pattern
   });
   return u;
 }

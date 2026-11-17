@@ -17,6 +17,7 @@ export const TOOLS: readonly Tool[] = [
   { id: 'bounce', label: 'Bounce light', paths: ['relief.bounce'], off: { 'relief.bounce': 0 } },
   { id: 'roomside', label: 'Room light from one side', paths: ['relief.roomSide', 'relief.roomFrom'], off: { 'relief.roomSide': 0 } },
   { id: 'gel', label: 'Colour filter', paths: ['lights.0.gel', 'lights.0.gelHue'], off: { 'lights.0.gel': 0 } },
+  { id: 'pattern', label: 'Light patterns', paths: ['lights.0.pattern', 'lights.0.patternSize', 'lights.0.patternSoft', 'lights.0.patternTurn'], off: { 'lights.0.pattern': 'none' } },
   { id: 'glow', label: 'Glow', paths: ['finish.glow', 'finish.glowSpread', 'finish.glowWarmth'], off: { 'finish.glow': 0 } },
 ];
 

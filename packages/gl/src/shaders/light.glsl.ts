@@ -5,11 +5,12 @@
 // factor and Brightness), the finish by core's prepareFinish.
 
 import { GRAIN_CELLS, GRAIN_SHIFT, ROOM_WRAP } from 'core';
+import { PATTERN } from './pattern.glsl.ts'; // tool:pattern
 
 /** Most lights a document holds (§6), so the uniform arrays are this long. */
 export const MAX_LAMPS = 8;
 /** vec4s per lamp in u_lamp (see packLamps in preview.ts). */
-export const LAMP_VEC4S = 5;
+export const LAMP_VEC4S = 7; // tool:pattern: 5 without patterns
 
 export const VERTEX = `#version 300 es
 void main() {
@@ -76,6 +77,7 @@ float horizonAt(vec2 uv, float f) { // f: direction in layers, [0, 32)
   float ta = a * a * u_tmax, tb = b * b * u_tmax;
   return ta + (tb - ta) * t;
 }
+${PATTERN /* tool:pattern */}
 
 vec3 lightingAt(vec2 P, vec3 paint, out vec3 S) { // paint: the photo's linear colour at P (tool:bounce)
   vec3 E = u_base, n = vec3(0.0, 0.0, 1.0);
@@ -112,6 +114,8 @@ vec3 lightingAt(vec2 P, vec3 paint, out vec3 S) { // paint: the photo's linear c
       if (b.w > 0.5) e *= smoothstep0(c.x, c.y, -dot(D, s.xyz) / d);
       l = D / d; omega = c.z / d;
     }
+    vec4 pu = u_lamp[i * ${LAMP_VEC4S} + 5]; // tool:pattern: the basis U and kind, then V and softness
+    if (pu.w > 0.5) e *= patternFactor(pu, u_lamp[i * ${LAMP_VEC4S} + 6], s.w > 0.5, P, a, s.xyz);
     if (u_relief) {
       float w = min(omega, 0.5);
       float rel = clamp(max(dot(n, l) + w, 0.0) / (l.z + w), 0.0, 4.0);

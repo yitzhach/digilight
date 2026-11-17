@@ -16,6 +16,7 @@ export { defaultDoc, defaultLight, type Doc, type Light, type PhotoInfo } from '
 // Light tools (§5.12): trials, each removable in one commit.
 export { dropRetired, RETIRED, TOOLS, type Tool } from './tools/index.ts';
 export { ROOM_ELEVATION, ROOM_WRAP } from './tools/bounce.ts';
+export { PATTERN_EDGE, PATTERN_FLOOR, PATTERNS } from './tools/pattern.ts'; // tool:pattern
 export { glowKey, glowMaps, glowTint, type GlowMaps } from './tools/glow.ts';
 
 /** Document format version (BUILD.md §6). */

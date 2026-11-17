@@ -86,6 +86,30 @@ test('parity: colour filter', async ({ page }) => {
   }
 });
 
+// tool:pattern (§5.12.5): the shapes in the shader against the reference, lamps and a sun, with Texture too.
+test('parity: light patterns', async ({ page }) => {
+  await open(page);
+  const pat = (look: string, p: object, d: Doc = full) => { const b = withLook(d, look); return parseDoc({ ...b, lights: b.lights.map((l) => ({ ...l, ...p })) }); };
+  const docs: Record<string, Doc> = {
+    'soft window, window': pat('soft-window', { pattern: 'window' }),
+    'soft window, blinds, hard edges': pat('soft-window', { pattern: 'blinds', patternSoft: 0.05, patternSize: 0.3 }),
+    'soft window, leaves': pat('soft-window', { pattern: 'leaves' }),
+    'gallery, small window turned 25': pat('gallery', { pattern: 'window', patternSize: 0.25, patternTurn: 25, patternSoft: 0.6 }),
+    'spotlight, leaves, large': pat('spotlight', { pattern: 'leaves', patternSize: 1.5, patternSoft: 1 }),
+    'sun, blinds turned -60': parseDoc({ ...full, ambient: { level: 0.4 }, lights: [{ id: 's', kind: 'sun', intensity: 0.7, pattern: 'blinds', patternTurn: -60 }] }),
+  };
+  for (const [name, doc] of Object.entries(docs)) {
+    const kappa = guardKappa(photo, doc);
+    await check(page, name, doc, kappa, render(photo, doc, { width: WIDTH, kappa }));
+  }
+  // with Texture: sheen and shadows follow the pattern
+  await page.evaluate(() => (window as any).harness.reliefCPU());
+  const base = neutralDoc({ width: small.width, height: small.height, space: 'srgb', sha256: photo.sha256 });
+  const tex = parseDoc({ ...pat('raking-left', { pattern: 'leaves', patternSize: 0.3 }, base), relief: { mode: 'estimated', depth: 0.006, sheen: 0.4 } });
+  const kappa = guardKappa(small, tex);
+  await check(page, 'raking left, leaves, texture and sheen', tex, kappa, render(small, tex, { kappa, relief: estimatedRelief(small) }));
+});
+
 // The app itself: the panel builds a tool's controls from the schema (no interface code); Glow's
 // maps reach the picture through the guard's worker (tool:glow); the export is the reference's.
 test('app: the tools show under Expert controls, glow reaches the picture, the export is the reference', async ({ page }) => {
@@ -118,7 +142,12 @@ test('app: the tools show under Expert controls, glow reaches the picture, the e
   expect((await dl<Doc>('getDoc')).relief.bounce).toBe(0.5);
   // A light's tools show under that light (tool:gel).
   await page.locator('[data-look="spotlight"]').click();
-  for (const p of TOOLS.flatMap((t) => t.paths).filter((q) => q.startsWith('lights.'))) await expect(slider('Lights', p)).toHaveCount(1);
+  const withLight = await dl<{ path: string; type: string; label: string }[]>('describe');
+  for (const p of TOOLS.flatMap((t) => t.paths).filter((q) => q.startsWith('lights.'))) {
+    const s = withLight.find((x) => x.path === p)!;
+    if (s.type === 'enum') await expect(section('Lights').locator('label.select', { hasText: s.label })).toHaveCount(1); // tool:pattern
+    else await expect(slider('Lights', p)).toHaveCount(1);
+  }
   await slider('Lights', 'lights.0.gel').fill('0.4');
   expect((await dl<Doc>('getDoc')).lights[0]!.gel).toBe(0.4);
   await dl('reset');

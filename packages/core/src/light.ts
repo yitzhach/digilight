@@ -9,6 +9,7 @@ import { layerOf, ReliefSampler, type ReliefMaps } from './relief/sample.ts';
 import type { Doc, Light } from './schema.ts';
 import { openness, ROOM_ELEVATION, roomLight, wallLight, wallShare } from './tools/bounce.ts';
 import { filtered } from './tools/gel.ts'; // tool:gel
+import { lampBasis, patternFactor, sunBasis, type PatternBasis } from './tools/pattern.ts'; // tool:pattern
 
 export const luma = (r: number, g: number, b: number): number => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
@@ -31,6 +32,7 @@ interface Lamp {
   sx: number; sy: number; sz: number; spot: boolean; cosOuter: number; cosInner: number;
   intensity: number; r: number; g: number; b: number; // colour times the document's factor
   k0: number; kt: number; // a sun's horizon layer
+  pat: PatternBasis | null; // tool:pattern (§5.12.5): null for none
 }
 interface Relief {
   s: ReliefSampler | null; depth: number; shadows: number; ao: number; sheen: number; sharp: number;
@@ -75,9 +77,9 @@ export function prepareLighting(doc: Doc, a: number, kappa: number, maps?: Relie
   const lamps: Lamp[] = [];
   on.forEach((l, i) => {
     const col = cols[i]!, fc: RGB = [col[0] * f[0], col[1] * f[1], col[2] * f[2]];
-    if (l.kind === 'sun' && !relief) { // fall = lam = spot = rel = sh = 1: constant
+    if (l.kind === 'sun' && !relief && l.pattern === 'none') { // fall = lam = spot = rel = sh = 1: constant (tool:pattern: a pattern is not)
       for (let c = 0; c < 3; c++) base[c]! += l.intensity * fc[c]!;
-    } else if (l.intensity > 0) lamps.push(l.kind === 'sun' ? prepareSun(l, fc) : prepareLamp(l, a, fc));
+    } else if (l.intensity > 0) lamps.push(l.kind === 'sun' ? prepareSun(l, a, fc) : prepareLamp(l, a, fc));
   });
   const unit = !relief && lamps.length === 0 && base[0] === 1 && base[1] === 1 && base[2] === 1;
   return { base, lamps, unit, relief };
@@ -89,19 +91,22 @@ function prepareLamp(l: Light, a: number, col: RGB): Lamp {
   const ex = Lx - Ax, ey = Ly - Ay;
   const r0 = Math.sqrt(ex * ex + ey * ey + Lz * Lz);
   const spot = l.cone < 89.5;
+  const sx = (Ax - Lx) / r0, sy = (Ay - Ly) / r0, sz = -Lz / r0;
   return {
     sun: false, size: l.size, Lx, Ly, Lz, r0, l0z: Lz / r0, falloff: l.falloff,
-    sx: (Ax - Lx) / r0, sy: (Ay - Ly) / r0, sz: -Lz / r0,
+    sx, sy, sz,
     spot, cosOuter: spot ? dcos(l.cone * DEG) : 0, cosInner: spot ? dcos(l.cone * (1 - l.edge) * DEG) : 0,
     intensity: l.intensity, r: col[0], g: col[1], b: col[2], k0: 0, kt: 0,
+    pat: l.pattern === 'none' ? null : lampBasis(l.pattern, l.patternSize, l.patternSoft, l.patternTurn, [sx, sy, sz]), // tool:pattern
   };
 }
 
-function prepareSun(l: Light, col: RGB): Lamp {
+function prepareSun(l: Light, a: number, col: RGB): Lamp {
   const [x, y, z] = direction(l.azimuth, l.elevation), [k0, kt] = layerOf(x, y);
   return {
     sun: true, size: l.size, Lx: x, Ly: y, Lz: z, r0: 1, l0z: 1, falloff: 0, sx: 0, sy: 0, sz: 0,
     spot: false, cosOuter: 0, cosInner: 0, intensity: l.intensity, r: col[0], g: col[1], b: col[2], k0, kt,
+    pat: l.pattern === 'none' ? null : sunBasis(l.pattern, l.patternSize, l.patternSoft, l.patternTurn, a), // tool:pattern
   };
 }
 
@@ -136,6 +141,7 @@ export function lightingAt(L: Lighting, x: number, y: number, out: Float64Array,
       if (p.spot) e *= smoothstep(p.cosOuter, p.cosInner, -(dx * p.sx + dy * p.sy + dz * p.sz) / d);
       lx = dx / d; ly = dy / d; lz = dz / d; omega = p.size / d;
     }
+    if (p.pat) e *= patternFactor(p.pat, p.sun, x, y, p.Lx, p.Ly, p.Lz, p.r0, p.sx, p.sy, p.sz); // tool:pattern
     if (R) {
       const w = Math.min(omega, 0.5);
       const rel = Math.min(4, Math.max(0, nx * lx + ny * ly + nz * lz + w) / (lz + w));

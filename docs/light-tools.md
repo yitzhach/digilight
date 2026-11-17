@@ -111,7 +111,7 @@ never replace, move or filter the photo's pixels.
 | T6 | Softer shadows: bounce light, room light from one side | **built 11-17** (D-063) | done | his judgement: keep, tune or remove |
 | T8 | Glow | **built 11-17** (D-064) | done | his judgement |
 | T3a | Colour filter on a light | **built 11-17** (D-066) | done | his judgement: keep, tune or remove |
-| T3b | Light patterns: window, blinds, leaves | to build | Opus 5.5, high | nothing |
+| T3b | Light patterns: window, blinds, leaves | **built 11-17** (D-067) | done | his judgement: keep, tune or remove |
 | T2 | The wall: light pool, drop shadow | to build, after Phase 6b's crop | Opus 5.5, high, two chats | wall colours; frame or not |
 | T4 | Even out the photo | to build | Opus 5.5, medium | one unevenly lit photo of his |
 | T7 | 16-bit export | to build if wanted | Opus 5.5, medium | does a lab or customer want it? |
@@ -119,7 +119,7 @@ never replace, move or filter the photo's pixels.
 | T5 | More side-lit shots | to build | Opus 5.5, high (hard) | one piece lit from 6 to 8 sides |
 | T9 | Scene: portraits and general photos | experiment first | Opus 5.5, high | scope and hosting (section 6) |
 
-Order: T3b, T2 (these change how the product looks without Texture; T2 after the crop),
+Order: T2 (these change how the product looks without Texture; T2 after the crop),
 T4, then T1 and T5 when their photos exist. T7 and T9 only on Isaac's word.
 
 T1, T5 and T9 were first marked for Fable 5.2: they change `relief/measure.ts`, the hardest code
@@ -175,6 +175,20 @@ What to judge: add a second light from one side, give it Colour filter 0.8 and a
 pieces. It should read as a coloured lamp, not a tint over the picture. Camera white balance
 (30% by default) leans the whole picture a little against the filter, as a camera would; set
 it to 0 to see the filter at full strength. A strong filter dims its lamp.
+
+### T3b — Light patterns (BUILD.md §5.12.5)
+
+Settings in each light's expert list: Pattern (none, window, blinds, leaves), Pattern size,
+Pattern softness, Pattern turn. Files: `core/src/tools/pattern.ts`,
+`gl/src/shaders/pattern.glsl.ts`; hooks `tool:pattern` in `core/src/fields.ts`, `light.ts`,
+`index.ts`, `gl/src/shaders/light.glsl.ts` and `gl/src/preview.ts` (`packLamps`; a lamp is 7
+vec4s, 5 without it). Tests: `core/test/tool-pattern.test.ts`.
+
+What to judge: Soft window, then a light's Pattern: window, on three pieces. The window's
+shadow should read at a glance as light through a window; blinds and leaves likewise. Size
+makes the shapes larger, Softness blurs their edges, Turn turns them. The shapes keep the
+picture's up for any lamp, and follow the lamp's perspective (a lamp from the side stretches
+them across). The pattern's names in the list are plain words (no interface code).
 
 ---
 
