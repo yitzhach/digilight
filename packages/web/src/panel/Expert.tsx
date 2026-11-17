@@ -21,7 +21,7 @@ export function ExpertFields({ prefixes }: { prefixes: string[] }) {
   return (
     <div class="expert">
       {list.map((s) => {
-        if (s.type === 'number') return <Slider key={s.path} path={s.path} label={s.label} help={s.help} min={s.min!} max={s.max!} step={s.step!} />;
+        if (s.type === 'number') return <Slider key={s.path} path={s.path} label={s.label} help={s.help} min={s.min!} max={s.max!} step={s.step!} track={s.track} />;
         if (s.type === 'boolean') return <Switch key={s.path} path={s.path} label={s.label} help={s.help} />;
         if (s.type === 'enum') return <Select key={s.path} path={s.path} label={s.label} help={s.help} options={s.options!} names={WORDS} />;
         return null; // the curve: set by agents and presets, no editor (D-049, §8)

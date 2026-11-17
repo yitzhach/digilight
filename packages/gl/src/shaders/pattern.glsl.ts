@@ -25,8 +25,8 @@ float patternAt(float kind, vec2 pq, float soft) {
     + 0.25 * patNoise(vec2(12.3 * p + 7.7, 12.3 * q - 2.3))) / 1.75; // leaves
   return patEdge(n - 0.55, e);
 }
-// U, V: the basis (xyz) with the kind and the softness in w; La: the lamp's L and r0; sv: its beam
-float patternFactor(vec4 U, vec4 V, bool sun, vec2 P, vec4 La, vec3 sv) {
+// U, V: the basis (xyz) with the kind and the softness in w; C: the shift; La: the lamp's L and r0; sv: its beam
+float patternFactor(vec4 U, vec4 V, vec2 C, bool sun, vec2 P, vec4 La, vec3 sv) {
   vec2 pq;
   if (sun) pq = vec2(dot(vec3(P, 1.0), U.xyz), dot(vec3(P, 1.0), V.xyz));
   else {
@@ -35,6 +35,6 @@ float patternFactor(vec4 U, vec4 V, bool sun, vec2 P, vec4 La, vec3 sv) {
     if (!(ds > 0.0)) return 1.0;
     pq = (La.w / ds) * vec2(dot(D, U.xyz), dot(D, V.xyz));
   }
-  return ${PATTERN_FLOOR} + ${1 - PATTERN_FLOOR} * patternAt(U.w, pq, V.w);
+  return ${PATTERN_FLOOR} + ${1 - PATTERN_FLOOR} * patternAt(U.w, pq - C, V.w);
 }
 `;

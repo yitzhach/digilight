@@ -4,7 +4,9 @@
 
 export type Tier = 'simple' | 'expert';
 interface Base { tier: Tier; label: string; help: string }
-export interface NumField extends Base { type: 'number'; min: number; max: number; step: number; default: number }
+/** A colour strip under a slider, so the colour the value gives shows (D-068). */
+export type Track = 'hue' | 'tint';
+export interface NumField extends Base { type: 'number'; min: number; max: number; step: number; default: number; track?: Track }
 export interface BoolField extends Base { type: 'boolean'; default: boolean }
 export interface EnumField extends Base { type: 'enum'; options: readonly string[]; default: string }
 export interface CurveField extends Base { type: 'curve'; min: 0; max: 1; default: null }
@@ -45,12 +47,16 @@ export const LIGHT = {
   size: num(0, 1, 0.01, 0.05, 'expert', 'Softness', 'Size of the light: bigger gives softer shadows'),
   // tool:gel (§5.12.4)
   gel: num(0, 1, 0.01, 0, 'expert', 'Colour filter', 'A coloured filter over this light; 0 is none'),
-  gelHue: num(0, 360, 1, 30, 'expert', 'Filter colour', '0 red, 60 yellow, 120 green, 180 cyan, 240 blue, 300 magenta'),
+  gelHue: { ...num(0, 360, 1, 30, 'expert', 'Filter colour', '0 red, 60 yellow, 120 green, 180 cyan, 240 blue, 300 magenta'), track: 'hue' },
   // tool:pattern (§5.12.5)
   pattern: choice(['none', 'window', 'blinds', 'leaves'], 'none', 'expert', 'Pattern', 'Shadow shapes in this light, as from a window, blinds or leaves'),
   patternSize: num(0.05, 2, 0.01, 0.5, 'expert', 'Pattern size', 'How large the shapes are on the picture'),
   patternSoft: num(0, 1, 0.01, 0.3, 'expert', 'Pattern softness', 'How soft the shapes\' edges are'),
   patternTurn: num(-180, 180, 1, 0, 'expert', 'Pattern turn', 'Turns the pattern'),
+  patternStretch: num(0.25, 4, 0.01, 1, 'expert', 'Pattern stretch', 'Wider (up) or narrower (down) than it is tall'),
+  patternSkew: num(-1, 1, 0.01, 0, 'expert', 'Pattern slant', 'Slants the pattern sideways'),
+  patternX: num(-2, 2, 0.01, 0, 'expert', 'Pattern across', 'Moves the pattern right (up) or left (down)'),
+  patternY: num(-2, 2, 0.01, 0, 'expert', 'Pattern up and down', 'Moves the pattern up (up) or down (down)'),
 } satisfies Spec;
 
 export const RELIEF = {
@@ -65,6 +71,14 @@ export const RELIEF = {
   // tool:roomside (§5.12.2)
   roomSide: num(0, 1, 0.01, 0, 'expert', 'Room light from one side', 'How much of the room light comes from one side, so the surface shows in it'),
   roomFrom: num(0, 360, 1, 90, 'expert', 'Room light comes from', '0 right, 90 top, 180 left, 270 bottom'),
+} satisfies Spec;
+
+// tool:even (§5.12.6): a group of its own, shown in the Lights section's expert list
+export const PREPARE = {
+  tilt: num(-0.5, 0.5, 0.01, 0, 'expert', 'Even out: one side', 'Lifts (up) or lowers (down) the light on one side of the photo'),
+  tiltFrom: num(0, 360, 1, 90, 'expert', 'Even out: which side', '0 right, 90 top, 180 left, 270 bottom'),
+  corners: num(-0.5, 0.5, 0.01, 0, 'expert', 'Even out: corners', 'Up lifts the corners, down lowers them (a hot centre or dark corners in the photo)'),
+  tint: { ...num(-1, 1, 0.01, 0, 'expert', 'Green to magenta', 'Takes a green (up) or magenta (down) cast out of the photo\'s light'), track: 'tint' },
 } satisfies Spec;
 
 export const TONE = {
@@ -94,6 +108,7 @@ export interface Light {
   cone: number; edge: number; falloff: number; size: number;
   gel: number; gelHue: number; // tool:gel
   pattern: 'none' | 'window' | 'blinds' | 'leaves'; patternSize: number; patternSoft: number; patternTurn: number; // tool:pattern
+  patternStretch: number; patternSkew: number; patternX: number; patternY: number; // tool:pattern
 }
 export interface Doc {
   version: 2;
@@ -105,6 +120,7 @@ export interface Doc {
     bounce: number; roomSide: number; roomFrom: number; // tool:bounce, tool:roomside
   };
   tone: { protectWhites: boolean; highlightProtect: number; whiteAdapt: number };
+  prepare: { tilt: number; tiltFrom: number; corners: number; tint: number }; // tool:even
   finish: {
     exposure: number; contrast: number; warmth: number; saturation: number; vignette: number; grain: number; curve?: number[];
     glow: number; glowSpread: number; glowWarmth: number; // tool:glow
@@ -127,5 +143,6 @@ export function defaultDoc(photo: PhotoInfo): Doc {
   return {
     version: 2, photo: { ...photo },
     ambient: defaultsOf(AMBIENT), lights: [], relief: defaultsOf(RELIEF), tone: defaultsOf(TONE), finish: defaultsOf(FINISH),
+    prepare: defaultsOf(PREPARE), // tool:even
   };
 }

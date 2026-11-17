@@ -2,7 +2,8 @@
 
 Written 11-17 after an audit of DigiLight against other relighting tools (D-062). It lists the
 tools that audit found missing, says how every one of them is built so that it can be taken out
-again, and gives a build spec for each. Two are built (T6, T8); the rest are for new chats.
+again, and gives a build spec for each. Built: T6, T8, T3a, T3b, T4 (11-17); the rest are for
+new chats.
 
 **How to use it.** From 11-17 Isaac runs every tool on **Opus 5.5** (his call; the effort for
 each is in section 3). One tool at a time, in section 3's order. A chat may go on to the next
@@ -15,14 +16,15 @@ Prompt for a new chat (Opus 5.5, high effort; repository `yitzhach/digilight` on
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4 and 5.12, then
 docs/light-tools.md sections 1 to 3. Build the next light tool that is "to build" in section 3's
-order and does not wait on me (first: T3a, then T3b), exactly as its spec in section 5 and the
-rules in section 2 say; nothing beyond it. For each tool: write its maths into BUILD.md 5.12
-first, then the reference, tests, the shader, parity; run pnpm typecheck, pnpm test, pnpm e2e and
-the size check; update section 3, DECISIONS.md, CHANGELOG.md and STATUS.md; open a pull request,
-merge it when CI is green, and send me before and after pictures of it on the door and the
-painting. Then go on to the next tool. Stop and ask when a tool waits on me.
-My notes on the tools already built: Glow: [keep / tune: ... / remove]. Bounce light: [...].
-Room light from one side: [...]. Answers to section 6: [... / "not yet"]. Keep replies brief.
+order and does not wait on me (next: T2 the wall, its first chat: the reference), exactly as its
+spec in section 5 and the rules in section 2 say; nothing beyond it. For each tool: write its
+maths into BUILD.md 5.12 first, then the reference, tests, the shader, parity; run pnpm
+typecheck, pnpm test, pnpm e2e and the size check; update section 3, DECISIONS.md, CHANGELOG.md
+and STATUS.md; open a pull request, merge it when CI is green, and send me before and after
+pictures of it on the door and the painting. Then go on. Make the calls you can yourself and log
+them; collect what only I can answer in section 6 and stop when nothing is left that does not
+wait on me. My notes on the tools built: [each: keep / tune: ... / remove, or "not yet"].
+Answers to section 6: [... / "not yet"]. Keep replies brief.
 ```
 
 ---
@@ -51,7 +53,10 @@ A tool is a trial. It must be possible to delete it in one commit and leave no t
 picture, document or test that does not use it.
 
 1. **Expert tier only**, in `core/src/fields.ts`, in the group whose panel section should show
-   it. The panel builds itself from the schema (§8), so a tool has **no interface code**.
+   it. The panel builds itself from the schema (§8), so a tool has **no interface code**. Two
+   exceptions, at Isaac's request (D-068): a number field may carry `track` (a colour strip under
+   its slider, drawn by the generic Slider), and a tool may have its own on-picture handles in
+   one marked file in `web/src/canvas/` (T3b's `PatternBox.tsx`).
 2. **Off by default, exactly.** At its default a tool changes no byte: every existing golden
    and parity document passes untouched. If a golden moves, the tool is wrong.
 3. **Its maths is in BUILD.md §5.12**, one subsection per tool, normative like the rest of §5.
@@ -112,15 +117,16 @@ never replace, move or filter the photo's pixels.
 | T8 | Glow | **built 11-17** (D-064) | done | his judgement |
 | T3a | Colour filter on a light | **built 11-17** (D-066) | done | his judgement: keep, tune or remove |
 | T3b | Light patterns: window, blinds, leaves | **built 11-17** (D-067) | done | his judgement: keep, tune or remove |
-| T2 | The wall: light pool, drop shadow | to build, after Phase 6b's crop | Opus 5.5, high, two chats | wall colours; frame or not |
-| T4 | Even out the photo | to build | Opus 5.5, medium | one unevenly lit photo of his |
+| T2 | The wall: light pool, drop shadow | to build (next) | Opus 5.5, high, two chats | nothing: decided 11-17 (D-068) |
+| T4 | Even out the photo | **built 11-17** (D-069) | done | his judgement: keep, tune or remove |
 | T7 | 16-bit export | to build if wanted | Opus 5.5, medium | does a lab or customer want it? |
 | T1 | Gloss map | to build | Opus 5.5, high (hard: see its spec) | side-lit photos of two glossy pieces |
 | T5 | More side-lit shots | to build | Opus 5.5, high (hard) | one piece lit from 6 to 8 sides |
 | T9 | Scene: portraits and general photos | experiment first | Opus 5.5, high | scope and hosting (section 6) |
 
-Order: T2 (these change how the product looks without Texture; T2 after the crop),
-T4, then T1 and T5 when their photos exist. T7 and T9 only on Isaac's word.
+Order: T2 (it changes how the product looks without Texture), then T1 and T5 when their photos
+exist. T7 and T9 only on Isaac's word. Isaac (11-17): keep moving, make the calls and log them;
+he answers in bulk later (section 6).
 
 T1, T5 and T9 were first marked for Fable 5.2: they change `relief/measure.ts`, the hardest code
 here, or are research. On Opus 5.5: high effort, agree the gate's score with Isaac before any
@@ -174,21 +180,44 @@ Settings in each light's expert list: `lights.i.gel` (Colour filter), `lights.i.
 What to judge: add a second light from one side, give it Colour filter 0.8 and a blue, on two
 pieces. It should read as a coloured lamp, not a tint over the picture. Camera white balance
 (30% by default) leans the whole picture a little against the filter, as a camera would; set
-it to 0 to see the filter at full strength. A strong filter dims its lamp.
+it to 0 to see the filter at full strength. A strong filter dims its lamp. Filter colour has a
+colour strip under its slider (D-068).
 
 ### T3b — Light patterns (BUILD.md §5.12.5)
 
 Settings in each light's expert list: Pattern (none, window, blinds, leaves), Pattern size,
-Pattern softness, Pattern turn. Files: `core/src/tools/pattern.ts`,
-`gl/src/shaders/pattern.glsl.ts`; hooks `tool:pattern` in `core/src/fields.ts`, `light.ts`,
-`index.ts`, `gl/src/shaders/light.glsl.ts` and `gl/src/preview.ts` (`packLamps`; a lamp is 7
-vec4s, 5 without it). Tests: `core/test/tool-pattern.test.ts`.
+softness, turn, and (D-068) stretch, slant, across, up and down. Files:
+`core/src/tools/pattern.ts`, `gl/src/shaders/pattern.glsl.ts`, `web/src/canvas/PatternBox.tsx`;
+hooks `tool:pattern` in `core/src/fields.ts`, `light.ts`, `index.ts`,
+`gl/src/shaders/light.glsl.ts`, `gl/src/preview.ts` (`packLamps`; a lamp is 8 vec4s, 5 without
+it), `web/src/canvas/Handles.tsx`, `web/src/panel/Lights.tsx` and `style.css`. Tests:
+`core/test/tool-pattern.test.ts`.
+
+**Edit pattern** (D-068, Isaac's ask): with Expert controls on and a light with a pattern
+selected, the button beside Remove shows the pattern as a box on the picture. Drag inside it to
+move the pattern, a corner square to scale it, the right edge's circle to stretch it, the top
+edge's circle sideways to slant it or up and down to change its height. One undo step a drag.
+The turn stays a slider.
 
 What to judge: Soft window, then a light's Pattern: window, on three pieces. The window's
 shadow should read at a glance as light through a window; blinds and leaves likewise. Size
 makes the shapes larger, Softness blurs their edges, Turn turns them. The shapes keep the
 picture's up for any lamp, and follow the lamp's perspective (a lamp from the side stretches
 them across). The pattern's names in the list are plain words (no interface code).
+
+### T4 — Even out the photo (BUILD.md §5.12.6)
+
+Settings, a group `prepare` in the Lights section's expert list: Even out: one side, which side,
+corners, and Green to magenta (with a colour strip). They belong to the photo: Copy settings and
+presets leave them out. Files: `core/src/tools/even.ts`; hooks `tool:even` in
+`core/src/fields.ts`, `schema.ts`, `render.ts` (`isNeutral`), `light.ts`, `tools/glow.ts`
+(`glowKey`), `gl/src/shaders/light.glsl.ts`, `gl/src/preview.ts`, `web/src/panel/Lights.tsx`.
+Tests: `core/test/tool-even.test.ts`.
+
+What to judge: a photo lit from one side, or with a hot centre, comes out even in under a
+minute. On Isaac's panel photo (11-17, a hard cast shadow across the lower left) it lifts the
+dark side but cannot take out the shadow's sharp edge: a smooth correction cannot. That needs a
+different tool (section 6, question 8).
 
 ---
 
@@ -276,6 +305,11 @@ shadow, so a spotlight has something to be a spotlight on. It is on BUILD.md's L
 this promotes it. Best after Phase 6b's crop: the photo must be cropped to the piece (the
 `*-crop.jpg` fixtures already are).
 
+Isaac's calls, made for him on 11-17 at his word ("make the decisions", D-068): the wall is one
+colour set by Wall brightness and Wall colour below (white, 0.8, by default); no frame (a frame
+is a later tool); it does not wait for the crop: it works on any photo and is right when the
+photo is cropped to the piece (the `*-crop.jpg` fixtures are).
+
 Settings: a new group `wall` (add it to `Doc`, `docSchema`, `describe` and `settingsOf`;
 its panel place is the Export section's expert list, decide and log):
 
@@ -288,7 +322,7 @@ its panel place is the Export section's expert list, decide and log):
 | `wall.standoff` | 0..0.1, 0.02 | How far the piece stands off the wall (picture widths) |
 | `wall.shadow` | 0..1, 0.7 | Shadow strength |
 
-Maths (§5.12.6):
+Maths (§5.12.7):
 
 - The wall is the plane `z = -standoff`; the piece's face stays `z = 0`. A wall point `Q` is
   lit by §5.3 with `P = Q` (so `D.z = L.z + standoff`), relief off.
@@ -314,35 +348,7 @@ Tests: piece pixels equal with the wall on and off; on a flat grey photo with th
 grey, the light is continuous across the edge away from the shadow; the shadow lies on the side
 away from the lamp and widens with `size` and `standoff`; the export's size; a golden; parity.
 **Gate:** Isaac sees Gallery and Spotlight on the door and the lintel with the wall on, and an
-exported file with its margin. Ask him first: which wall colours, and a frame or not (a frame
-is a later tool).
-
-### T4 — Even out the photo (Opus 5.5, medium)
-
-`photo x light` assumes the photo was lit evenly. A hot spot or a darker side is multiplied
-into every look. Art reproduction corrects this before anything else.
-
-Settings: a new group `prepare`, shown in the Lights section's expert list (decide and log):
-
-| path | range, default | label |
-|---|---|---|
-| `prepare.tilt` | -0.5..0.5, 0 | Even out: one side |
-| `prepare.tiltFrom` | 0..360, 90 | Even out: which side |
-| `prepare.corners` | -0.5..0.5, 0 | Even out: corners (up lifts them, down lowers them) |
-| `prepare.tint` | -1..1, 0 | Green to magenta |
-
-Maths (§5.12.7): it is light, so the whites stay protected and the guard counts it. With `t`
-the distance from the picture's centre along `tiltFrom`'s direction, in units of half the
-picture's extent that way, and `r` the distance from the centre over half the diagonal:
-`g(P) = (1 + tilt * t) * (1 + corners * r * r)`, and `E(P) *= g(P) * T`, `T` a per-channel
-factor of luma 1 for `tint` (write its formula; magenta raises red and blue, green raises
-green). No `exp` per pixel.
-
-Hooks: `tools/even.ts`; the end of `lightingAt`; the shader's `lightingAt`.
-Tests: zero leaves the bytes; a photo made by multiplying a flat one by a known `g` comes back
-flat within one level with the opposite settings; a golden; parity.
-**Gate:** Isaac evens one unevenly lit photo of his in under a minute (needs that photo).
-Later, not now: a photo of a white card in the same light as a measured correction.
+exported file with its margin.
 
 ### T7 — 16-bit export (Opus 5.5, medium; only if Isaac says a lab or customer wants it)
 
@@ -421,6 +427,12 @@ From the audit, not yet answered:
 3. What do his customers make: varnished, metal leaf, heavy impasto, flat matte? (ranks T1)
 4. Would artists take four to eight side-lit shots, or is one extra photo the limit? (T5)
 5. Is the output mainly for screens, prints or both? (T7)
+6. Each tool built: keep, tune (how) or remove? Glow, Bounce light, Room light from one side,
+   Colour filter, Light patterns (and the Edit pattern box), Even out the photo.
+7. Grain at full is now about four times stronger (D-068): right, or a different top?
+8. A hard shadow in the photo (his panel, 11-17): worth a tool that lifts a shadow he paints or
+   that is found from its edge? It would be a light multiplier from a mask, never a repaint.
+9. T2's calls made for him (D-068): one wall colour (brightness and warmth), no frame. Right?
 
 Answered 11-17: expert-only additions that add light are fine (gloss, wall, glow), each
 removable; build now, before the first customer.

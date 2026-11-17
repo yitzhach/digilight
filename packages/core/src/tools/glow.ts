@@ -36,7 +36,7 @@ export interface GlowMaps {
 
 /** Everything the maps depend on: the light, not Glow's own three settings. */
 export function glowKey(doc: Doc, kappa: number): string {
-  return JSON.stringify([doc.ambient, doc.lights, doc.tone.whiteAdapt, doc.finish.exposure, kappa]);
+  return JSON.stringify([doc.ambient, doc.lights, doc.tone.whiteAdapt, doc.finish.exposure, kappa, doc.prepare]); // tool:even: prepare
 }
 
 const last = new WeakMap<Uint8ClampedArray, GlowMaps>();

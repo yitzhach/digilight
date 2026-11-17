@@ -8,6 +8,7 @@ import { K } from './relief/horizon.ts';
 import { layerOf, ReliefSampler, type ReliefMaps } from './relief/sample.ts';
 import type { Doc, Light } from './schema.ts';
 import { openness, ROOM_ELEVATION, roomLight, wallLight, wallShare } from './tools/bounce.ts';
+import { evenAt, prepareEven, type Even } from './tools/even.ts'; // tool:even
 import { filtered } from './tools/gel.ts'; // tool:gel
 import { lampBasis, patternFactor, sunBasis, type PatternBasis } from './tools/pattern.ts'; // tool:pattern
 
@@ -47,6 +48,7 @@ export interface Lighting {
   /** True when E is exactly (1, 1, 1) everywhere (§5.5 identity). */
   unit: boolean;
   relief: Relief | null;
+  even: Even | null; // tool:even (§5.12.6)
 }
 
 /**
@@ -81,8 +83,9 @@ export function prepareLighting(doc: Doc, a: number, kappa: number, maps?: Relie
       for (let c = 0; c < 3; c++) base[c]! += l.intensity * fc[c]!;
     } else if (l.intensity > 0) lamps.push(l.kind === 'sun' ? prepareSun(l, a, fc) : prepareLamp(l, a, fc));
   });
-  const unit = !relief && lamps.length === 0 && base[0] === 1 && base[1] === 1 && base[2] === 1;
-  return { base, lamps, unit, relief };
+  const even = prepareEven(doc.prepare, a); // tool:even
+  const unit = !relief && lamps.length === 0 && base[0] === 1 && base[1] === 1 && base[2] === 1 && !even;
+  return { base, lamps, unit, relief, even };
 }
 
 function prepareLamp(l: Light, a: number, col: RGB): Lamp {
@@ -97,7 +100,7 @@ function prepareLamp(l: Light, a: number, col: RGB): Lamp {
     sx, sy, sz,
     spot, cosOuter: spot ? dcos(l.cone * DEG) : 0, cosInner: spot ? dcos(l.cone * (1 - l.edge) * DEG) : 0,
     intensity: l.intensity, r: col[0], g: col[1], b: col[2], k0: 0, kt: 0,
-    pat: l.pattern === 'none' ? null : lampBasis(l.pattern, l.patternSize, l.patternSoft, l.patternTurn, [sx, sy, sz]), // tool:pattern
+    pat: l.pattern === 'none' ? null : lampBasis(l, [sx, sy, sz]), // tool:pattern
   };
 }
 
@@ -106,7 +109,7 @@ function prepareSun(l: Light, a: number, col: RGB): Lamp {
   return {
     sun: true, size: l.size, Lx: x, Ly: y, Lz: z, r0: 1, l0z: 1, falloff: 0, sx: 0, sy: 0, sz: 0,
     spot: false, cosOuter: 0, cosInner: 0, intensity: l.intensity, r: col[0], g: col[1], b: col[2], k0, kt,
-    pat: l.pattern === 'none' ? null : sunBasis(l.pattern, l.patternSize, l.patternSoft, l.patternTurn, a), // tool:pattern
+    pat: l.pattern === 'none' ? null : sunBasis(l, a), // tool:pattern
   };
 }
 
@@ -166,6 +169,7 @@ export function lightingAt(L: Lighting, x: number, y: number, out: Float64Array,
     }
     r += e * p.r; g += e * p.g; b += e * p.b;
   }
+  if (L.even) { const k = evenAt(L.even, x, y), T = L.even.T; r *= k * T[0]; g *= k * T[1]; b *= k * T[2]; } // tool:even
   out[0] = r; out[1] = g; out[2] = b;
   if (spec) { spec[0] = sr; spec[1] = sg; spec[2] = sb; }
 }

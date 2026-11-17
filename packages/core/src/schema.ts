@@ -3,7 +3,7 @@
 // from them here, so the expert panel and an AI agent's menu can never drift from validation.
 
 import { z } from 'zod';
-import { AMBIENT, FINISH, LIGHT, RELIEF, TONE, type Doc, type Field, type PhotoInfo, type Spec, type Tier, type TupleField } from './fields.ts';
+import { AMBIENT, FINISH, LIGHT, PREPARE, RELIEF, TONE, type Doc, type Field, type PhotoInfo, type Spec, type Tier, type Track, type TupleField } from './fields.ts';
 import { dropRetired } from './tools/index.ts';
 
 export * from './fields.ts';
@@ -42,6 +42,7 @@ export const docSchema = z.strictObject({
   relief: group(RELIEF).prefault({}),
   tone: group(TONE).prefault({}),
   finish: group(FINISH).prefault({}),
+  prepare: group(PREPARE).prefault({}), // tool:even
 }).superRefine((d, ctx) => {
   const ids = d.lights.map((l) => l.id);
   if (new Set(ids).size !== ids.length) ctx.addIssue({ code: 'custom', path: ['lights'], message: 'light ids must be different' });
@@ -65,7 +66,7 @@ export function neutralDoc(photo: PhotoInfo): Doc {
 
 export interface Setting {
   path: string; label: string; help: string; tier: Tier; type: Field['type'];
-  min?: number; max?: number; step?: number; options?: readonly string[];
+  min?: number; max?: number; step?: number; options?: readonly string[]; track?: Track;
   default: number | boolean | string | null; value: unknown;
 }
 
@@ -80,7 +81,7 @@ function entries(prefix: string, spec: Spec, value: Record<string, unknown>, out
 function setting(path: string, f: Field, value: unknown): Setting {
   const s: Setting = { path, label: f.label, help: f.help, tier: f.tier, type: f.type, default: f.default, value };
   if (f.type === 'number' || f.type === 'curve') { s.min = f.min; s.max = f.max; }
-  if (f.type === 'number') s.step = f.step;
+  if (f.type === 'number') { s.step = f.step; if (f.track) s.track = f.track; }
   if (f.type === 'enum') s.options = f.options;
   return s;
 }
@@ -93,5 +94,6 @@ export function describe(doc: Doc): Setting[] {
   entries('relief.', RELIEF, doc.relief, out);
   entries('tone.', TONE, doc.tone, out);
   entries('finish.', FINISH, doc.finish, out);
+  entries('prepare.', PREPARE, doc.prepare, out); // tool:even
   return out;
 }

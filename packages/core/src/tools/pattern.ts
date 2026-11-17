@@ -5,6 +5,7 @@
 
 import { DEG, dcos, dsin } from '../dmath.ts';
 import { pcg } from '../finish.ts';
+import type { Light } from '../fields.ts';
 
 export const PATTERNS = ['none', 'window', 'blinds', 'leaves'] as const;
 export type Pattern = (typeof PATTERNS)[number];
@@ -13,36 +14,45 @@ export const PATTERN_FLOOR = 0.15;
 /** A pattern's edge half-width per unit of patternSoft, in pattern units. */
 export const PATTERN_EDGE = 0.1;
 
-/** A light's pattern, ready for patternAt: p = t dot(D, U) with t = r0 / dot(D, s) for a lamp
- *  (D = P - L), p = U.x x + U.y y + U.z for a sun; q the same with V. kind 0 is none. */
-export interface PatternBasis { kind: number; soft: number; U: [number, number, number]; V: [number, number, number] }
+/** A light's pattern settings (fields.ts LIGHT). */
+export type PatternSettings = Pick<Light, 'pattern' | 'patternSize' | 'patternSoft' | 'patternTurn' | 'patternStretch' | 'patternSkew' | 'patternX' | 'patternY'>;
 
+/** A light's pattern, ready for patternFactor: p = t dot(D, U) - C[0] with t = r0 / dot(D, s) for
+ *  a lamp (D = P - L), p = U.x x + U.y y + U.z - C[0] for a sun; q the same with V and C[1]. */
+export interface PatternBasis { kind: number; soft: number; U: [number, number, number]; V: [number, number, number]; C: [number, number] }
+
+type V3 = [number, number, number];
 const turnOf = (turn: number) => { const t = (((turn % 360) + 360) % 360) * DEG; return [dcos(t), dsin(t)] as const; };
 
-/** For a lamp whose beam is the unit vector s (picture widths, y down, z out of the wall). */
-export function lampBasis(kind: Pattern, size: number, soft: number, turn: number, s: readonly [number, number, number]): PatternBasis {
-  const [sx, sy, sz] = s;
-  // v: the picture's up (0, -1, 0) in the plane at right angles to the beam; u = v x s, its right
-  const n = 1 / Math.sqrt(1 - sy * sy);
+/** The plane's unit right u and up v for a beam s: v is the picture's up (0, -1, 0) made square
+ *  to the beam, u = v x s. |s.y| < 1 always (a lamp stands off the wall). */
+export function planeAxes(s: Readonly<V3>): { u: V3; v: V3 } {
+  const [sx, sy, sz] = s, n = 1 / Math.sqrt(1 - sy * sy);
   const vx = sy * sx * n, vy = (sy * sy - 1) * n, vz = sy * sz * n;
-  const ux = vy * sz - vz * sy, uy = vz * sx - vx * sz, uz = vx * sy - vy * sx;
-  const [c, si] = turnOf(turn), k = 1 / size;
+  return { u: [vy * sz - vz * sy, vz * sx - vx * sz, vx * sy - vy * sx], v: [vx, vy, vz] };
+}
+
+/** The basis from the plane's (affine) right and up: turned, slanted, stretched, scaled, shifted. */
+function basis(l: PatternSettings, u: Readonly<V3>, v: Readonly<V3>): PatternBasis {
+  const [c, si] = turnOf(l.patternTurn), k = 1 / l.patternSize, st = l.patternStretch, sk = l.patternSkew;
+  const Ut = [0, 1, 2].map((i) => u[i]! * c + v[i]! * si), Vt = [0, 1, 2].map((i) => v[i]! * c - u[i]! * si);
+  const cx = l.patternX * c + l.patternY * si, cy = l.patternY * c - l.patternX * si; // the shift, turned
   return {
-    kind: PATTERNS.indexOf(kind), soft,
-    U: [(ux * c + vx * si) * k, (uy * c + vy * si) * k, (uz * c + vz * si) * k],
-    V: [(vx * c - ux * si) * k, (vy * c - uy * si) * k, (vz * c - uz * si) * k],
+    kind: PATTERNS.indexOf(l.pattern), soft: l.patternSoft,
+    U: Ut.map((x, i) => ((x - sk * Vt[i]!) * k) / st) as V3, V: Vt.map((x) => x * k) as V3,
+    C: [((cx - sk * cy) * k) / st, cy * k],
   };
 }
 
-/** For a sun, on a picture `a` high: (x - 0.5, a/2 - y), turned, over size. */
-export function sunBasis(kind: Pattern, size: number, soft: number, turn: number, a: number): PatternBasis {
-  const [c, si] = turnOf(turn), k = 1 / size, h = a / 2;
-  // p0 = x - 0.5, q0 = h - y; p = (p0 c + q0 si) k, q = (q0 c - p0 si) k
-  return {
-    kind: PATTERNS.indexOf(kind), soft,
-    U: [c * k, -si * k, (-0.5 * c + h * si) * k],
-    V: [-si * k, -c * k, (h * c + 0.5 * si) * k],
-  };
+/** For a lamp whose beam is the unit vector s (picture widths, y down, z out of the wall). */
+export function lampBasis(l: PatternSettings, s: Readonly<V3>): PatternBasis {
+  const { u, v } = planeAxes(s);
+  return basis(l, u, v);
+}
+
+/** For a sun, on a picture `a` high: the plane is the picture, (x - 0.5, a/2 - y). */
+export function sunBasis(l: PatternSettings, a: number): PatternBasis {
+  return basis(l, [1, 0, -0.5], [0, -1, a / 2]);
 }
 
 const ss = (a: number, b: number, x: number) => {
@@ -86,12 +96,72 @@ export function patternAt(kind: number, p: number, q: number, soft: number): num
 export function patternFactor(B: PatternBasis, sun: boolean, x: number, y: number,
   Lx: number, Ly: number, Lz: number, r0: number, sx: number, sy: number, sz: number): number {
   let p: number, q: number;
-  if (sun) { p = B.U[0] * x + B.U[1] * y + B.U[2]; q = B.V[0] * x + B.V[1] * y + B.V[2]; }
+  if (sun) { p = B.U[0] * x + B.U[1] * y + B.U[2] - B.C[0]; q = B.V[0] * x + B.V[1] * y + B.V[2] - B.C[1]; }
   else {
     const dx = x - Lx, dy = y - Ly, dz = -Lz, ds = dx * sx + dy * sy + dz * sz;
     if (!(ds > 0)) return 1;
     const t = r0 / ds;
-    p = t * (dx * B.U[0] + dy * B.U[1] + dz * B.U[2]); q = t * (dx * B.V[0] + dy * B.V[1] + dz * B.V[2]);
+    p = t * (dx * B.U[0] + dy * B.U[1] + dz * B.U[2]) - B.C[0]; q = t * (dx * B.V[0] + dy * B.V[1] + dz * B.V[2]) - B.C[1];
   }
   return PATTERN_FLOOR + (1 - PATTERN_FLOOR) * patternAt(B.kind, p, q, B.soft);
+}
+
+// ---- The pattern's frame on the picture, for the handles that move, scale, stretch and slant it
+// (web/src/canvas/PatternBox.tsx). Picture points (x, y) are in picture widths, y down; plane
+// points (p0, q0) are in the pattern's plane before its own shift, turn and scale, up positive.
+
+const len = (x: number, y: number, z: number) => Math.sqrt(x * x + y * y + z * z);
+type Lamped = PatternSettings & Pick<Light, 'kind' | 'pos' | 'aim'>;
+export type Pt = [number, number];
+
+/** From the picture to the pattern's plane and back (null where a ray misses). */
+export function patternPlane(l: Lamped, a: number): { toPlane(x: number, y: number): Pt | null; toPicture(p: number, q: number): Pt | null } {
+  if (l.kind === 'sun') return { toPlane: (x, y) => [x - 0.5, a / 2 - y], toPicture: (p, q) => [p + 0.5, a / 2 - q] };
+  const L: V3 = [l.pos[0], l.pos[1] * a, l.pos[2]], A: V3 = [l.aim[0], l.aim[1] * a, 0];
+  const r0 = len(A[0] - L[0], A[1] - L[1], L[2]), s: V3 = [(A[0] - L[0]) / r0, (A[1] - L[1]) / r0, -L[2] / r0];
+  const { u, v } = planeAxes(s), dot = (d: V3, w: V3) => d[0] * w[0] + d[1] * w[1] + d[2] * w[2];
+  return {
+    toPlane(x, y) {
+      const D: V3 = [x - L[0], y - L[1], -L[2]], ds = dot(D, s);
+      return ds > 0 ? [(r0 / ds) * dot(D, u), (r0 / ds) * dot(D, v)] : null;
+    },
+    toPicture(p, q) {
+      const d: V3 = [A[0] + p * u[0] + q * v[0] - L[0], A[1] + p * u[1] + q * v[1] - L[1], p * u[2] + q * v[2] - L[2]];
+      if (!(d[2] < 0)) return null;
+      const k = -L[2] / d[2];
+      return [L[0] + k * d[0], L[1] + k * d[1]];
+    },
+  };
+}
+
+/** Half the width and height of the box the handles draw, in shape units. */
+export const patternExtent = (pattern: Light['pattern']): Pt => (pattern === 'window' ? [0.5, 0.75] : [0.5, 0.5]);
+
+/** Shape units (sp, sq) to the plane: C + R(turn) size (stretch sp + slant sq, sq). */
+export function shapeToPlane(l: PatternSettings, sp: number, sq: number): Pt {
+  const [c, si] = turnOf(l.patternTurn), a = l.patternSize * (l.patternStretch * sp + l.patternSkew * sq), b = l.patternSize * sq;
+  return [l.patternX + a * c - b * si, l.patternY + a * si + b * c];
+}
+/** A plane point in the pattern's turned frame about its centre. */
+function local(l: PatternSettings, p: number, q: number): Pt {
+  const [c, si] = turnOf(l.patternTurn), dp = p - l.patternX, dq = q - l.patternY;
+  return [dp * c + dq * si, dq * c - dp * si];
+}
+
+export type PatternHandle = 'move' | 'scale' | 'stretch' | 'top';
+const clamp = (x: number, lo: number, hi: number) => Math.round(Math.min(hi, Math.max(lo, x)) * 1000) / 1000;
+
+/** The settings after dragging `handle` from plane point `from` to `to`; `l` as the drag began. */
+export function dragPattern(l: PatternSettings, handle: PatternHandle, from: Pt, to: Pt): Partial<PatternSettings> {
+  const [ex, ey] = patternExtent(l.pattern);
+  if (handle === 'move') return { patternX: clamp(l.patternX + to[0] - from[0], -2, 2), patternY: clamp(l.patternY + to[1] - from[1], -2, 2) };
+  const [lp, lq] = local(l, to[0], to[1]);
+  if (handle === 'scale') {
+    const [fp, fq] = local(l, from[0], from[1]), r0 = len(fp, fq, 0);
+    return r0 > 0 ? { patternSize: clamp((l.patternSize * len(lp, lq, 0)) / r0, 0.05, 2) } : {};
+  }
+  if (handle === 'stretch') return { patternStretch: clamp((lp - l.patternSkew * lq) / (l.patternSize * ex), 0.25, 4) };
+  if (!(lq > 0)) return {}; // the top edge: its height sets the size (the width kept), its sideways place the slant
+  const size = clamp(lq / ey, 0.05, 2);
+  return { patternSize: size, patternStretch: clamp((l.patternStretch * l.patternSize) / size, 0.25, 4), patternSkew: clamp(lp / lq, -1, 1) };
 }

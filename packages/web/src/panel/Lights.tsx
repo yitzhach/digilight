@@ -5,6 +5,7 @@
 import { cmd, expert, run, selected, shown } from '../state.ts';
 import { Slider } from './controls.tsx';
 import { ExpertFields } from './Expert.tsx';
+import { editingPattern } from '../canvas/PatternBox.tsx'; // tool:pattern
 
 const Z0 = 0.05, Z1 = 1.5;
 /** Angle 0 (raking) to 100 (front) = pos.z 0.05 to 1.5 on a log scale. */
@@ -43,13 +44,18 @@ export function Lights() {
           <div class="row">
             <button onClick={() => run(() => cmd.updateLight(l.id, { on: !l.on }))} title="Switch this light off or on">{l.on ? 'Switch off' : 'Switch on'}</button>
             <button onClick={() => run(() => cmd.removeLight(l.id))} title="Remove this light (Delete)">Remove</button>
+            {expert.value && l.pattern !== 'none' && ( // tool:pattern
+              <button class={editingPattern.value ? 'current' : ''} onClick={() => (editingPattern.value = !editingPattern.value)}
+                title="Show the pattern as a box on the picture, with handles to move, scale, stretch and slant it">
+                {editingPattern.value ? 'Done' : 'Edit pattern'}</button>
+            )}
           </div>
           <ExpertFields prefixes={[p]} />
         </div>
       )}
       <Slider path="ambient.level" label="Room light" help="How much of the light in the photo stays" min={0} max={200} step={1}
         toValue={(t) => t / 100} fromValue={(v) => v * 100} format={(t) => `${Math.round(t)}%`} />
-      <ExpertFields prefixes={['ambient.', 'tone.']} />
+      <ExpertFields prefixes={['ambient.', 'prepare.', 'tone.']} /* tool:even: prepare. */ />
     </section>
   );
 }

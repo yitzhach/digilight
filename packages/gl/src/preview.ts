@@ -49,7 +49,7 @@ export function packLamps(lamps: readonly Lamp[]): Float32Array {
   lamps.forEach((p, i) => {
     u.set([p.Lx, p.Ly, p.Lz, p.r0, p.l0z, p.falloff, p.intensity, p.spot ? 1 : 0,
       p.sx, p.sy, p.sz, p.sun ? 1 : 0, p.cosOuter, p.cosInner, p.size, p.k0 + p.kt, p.r, p.g, p.b, 0,
-      ...(p.pat ? [...p.pat.U, p.pat.kind, ...p.pat.V, p.pat.soft] : [])], i * LAMP_VEC4S * 4); // tool:pattern
+      ...(p.pat ? [...p.pat.U, p.pat.kind, ...p.pat.V, p.pat.soft, ...p.pat.C, 0, 0] : [])], i * LAMP_VEC4S * 4); // tool:pattern
   });
   return u;
 }
@@ -66,6 +66,7 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
     relief: loc('u_relief'), slopes: loc('u_slopes'), horizon: loc('u_horizon'), aoTex: loc('u_aoTex'), rAspect: loc('u_rAspect'),
     tmax: loc('u_tmax'), depth: loc('u_depth'), shadows: loc('u_shadows'), ao: loc('u_ao'), sheen: loc('u_sheen'), sharp: loc('u_sharp'),
     bounce: loc('u_bounce'), roomSide: loc('u_roomSide'), room: loc('u_room'), // tool:bounce, tool:roomside
+    even: loc('u_even'), evenA: loc('u_evenA'), evenB: loc('u_evenB'), evenT: loc('u_evenT'), // tool:even
     glow: loc('u_glow'), glowNear: loc('u_glowNear'), glowFar: loc('u_glowFar'), glowTint: loc('u_glowTint'), glowMix: loc('u_glowMix'), // tool:glow
     finish: loc('u_finish'), warm: loc('u_warm'), contrast: loc('u_contrast'), saturation: loc('u_saturation'),
     vignette: loc('u_vignette'), grain: loc('u_grain'), vig: loc('u_vig'), hasCurve: loc('u_hasCurve'), curve: loc('u_curve'),
@@ -145,6 +146,9 @@ export function createPreview(canvas: HTMLCanvasElement | OffscreenCanvas): Prev
       gl.uniform1f(U.protect, doc!.tone.highlightProtect);
       gl.uniform1i(U.lamps, lighting.lamps.length);
       gl.uniform4fv(U.lamp, lampData);
+      const ev = lighting.even; // tool:even
+      gl.uniform1i(U.even, ev ? 1 : 0);
+      if (ev) { gl.uniform4f(U.evenA, ev.cx, ev.cy, ev.kx, ev.ky); gl.uniform3f(U.evenB, ev.h, ev.k, ev.inv); gl.uniform3f(U.evenT, ev.T[0], ev.T[1], ev.T[2]); }
       const R = lighting.relief && relief ? doc!.relief : null;
       gl.uniform1i(U.relief, R ? 1 : 0);
       gl.uniform1i(U.slopes, 1); gl.uniform1i(U.horizon, 2); gl.uniform1i(U.aoTex, 3);

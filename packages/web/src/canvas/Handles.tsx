@@ -4,9 +4,10 @@
 // (the buttons for the same zoom are Zoom.tsx).
 // A drag shows its document live (preview) and commits once on release: one undo step.
 
-import type { Doc, Light } from 'core';
+import { dragPattern, patternPlane, type Doc, type Light, type PatternHandle, type Pt } from 'core';
 import { useRef } from 'preact/hooks';
 import { cmd, preview, run, selected, shown } from '../state.ts';
+import { editingPattern, PatternBox } from './PatternBox.tsx'; // tool:pattern
 import { geo } from './Stage.tsx';
 import { clampPan, toPicture, toScreen, zoomAt, type Geometry } from './view.ts';
 import { zoomMax } from './Zoom.tsx';
@@ -31,7 +32,8 @@ function handleAt(g: Geometry, l: Light): [number, number] {
 
 type Drag =
   | { kind: 'light'; id: string; part: 'pos' | 'aim'; moved: boolean; last?: Partial<Light> }
-  | { kind: 'pan'; x: number; y: number; pan: [number, number] };
+  | { kind: 'pan'; x: number; y: number; pan: [number, number] }
+  | { kind: 'pattern'; id: string; handle: PatternHandle; l: Light; from: Pt; last?: Partial<Light> }; // tool:pattern
 
 export function Handles() {
   const svg = useRef<SVGSVGElement>(null);
@@ -51,6 +53,13 @@ export function Handles() {
     const [x, y] = local(e);
     pointers.current.set(e.pointerId, [x, y]);
     if (pointers.current.size === 2) { drag.current = null; pinch.current = 0; return; }
+    const pt = (e.target as Element).closest('[data-pattern]'); // tool:pattern
+    if (pt) {
+      const id = pt.getAttribute('data-for')!, l = shown.value!.lights.find((k) => k.id === id)!, [u, v] = toPicture(geo.value, x, y);
+      const from = patternPlane(l, geo.value.aspect).toPlane(u, v * geo.value.aspect);
+      drag.current = from ? { kind: 'pattern', id, handle: pt.getAttribute('data-pattern') as PatternHandle, l, from } : null;
+      return;
+    }
     if (t) {
       const id = t.getAttribute('data-light')!, part = t.getAttribute('data-part') as 'pos' | 'aim';
       selected.value = id;
@@ -83,6 +92,11 @@ export function Handles() {
     const doc = shown.value!, l = doc.lights.find((k) => k.id === dr.id);
     if (!l) return;
     const [u, v] = toPicture(gg, x, y);
+    if (dr.kind === 'pattern') { // tool:pattern
+      const to = patternPlane(dr.l, gg.aspect).toPlane(u, v * gg.aspect);
+      if (to) { dr.last = dragPattern(dr.l, dr.handle, dr.from, to); preview(withLight(doc, dr.id, dr.last)); }
+      return;
+    }
     let part: Partial<Light>;
     if (l.kind === 'sun' && dr.part === 'pos') {
       const [cx, cy] = toScreen(gg, 0.5, 0.5);
@@ -100,6 +114,7 @@ export function Handles() {
     const dr = drag.current;
     drag.current = null;
     if (dr?.kind === 'light' && dr.moved && dr.last) run(() => cmd.updateLight(dr.id, dr.last!));
+    if (dr?.kind === 'pattern' && dr.last) run(() => cmd.updateLight(dr.id, dr.last!)); // tool:pattern
   }
 
   function wheel(e: WheelEvent) {
@@ -129,6 +144,7 @@ export function Handles() {
   return (
     <svg class="handles" ref={svg} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
       onWheel={wheel} onDblClick={dbl} width={g.w} height={g.h}>
+      {sel && sel.pattern !== 'none' && editingPattern.value && <PatternBox g={g} l={sel} />/* tool:pattern */}
       {sel && sel.kind === 'lamp' && <Aim g={g} l={sel} />}
       {d.lights.map((l, i) => {
         const [x, y] = handleAt(g, l), on = l.id === selected.value;

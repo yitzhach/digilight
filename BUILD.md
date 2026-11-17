@@ -368,10 +368,16 @@ u  = cross(v, s)                            // its right
 t  = r0 / dot(D, s)                         // the ray from L through P meets the plane at L + t D
 (p0, q0) = t * (dot(D, u), dot(D, v))       // a lamp; 1 is the factor where dot(D, s) <= 0
 (p0, q0) = (P.x - 0.5, a/2 - P.y)           // a sun: on the picture, from its centre, up positive
-θ  = patternTurn mod 360,  (p, q) = (p0 cos θ + q0 sin θ,  q0 cos θ - p0 sin θ) / patternSize
+θ  = patternTurn mod 360,  c = (patternX, patternY)               // the shift, in the plane, up positive
+(pt, qt) = ((p0 - c.x) cos θ + (q0 - c.y) sin θ,  (q0 - c.y) cos θ - (p0 - c.x) sin θ)
+(p, q)   = ((pt - patternSkew * qt) / (patternSize * patternStretch),  qt / patternSize)
 ```
 
 `|s.y| < 1` always (a lamp stands off the wall), so `v` is defined. The turn is counter-clockwise.
+Stretch, slant and shift (D-068) are 1, 0 and 0 by default, which is the pattern as first built.
+The reference folds all of it into two vectors and a constant per light (`tools/pattern.ts`); the
+handles on the picture invert it (`shapeToPlane`, `patternPlane`, `dragPattern`) and change only
+these settings.
 The shapes, with `edge(x) = smoothstep(-ε, ε, x)`, `ε = 0.1 * patternSoft` (a step at 0),
 `frac(x) = x - floor(x)`:
 
@@ -391,6 +397,24 @@ Every shape is continuous where `floor` steps, so float32 and float64 agree (D-0
 on the light's `e` after the spot (§5.3), before rel and sh, so sheen and bounce follow it:
 `e *= 0.15 + 0.85 M`. A sun with a pattern is not constant, so §5.4 does not fold it into the
 ambient term; at `none` nothing is computed.
+
+**5.12.6 Even out the photo** (`prepare.tilt`, `tiltFrom`, `corners`, `tint`; T4, D-068). The
+light the photo was taken in is multiplied into every look; a darker side, a hot centre or a
+colour cast can be taken out. It is light: the whites stay protected and the guard counts it.
+
+```
+d  = (cos tiltFrom, -sin tiltFrom),  C = (0.5, a/2)
+t  = dot(P - C, d) / (0.5 |d.x| + (a/2) |d.y|)       // -1 to 1 across the picture along d
+r2 = |P - C|^2 / ((1 + a^2) / 4)                      // 0 at the centre, 1 at the corners
+g  = ((1 + h t) / (1 - h t)) * ((1 + k r2) / (1 - k r2)),  h = tilt / 2,  k = corners / 2
+m  = 0.1 * tint,  T = (1 + m, 1 - m, 1 + m) / luma(1 + m, 1 - m, 1 + m)   // magenta lifts red and blue
+E  = E * g * T                                        // per channel, at the end of §5.4
+```
+
+`g` is about `1 + tilt t` near the centre, and the opposite settings undo it exactly (a ratio, not
+`exp`). `|h t|` and `|k r2|` stay at or under 0.25. With all three at 0 nothing is computed and the
+document is neutral as before. Sheen is not changed (it is not the photo's light). The settings
+belong to the photo: Copy settings and presets leave them out.
 
 ---
 
@@ -876,9 +900,8 @@ it can and on a server otherwise.
 Expert settings that make the light itself better, each a trial that can be removed in one
 commit. The rules, the state of each and a build spec for each are in `docs/light-tools.md`;
 the maths of those built is §5.12. One tool per chat, in any gap between phases; a tool never
-blocks a phase. Built: T6 softer shadows, T8 Glow, T3a colour filter, T3b light patterns. To
-build, on Opus 5.5: T2 the wall, T4 even out the photo, T7 16-bit export, and (hard: high
-effort, the gate agreed first) T1 gloss map, T5 more side-lit shots, T9 the portrait experiment.
+blocks a phase. Built: T6 softer shadows, T8 Glow, T3a colour filter, T3b light patterns, T4 even
+out the photo. To build, on Opus 5.5: T2 the wall, T7 16-bit export, and (hard: high effort, the gate agreed first) T1 gloss map, T5 more side-lit shots, T9 the portrait experiment.
 Isaac runs them all on Opus 5.5 (11-17, D-065).
 
 **Gate, per tool:** its tests and parity pass with every older golden untouched; Isaac tries
