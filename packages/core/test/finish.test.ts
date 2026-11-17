@@ -100,7 +100,7 @@ test('grain: an even hash on a fixed grid, zero on average, the same at any size
   expect(grainAt(0.25, 0.125)).toBe(grainAt(0.25 + 0.1 / 2048, 0.125 + 0.1 / 2048));
   const photo = flat(128), out = render(photo, docOf(photo, { grain: 1 }));
   expect(Math.abs(mean(out, 0) - 128)).toBeLessThan(1.5);
-  expect(spread(out)).toBeGreaterThan(4);
+  expect(spread(out)).toBeGreaterThan(15); // clearly visible at full (D-068)
 });
 
 test('a neutral finish changes nothing; any finish makes it a full render', () => {

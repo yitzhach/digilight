@@ -254,7 +254,7 @@ luma 1), then on display-encoded values `v`: contrast (`v = 0.5 + (v - 0.5) * (1
 contrast <= 0; for > 0 the S-curve `v = mix(v, smoothstep(0, 1, v), contrast)`), saturation (`v =
 grey + (v - grey) * (1 + saturation)`, grey = luma of the encoded values), curve (a 256-entry
 table, expert; read at `255 v`, linear between entries), vignette (`v *= 1 - vignette * smoothstep(0.55, 1.15, dist)`, `dist` = distance
-from the centre in units of half the diagonal), grain (expert; `v += grain * 0.08 * (h - 0.5)`,
+from the centre in units of half the diagonal), grain (expert; `v += grain * 0.3 * (h - 0.5)`, D-068,
 `h` in `[0, 1)` from an integer hash (PCG) of the pixel's cell on a grid 2048 cells wide, so
 every size has the same grain and the shader and the reference agree; the cell of picture point
 `(x, y)` is `floor(2048 x + 1/3), floor(2048 y + 1/3)`: shifted a third of a cell so no pixel

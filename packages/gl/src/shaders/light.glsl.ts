@@ -180,7 +180,7 @@ vec3 finish(vec3 c, vec2 P) { // linear in, display-encoded out
   if (u_saturation != 0.0) { float grey = luma(v); v = grey + (v - grey) * (1.0 + u_saturation); }
   if (u_hasCurve) v = vec3(curveAt(v.r), curveAt(v.g), curveAt(v.b));
   if (u_vignette > 0.0) v *= 1.0 - u_vignette * smoothstep0(0.55, 1.15, length(P - u_vig.xy) * u_vig.z);
-  if (u_grain > 0.0) v += u_grain * 0.08 * (grainAt(P) - 0.5);
+  if (u_grain > 0.0) v += u_grain * 0.3 * (grainAt(P) - 0.5);
   return clamp(v, 0.0, 1.0);
 }
 
