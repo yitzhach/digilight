@@ -30,8 +30,8 @@ The foot of the page says which update it is; quote that line when something loo
 ## Next: new chats on Opus 5.5, repository `yitzhach/digilight` only, one at a time
 1. **Medium.** Phase 6a item 2 (look tuning, from Isaac's settings notes), then 6a's gate.
 2. Phase 6b item 1, crop (**high**: the warp in `core`), item 2, Versions (**medium**), the gate.
-3. A light tool, any time: T3a colour filter (**medium**), T3b patterns (**high**), T2 the wall
-   (**high**, after the crop). Its own prompt is at the top of `docs/light-tools.md`.
+3. Light tools, in order (D-065): T3a colour filter, T3b patterns, T2 the wall (after the crop),
+   T4. **High.** The prompt for that chat is at the top of `docs/light-tools.md`.
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do chat
 [1 or 2] of STATUS.md's "Next" as BUILD.md section 10 lists it; nothing beyond it. Answers to

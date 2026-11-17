@@ -828,8 +828,9 @@ Expert settings that make the light itself better, each a trial that can be remo
 commit. The rules, the state of each and a build spec for each are in `docs/light-tools.md`;
 the maths of those built is §5.12. One tool per chat, in any gap between phases; a tool never
 blocks a phase. Built: T6 softer shadows, T8 Glow. To build, on Opus 5.5: T3a colour filter,
-T3b light patterns, T2 the wall, T4 even out the photo, T7 16-bit export. On Fable 5.2: T1
-gloss map, T5 more side-lit shots, T9 the portrait experiment.
+T3b light patterns, T2 the wall, T4 even out the photo, T7 16-bit export, and (hard: high
+effort, the gate agreed first) T1 gloss map, T5 more side-lit shots, T9 the portrait experiment.
+Isaac runs them all on Opus 5.5 (11-17, D-065).
 
 **Gate, per tool:** its tests and parity pass with every older golden untouched; Isaac tries
 it and says keep, tune or remove.
@@ -894,7 +895,7 @@ address until Isaac says 2.0 has replaced it.
 | 8b Ready for a first customer | Sonnet 5.5 | pages and words |
 | **10 Trained model** | **Fable 5.2, high (or ultracode)** | research with an honest gate |
 | Light tools T2, T3a, T3b, T4, T7 | Opus 5.5: high for T2 and T3b, medium for the rest | a written spec each (`docs/light-tools.md`); T2 and T3b change both renderers |
-| **Light tools T1, T5, T9** | **Fable 5.2, high** | they change how the surface is measured, or are research |
+| Light tools T1, T5, T9 | Opus 5.5, high (Isaac, D-065; first marked for Fable 5.2) | they change how the surface is measured, or are research: agree the gate first |
 
 ## 14. Session prompt
 

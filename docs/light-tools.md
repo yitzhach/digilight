@@ -4,14 +4,25 @@ Written 11-17 after an audit of DigiLight against other relighting tools (D-062)
 tools that audit found missing, says how every one of them is built so that it can be taken out
 again, and gives a build spec for each. Two are built (T6, T8); the rest are for new chats.
 
-**How to use it.** One tool per chat, on the model its section names. Read CLAUDE.md, STATUS.md,
-BUILD.md §1 to §4 and §5.12, then sections 1 to 3 here and the one tool. BUILD.md's rules (§3)
-all still apply. Session prompt:
+**How to use it.** From 11-17 Isaac runs every tool on **Opus 5.5** (his call; the effort for
+each is in section 3). One tool at a time, in section 3's order. A chat may go on to the next
+tool once the last one's tests and parity pass and it is merged; it stops when a tool waits on
+Isaac (photos, an answer) or when he says so. Read CLAUDE.md, STATUS.md, BUILD.md §1 to §4 and
+§5.12, then sections 1 to 3 here and the tool. BUILD.md's rules (§3) all still apply.
+
+Prompt for a new chat (Opus 5.5, high effort; repository `yitzhach/digilight` only):
 
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4 and 5.12, then
-docs/light-tools.md sections 1 to 3 and tool [T3a]. Build that tool; nothing beyond it.
-Answers from Isaac: [...]. Keep replies brief. Stop at the tool's gate and tell me what to check.
+docs/light-tools.md sections 1 to 3. Build the next light tool that is "to build" in section 3's
+order and does not wait on me (first: T3a, then T3b), exactly as its spec in section 5 and the
+rules in section 2 say; nothing beyond it. For each tool: write its maths into BUILD.md 5.12
+first, then the reference, tests, the shader, parity; run pnpm typecheck, pnpm test, pnpm e2e and
+the size check; update section 3, DECISIONS.md, CHANGELOG.md and STATUS.md; open a pull request,
+merge it when CI is green, and send me before and after pictures of it on the door and the
+painting. Then go on to the next tool. Stop and ask when a tool waits on me.
+My notes on the tools already built: Glow: [keep / tune: ... / remove]. Bounce light: [...].
+Room light from one side: [...]. Answers to section 6: [... / "not yet"]. Keep replies brief.
 ```
 
 ---
@@ -97,19 +108,27 @@ never replace, move or filter the photo's pixels.
 
 | id | tool | state | model | waits on Isaac |
 |---|---|---|---|---|
-| T6 | Softer shadows: bounce light, room light from one side | **built 11-17** (D-063) | Fable 5.2 | his judgement: keep, tune or remove |
-| T8 | Glow | **built 11-17** (D-064) | Fable 5.2 | his judgement |
+| T6 | Softer shadows: bounce light, room light from one side | **built 11-17** (D-063) | done | his judgement: keep, tune or remove |
+| T8 | Glow | **built 11-17** (D-064) | done | his judgement |
 | T3a | Colour filter on a light | to build | Opus 5.5, medium | nothing |
 | T3b | Light patterns: window, blinds, leaves | to build | Opus 5.5, high | nothing |
 | T2 | The wall: light pool, drop shadow | to build, after Phase 6b's crop | Opus 5.5, high, two chats | wall colours; frame or not |
 | T4 | Even out the photo | to build | Opus 5.5, medium | one unevenly lit photo of his |
 | T7 | 16-bit export | to build if wanted | Opus 5.5, medium | does a lab or customer want it? |
-| T1 | Gloss map | to build | **Fable 5.2, high** | side-lit photos of two glossy pieces |
-| T5 | More side-lit shots | to build | **Fable 5.2, high** | one piece lit from 6 to 8 sides |
-| T9 | Scene: portraits and general photos | experiment first | **Fable 5.2, high** | scope and hosting (section 6) |
+| T1 | Gloss map | to build | Opus 5.5, high (hard: see its spec) | side-lit photos of two glossy pieces |
+| T5 | More side-lit shots | to build | Opus 5.5, high (hard) | one piece lit from 6 to 8 sides |
+| T9 | Scene: portraits and general photos | experiment first | Opus 5.5, high | scope and hosting (section 6) |
 
-Suggested order: T3a, T3b, T2 (these change how the product looks without Texture), T4, then
-T1 and T5 when their photos exist. T7 and T9 only on Isaac's word.
+Order: T3a, T3b, T2 (these change how the product looks without Texture; T2 after the crop),
+T4, then T1 and T5 when their photos exist. T7 and T9 only on Isaac's word.
+
+T1, T5 and T9 were first marked for Fable 5.2: they change `relief/measure.ts`, the hardest code
+here, or are research. On Opus 5.5: high effort, agree the gate's score with Isaac before any
+code, change nothing in the measuring that `pnpm gate:relief` then scores lower, and if the
+gate is not met after an honest try, stop and say so rather than loosen it.
+
+**Shipping** (Isaac, 11-17): a tool's pull request is merged once CI is green, so he can try it
+on the live site; it is off by default, so nothing changes for anyone until a slider moves.
 
 ---
 
@@ -317,7 +336,7 @@ channel in Preview and Photoshop on Isaac's iMac.
 Separate, and Isaac's call: averaging smaller exports in linear light (BUILD.md, Later). It
 moves the golden of every sized render.
 
-### T1 — Gloss map (Fable 5.2, high)
+### T1 — Gloss map (Opus 5.5, high; hard)
 
 Where the surface is shiny, a moving lamp should catch it. Today `relief.sheen` is one number
 for the whole piece, and True Relief finds glints only to discard them (`relief/shading.ts`
@@ -338,7 +357,7 @@ R8 texture in the preview.
 real shot has them (agree the score before building, as the bake-off did); Isaac says it reads
 as varnish or leaf, not as plastic.
 
-### T5 — More side-lit shots (Fable 5.2, high)
+### T5 — More side-lit shots (Opus 5.5, high; hard)
 
 True Relief takes one to three shots. With four to eight from round the piece, each pixel has
 several readings: shadows and glints can be left out per shot, both slopes are measured
@@ -350,7 +369,7 @@ neither shadow nor glint there; the flow takes up to eight photos. The check tha
 three shots (each predicted from the others at 0.7 or better) is the gate for eight.
 A short video sweep as the source of the shots is a later step.
 
-### T9 — Scene: portraits and general photos (Fable 5.2, high; an experiment before any build)
+### T9 — Scene: portraits and general photos (Opus 5.5, high; an experiment before any build)
 
 BUILD.md §1 says artwork only. Isaac asked about portraits on 11-17; nothing is decided
 (section 6). What other tools do: a depth and surface map from a trained model, the existing
