@@ -2,8 +2,8 @@
 
 Written 11-17 after an audit of DigiLight against other relighting tools (D-062). It lists the
 tools that audit found missing, says how every one of them is built so that it can be taken out
-again, and gives a build spec for each. Built: T6, T8, T3a, T3b, T4 (11-17); the rest are for
-new chats.
+again, and gives a build spec for each. Built: T6, T8, T3a, T3b, T4 (11-17), T2's reference (11-17);
+the rest are for new chats.
 
 **How to use it.** From 11-17 Isaac runs every tool on **Opus 5.5** (his call; the effort for
 each is in section 3). One tool at a time, in section 3's order. A chat may go on to the next
@@ -117,7 +117,7 @@ never replace, move or filter the photo's pixels.
 | T8 | Glow | **built 11-17** (D-064) | done | his judgement |
 | T3a | Colour filter on a light | **built 11-17** (D-066) | done | his judgement: keep, tune or remove |
 | T3b | Light patterns: window, blinds, leaves | **built 11-17** (D-067) | done | his judgement: keep, tune or remove |
-| T2 | The wall: light pool, drop shadow | to build (next) | Opus 5.5, high, two chats | nothing: decided 11-17 (D-068) |
+| T2 | The wall: light pool, drop shadow | **reference built 11-17** (D-070); preview and app: next | Opus 5.5, high, two chats | nothing: decided 11-17 (D-068) |
 | T4 | Even out the photo | **built 11-17** (D-069) | done | his judgement: keep, tune or remove |
 | T7 | 16-bit export | to build if wanted | Opus 5.5, medium | does a lab or customer want it? |
 | T1 | Gloss map | to build | Opus 5.5, high (hard: see its spec) | side-lit photos of two glossy pieces |
@@ -218,6 +218,14 @@ What to judge: a photo lit from one side, or with a hot centre, comes out even i
 minute. On Isaac's panel photo (11-17, a hard cast shadow across the lower left) it lifts the
 dark side but cannot take out the shadow's sharp edge: a smooth correction cannot. That needs a
 different tool (section 6, question 8).
+
+### T2 — The wall (BUILD.md §5.12.7): the reference
+
+Settings, a group `wall` (on, margin, tone, warmth, standoff, shadow). Files:
+`core/src/tools/wall.ts` (`wallSize`, `wallPixels`, `renderWithWall`); hooks `tool:wall` in
+`core/src/fields.ts`, `schema.ts`, `settings.ts`, `light.ts` (the suns folded into the room light
+are kept for the wall's shadow), `index.ts`. Tests: `core/test/tool-wall.test.ts`. Not yet in the
+app: the second chat adds the shader, parity, the panel's place, Fit and the export.
 
 ---
 

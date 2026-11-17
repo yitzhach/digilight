@@ -27,7 +27,7 @@ export function direction(azimuth: number, elevation: number): RGB {
 }
 
 /** A lamp or (with relief only) a sun, ready for lightingAt (picture widths; y down). */
-interface Lamp {
+export interface Lamp {
   sun: boolean; size: number;
   Lx: number; Ly: number; Lz: number; r0: number; l0z: number; falloff: number;
   sx: number; sy: number; sz: number; spot: boolean; cosOuter: number; cosInner: number;
@@ -49,6 +49,7 @@ export interface Lighting {
   unit: boolean;
   relief: Relief | null;
   even: Even | null; // tool:even (§5.12.6)
+  room: RGB; suns: Lamp[]; // tool:wall (§5.12.7): the room light alone, and the suns folded into base
 }
 
 /**
@@ -76,16 +77,17 @@ export function prepareLighting(doc: Doc, a: number, kappa: number, maps?: Relie
     }
     : null;
   const base: RGB = [amb[0] * f[0], amb[1] * f[1], amb[2] * f[2]];
-  const lamps: Lamp[] = [];
+  const lamps: Lamp[] = [], room: RGB = [base[0], base[1], base[2]], suns: Lamp[] = []; // tool:wall
   on.forEach((l, i) => {
     const col = cols[i]!, fc: RGB = [col[0] * f[0], col[1] * f[1], col[2] * f[2]];
     if (l.kind === 'sun' && !relief && l.pattern === 'none') { // fall = lam = spot = rel = sh = 1: constant (tool:pattern: a pattern is not)
       for (let c = 0; c < 3; c++) base[c]! += l.intensity * fc[c]!;
+      if (doc.wall.on && l.intensity > 0) suns.push(prepareSun(l, a, fc)); // tool:wall: the wall has its shadow
     } else if (l.intensity > 0) lamps.push(l.kind === 'sun' ? prepareSun(l, a, fc) : prepareLamp(l, a, fc));
   });
   const even = prepareEven(doc.prepare, a); // tool:even
   const unit = !relief && lamps.length === 0 && base[0] === 1 && base[1] === 1 && base[2] === 1 && !even;
-  return { base, lamps, unit, relief, even };
+  return { base, lamps, unit, relief, even, room, suns }; // room, suns: tool:wall
 }
 
 function prepareLamp(l: Light, a: number, col: RGB): Lamp {

@@ -75,3 +75,6 @@
 ## Light tools: Isaac's notes (11-17), even out the photo (T4)
 - Colour strips under Filter colour and Green to magenta; grain about four times stronger at full; Edit pattern: a box on the picture to move, scale, stretch and slant a light's pattern, with four new pattern settings (D-068).
 - Even out the photo (expert, Lights section): one side, which side, corners, green to magenta; off by default, parity and a golden (D-069).
+
+## Light tools: the wall (T2), the reference
+- The wall (expert): the piece on a wall of one colour, the light spilling past its edge and the piece's soft shadow; `renderWithWall` in `core`, tests and a golden; not yet in the app (D-070).
