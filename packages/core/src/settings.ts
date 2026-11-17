@@ -12,6 +12,7 @@ export interface Settings {
   app: typeof SETTINGS_APP; version: 2;
   ambient: Doc['ambient']; lights: Doc['lights']; tone: Doc['tone']; finish: Doc['finish'];
   relief?: Doc['relief'];
+  wall?: Doc['wall']; // tool:wall
 }
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
@@ -20,6 +21,7 @@ const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 export function settingsOf(doc: Doc, opts: { relief?: boolean } = {}): Settings {
   const s: Settings = { app: SETTINGS_APP, version: 2, ambient: doc.ambient, lights: doc.lights, tone: doc.tone, finish: doc.finish };
   if (opts.relief !== false) s.relief = doc.relief;
+  s.wall = doc.wall; // tool:wall: how the piece hangs, like the finish
   return clone(s);
 }
 
@@ -34,7 +36,8 @@ export function readSettings(input: unknown): Partial<Settings> {
   if (!o || typeof o !== 'object' || !('lights' in o || 'ambient' in o || 'finish' in o || 'tone' in o))
     throw new Error('That is not DigiLight settings (copy them with Copy settings first).');
   const out: Partial<Settings> = {};
-  for (const k of ['ambient', 'lights', 'tone', 'finish', 'relief'] as const) if (k in o) (out as Record<string, unknown>)[k] = clone(o[k]);
+  for (const k of ['ambient', 'lights', 'tone', 'finish', 'relief', 'wall'] as const) // wall: tool:wall
+    if (k in o) (out as Record<string, unknown>)[k] = clone(o[k]);
   return out;
 }
 
@@ -43,7 +46,7 @@ export function readSettings(input: unknown): Partial<Settings> {
 export function withSettings(doc: Doc, input: unknown, hasMeasured: boolean): Doc {
   const s = readSettings(input);
   const next: Record<string, unknown> = { ...clone(doc) };
-  for (const k of ['ambient', 'lights', 'tone', 'finish'] as const) if (s[k] !== undefined) next[k] = s[k];
+  for (const k of ['ambient', 'lights', 'tone', 'finish', 'wall'] as const) if (s[k] !== undefined) next[k] = s[k]; // wall: tool:wall
   if (s.relief) next.relief = { ...s.relief, mode: hasMeasured && s.relief.mode !== 'off' ? 'measured' : 'off' };
   return parseDoc(next);
 }

@@ -3,7 +3,7 @@
 // from them here, so the expert panel and an AI agent's menu can never drift from validation.
 
 import { z } from 'zod';
-import { AMBIENT, FINISH, LIGHT, PREPARE, RELIEF, TONE, type Doc, type Field, type PhotoInfo, type Spec, type Tier, type Track, type TupleField } from './fields.ts';
+import { AMBIENT, FINISH, LIGHT, PREPARE, RELIEF, TONE, WALL, type Doc, type Field, type PhotoInfo, type Spec, type Tier, type Track, type TupleField } from './fields.ts';
 import { dropRetired } from './tools/index.ts';
 
 export * from './fields.ts';
@@ -43,6 +43,7 @@ export const docSchema = z.strictObject({
   tone: group(TONE).prefault({}),
   finish: group(FINISH).prefault({}),
   prepare: group(PREPARE).prefault({}), // tool:even
+  wall: group(WALL).prefault({}), // tool:wall
 }).superRefine((d, ctx) => {
   const ids = d.lights.map((l) => l.id);
   if (new Set(ids).size !== ids.length) ctx.addIssue({ code: 'custom', path: ['lights'], message: 'light ids must be different' });
@@ -95,5 +96,6 @@ export function describe(doc: Doc): Setting[] {
   entries('tone.', TONE, doc.tone, out);
   entries('finish.', FINISH, doc.finish, out);
   entries('prepare.', PREPARE, doc.prepare, out); // tool:even
+  entries('wall.', WALL, doc.wall, out); // tool:wall
   return out;
 }

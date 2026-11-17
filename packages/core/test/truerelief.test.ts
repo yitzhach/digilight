@@ -117,7 +117,7 @@ test('the stored height: 16 bits through two PNG channels, and the maps made fro
   const a = render(door, doc, { relief: maps }), b = render(door, doc, { relief: measuredRelief(back) });
   expect(a.data).toEqual(b.data);
   expect(() => render(door, doc)).toThrow(/side-lit photo/);
-});
+}, 20_000); // about 3 s here; CI's smaller runner went over the 5 s default once (11-17)
 
 test('commands: measured texture only after a measurement, then it renders', () => {
   const c = createCommands();

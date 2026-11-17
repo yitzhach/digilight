@@ -81,6 +81,16 @@ export const PREPARE = {
   tint: { ...num(-1, 1, 0.01, 0, 'expert', 'Green to magenta', 'Takes a green (up) or magenta (down) cast out of the photo\'s light'), track: 'tint' },
 } satisfies Spec;
 
+// tool:wall (§5.12.7): a group of its own, shown in the Export section's expert list
+export const WALL = {
+  on: bool(false, 'expert', 'Wall', 'Shows the piece hanging on a wall, so the light spills past its edge and it throws a shadow'),
+  margin: num(0.05, 1, 0.01, 0.25, 'expert', 'Wall around the piece', 'How much wall shows on each side, in picture widths'),
+  tone: num(0, 1, 0.01, 0.8, 'expert', 'Wall brightness', 'How light the wall\'s paint is: 1 white, 0 black'),
+  warmth: num(-1, 1, 0.01, 0, 'expert', 'Wall colour', 'A warmer (up) or cooler (down) white, as Finish\'s warmth'),
+  standoff: num(0, 0.1, 0.001, 0.02, 'expert', 'Distance from the wall', 'How far the piece stands off the wall, in picture widths: further gives a wider, softer shadow'),
+  shadow: num(0, 1, 0.01, 0.7, 'expert', 'Shadow strength', 'How dark the piece\'s shadow on the wall is'),
+} satisfies Spec;
+
 export const TONE = {
   protectWhites: bool(true, 'expert', 'Protect whites', 'Dim all the light a little if it would blow out the whites'),
   highlightProtect: num(0, 1, 0.01, 1, 'expert', 'Soft highlights', 'Bright parts approach white without losing detail'),
@@ -121,6 +131,7 @@ export interface Doc {
   };
   tone: { protectWhites: boolean; highlightProtect: number; whiteAdapt: number };
   prepare: { tilt: number; tiltFrom: number; corners: number; tint: number }; // tool:even
+  wall: { on: boolean; margin: number; tone: number; warmth: number; standoff: number; shadow: number }; // tool:wall
   finish: {
     exposure: number; contrast: number; warmth: number; saturation: number; vignette: number; grain: number; curve?: number[];
     glow: number; glowSpread: number; glowWarmth: number; // tool:glow
@@ -144,5 +155,6 @@ export function defaultDoc(photo: PhotoInfo): Doc {
     version: 2, photo: { ...photo },
     ambient: defaultsOf(AMBIENT), lights: [], relief: defaultsOf(RELIEF), tone: defaultsOf(TONE), finish: defaultsOf(FINISH),
     prepare: defaultsOf(PREPARE), // tool:even
+    wall: defaultsOf(WALL), // tool:wall
   };
 }

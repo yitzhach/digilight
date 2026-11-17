@@ -10,9 +10,9 @@ The foot of the page says which update it is; quote that line when something loo
   `pnpm gate:relief`: door 0.78 / 0.87, lintel 0.68 / 0.85, lamps 0.80 to 0.87.
 - Review round 4 (D-047), audit (D-049, D-050), Phase 5b (D-051 to D-054), Phase 6a (D-055 to
   D-060), Phase 6b items 3 to 6 (D-061): see CHANGELOG.md.
-- Light tools (D-062 to D-069): `docs/light-tools.md` (rules, a spec for each). Built, expert,
+- Light tools (D-062 to D-070): `docs/light-tools.md` (rules, a spec for each). Built, expert,
   off by default: softer shadows, Glow, colour filter, light patterns with Edit pattern, even
-  out the photo. 135 unit, 42 e2e tests; 187.5 of 250 KB.
+  out the photo; the wall's reference (not in the app yet). 135 unit, 42 e2e tests; 187.5 of 250 KB.
 
 ## Waiting on Isaac
 - **Light tools (11-17):** Expert controls on. Texture measured, a raking lamp, Shadows high:
@@ -31,7 +31,7 @@ The foot of the page says which update it is; quote that line when something loo
 ## Next: new chats on Opus 5.5, repository `yitzhach/digilight` only, one at a time
 1. **Medium.** Phase 6a item 2 (look tuning, from Isaac's settings notes), then 6a's gate.
 2. Phase 6b item 1, crop (**high**: the warp in `core`), item 2, Versions (**medium**), the gate.
-3. Light tools (D-065): T2 the wall, two chats (**high**). Prompt: top of `docs/light-tools.md`.
+3. Light tools (D-065): T2 the wall, its second chat: preview and app (**high**). Prompt: top of `docs/light-tools.md`.
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do chat
 [1 or 2] of STATUS.md's "Next" as BUILD.md section 10 lists it; nothing beyond it. Answers to

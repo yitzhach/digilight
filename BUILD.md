@@ -416,6 +416,41 @@ E  = E * g * T                                        // per channel, at the end
 document is neutral as before. Sheen is not changed (it is not the photo's light). The settings
 belong to the photo: Copy settings and presets leave them out.
 
+**5.12.7 The wall** (`wall.on`, `margin`, `tone`, `warmth`, `standoff`, `shadow`; T2). The piece
+hangs on a wall: the light spills past its edge and the piece throws a soft shadow. The wall is
+the plane `z = -standoff`; the piece's face stays `z = 0`, and it is drawn exactly as with the
+wall off. The wall is a margin of `mp = round(margin * W)` pixels on each side of a piece `W x H`
+pixels: the picture is `(W + 2 mp) x (H + 2 mp)`, the piece's pixel `(i, j)` is the picture's
+`(i + mp, j + mp)`, and a wall pixel `(i, j)` stands at `Q = ((i - mp + 0.5)/W, (j - mp + 0.5)/W, -standoff)`
+(§5.1), always outside the piece's rectangle `[0, 1] x [0, a]`.
+
+```
+paint = decode(tone) * warm,  decode the continuous sRGB curve (§5.10's, inverted),
+        warm = colour(6500 - 2500 w) for w > 0, colour(6500 - 4500 w) for w < 0, luma 1 (§5.9), w = wall.warmth
+E     = ambient.level * colour(ambient.kelvin)                          // no hollows: the wall is flat
+each light that is on (suns included, never folded into the room light here):
+        lamp:  §5.3 with P = Q, so D = L - Q and D.z = L.z + standoff; relief off (rel = sh = 1)
+               X  = Q.xy + (L.xy - Q.xy) * standoff / (L.z + standoff);   pw = max(size * standoff / L.z, 0.002)
+        sun:   e = intensity;  X = Q.xy + l.xy * standoff / l.z;          pw = max(size * standoff / l.z, 0.002)
+        e    *= the light's pattern at Q (§5.12.5, with D = Q - L), when it has one
+        qx = |X.x - 0.5| - 0.5,  qy = |X.y - a/2| - a/2
+        d  = hypot(max(qx, 0), max(qy, 0)) + min(max(qx, qy), 0)          // to the piece's edge, negative inside
+        e  *= 1 - wall.shadow * (1 - smoothstep(-pw, pw, d))
+        E  += e * colour                                                  // the light's colour (§5.8, §5.12.4)
+E     = E / mix((1,1,1), Wc / luma(Wc), whiteAdapt) * kappa * 2^exposure  // §5.4, §5.9: the piece's Wc and kappa
+lit   = paint * E (+ Glow at Q, §5.12.3, its maps read with edges clamped)
+```
+
+Then §5.5 with `c = paint` (no pixel is copied: the wall has no photo), Finish (§5.9) at `Q.xy`
+as on the piece (so the vignette and grain run on across the edge), encode; alpha 255. The
+ray from `Q` to the light passes the piece's face at `X`: inside the rectangle, the piece is in
+the way, so the shadow lies on the side away from the light and widens with `size` and
+`standoff`. With the shadow at 0 or away from it, the wall is lit as the piece would be if it
+were the wall's paint, so the light runs on across the edge. The guard (§5.7) judges the piece
+only; Even out (§5.12.6) is the photo's light and does not reach the wall; without relief there
+is no sheen, bounce or room light from one side on it. At `wall.on = false` nothing is computed
+and the picture is the piece alone.
+
 ---
 
 ## 6. The document
