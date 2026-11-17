@@ -356,6 +356,42 @@ the white balance `Wc` included. It is not renormalised: a strong filter dims th
 real one does. At `gel = 0` the factor is exactly 1 and is not applied. Colours reach the
 preview prepared, so the shader does not change.
 
+**5.12.5 Light patterns** (`lights.i.pattern`, `patternSize`, `patternSoft`, `patternTurn`; T3b).
+A lamp behind a window, blinds or leaves throws their shadow. The pattern stands in a plane at
+right angles to the beam through the aim point, so it keeps its shape as the lamp moves, and
+the picture's up is the pattern's up for any lamp. With `D = P - L`, `s` the beam (§5.3) and
+`r0 = |A - L|`:
+
+```
+v  = normalize((0, -1, 0) - s.y * s)       // the picture's up, at right angles to the beam
+u  = cross(v, s)                            // its right
+t  = r0 / dot(D, s)                         // the ray from L through P meets the plane at L + t D
+(p0, q0) = t * (dot(D, u), dot(D, v))       // a lamp; 1 is the factor where dot(D, s) <= 0
+(p0, q0) = (P.x - 0.5, a/2 - P.y)           // a sun: on the picture, from its centre, up positive
+θ  = patternTurn mod 360,  (p, q) = (p0 cos θ + q0 sin θ,  q0 cos θ - p0 sin θ) / patternSize
+```
+
+`|s.y| < 1` always (a lamp stands off the wall), so `v` is defined. The turn is counter-clockwise.
+The shapes, with `edge(x) = smoothstep(-ε, ε, x)`, `ε = 0.1 * patternSoft` (a step at 0),
+`frac(x) = x - floor(x)`:
+
+```
+window:  2 x 3 panes of 0.5, bars 0.08 wide, dark outside the frame
+         dp = 0.5 (0.5 - |frac(2p) - 0.5|),  dq = 0.5 |frac(2q) - 0.5|
+         M  = edge(0.5 - |p|) edge(0.75 - |q|) edge(dp - 0.04) edge(dq - 0.04)
+blinds:  M  = edge(0.25 (0.25 - |frac(4q) - 0.5|))        // a period of 0.25, slats half of it
+leaves:  n  = (N(3p + 17.3, 3q + 5.1) + 0.5 N(6.1p - 3.7, 6.1q + 11.9) + 0.25 N(12.3p + 7.7, 12.3q - 2.3)) / 1.75
+         M  = edge(n - 0.55)
+N(x, y): value noise; with i = floor(x), j = floor(y), fx = x - i, sx = fx² (3 - 2 fx) (sy alike)
+         and h(i, j) = pcg(i + pcg(j)) / 2^32 (§5.9's hash, on 32-bit wrapped integers),
+         N = mix(mix(h(i, j), h(i+1, j), sx), mix(h(i, j+1), h(i+1, j+1), sx), sy)
+```
+
+Every shape is continuous where `floor` steps, so float32 and float64 agree (D-057). Its effect,
+on the light's `e` after the spot (§5.3), before rel and sh, so sheen and bounce follow it:
+`e *= 0.15 + 0.85 M`. A sun with a pattern is not constant, so §5.4 does not fold it into the
+ambient term; at `none` nothing is computed.
+
 ---
 
 ## 6. The document
@@ -840,8 +876,8 @@ it can and on a server otherwise.
 Expert settings that make the light itself better, each a trial that can be removed in one
 commit. The rules, the state of each and a build spec for each are in `docs/light-tools.md`;
 the maths of those built is §5.12. One tool per chat, in any gap between phases; a tool never
-blocks a phase. Built: T6 softer shadows, T8 Glow, T3a colour filter. To build, on Opus 5.5:
-T3b light patterns, T2 the wall, T4 even out the photo, T7 16-bit export, and (hard: high
+blocks a phase. Built: T6 softer shadows, T8 Glow, T3a colour filter, T3b light patterns. To
+build, on Opus 5.5: T2 the wall, T4 even out the photo, T7 16-bit export, and (hard: high
 effort, the gate agreed first) T1 gloss map, T5 more side-lit shots, T9 the portrait experiment.
 Isaac runs them all on Opus 5.5 (11-17, D-065).
 

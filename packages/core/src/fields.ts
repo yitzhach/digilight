@@ -46,6 +46,11 @@ export const LIGHT = {
   // tool:gel (§5.12.4)
   gel: num(0, 1, 0.01, 0, 'expert', 'Colour filter', 'A coloured filter over this light; 0 is none'),
   gelHue: num(0, 360, 1, 30, 'expert', 'Filter colour', '0 red, 60 yellow, 120 green, 180 cyan, 240 blue, 300 magenta'),
+  // tool:pattern (§5.12.5)
+  pattern: choice(['none', 'window', 'blinds', 'leaves'], 'none', 'expert', 'Pattern', 'Shadow shapes in this light, as from a window, blinds or leaves'),
+  patternSize: num(0.05, 2, 0.01, 0.5, 'expert', 'Pattern size', 'How large the shapes are on the picture'),
+  patternSoft: num(0, 1, 0.01, 0.3, 'expert', 'Pattern softness', 'How soft the shapes\' edges are'),
+  patternTurn: num(-180, 180, 1, 0, 'expert', 'Pattern turn', 'Turns the pattern'),
 } satisfies Spec;
 
 export const RELIEF = {
@@ -88,6 +93,7 @@ export interface Light {
   azimuth: number; elevation: number; intensity: number; kelvin: number;
   cone: number; edge: number; falloff: number; size: number;
   gel: number; gelHue: number; // tool:gel
+  pattern: 'none' | 'window' | 'blinds' | 'leaves'; patternSize: number; patternSoft: number; patternTurn: number; // tool:pattern
 }
 export interface Doc {
   version: 2;

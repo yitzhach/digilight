@@ -68,3 +68,6 @@
 
 ## Light tools: colour filter (T3a)
 - Colour filter and Filter colour on each light (expert): a coloured lamp, as a filter in front of it; off by default, parity and a golden (D-066).
+
+## Light tools: light patterns (T3b)
+- Pattern (window, blinds, leaves), Pattern size, softness and turn on each light (expert): the shadow of a window, blinds or leaves in a light; off by default, parity and goldens (D-067).
