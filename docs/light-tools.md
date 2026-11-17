@@ -117,7 +117,7 @@ never replace, move or filter the photo's pixels.
 | T8 | Glow | **built 11-17** (D-064) | done | his judgement |
 | T3a | Colour filter on a light | **built 11-17** (D-066) | done | his judgement: keep, tune or remove |
 | T3b | Light patterns: window, blinds, leaves | **built 11-17** (D-067) | done | his judgement: keep, tune or remove |
-| T2 | The wall: light pool, drop shadow | **built 11-17** (D-070, D-071) | done | his judgement, and the calls of D-068 (question 9) |
+| T2 | The wall: light pool, drop shadow | **built 11-17** (D-070, D-071) | done | kept (Isaac, 11-17: "works great", D-073) |
 | T4 | Even out the photo | **built 11-17** (D-069) | done | his judgement: keep, tune or remove |
 | T7 | 16-bit export | to build if wanted | Opus 5.5, medium | does a lab or customer want it? |
 | T1 | Gloss map | to build | Opus 5.5, high (hard: see its spec) | side-lit photos of two glossy pieces |
@@ -448,7 +448,7 @@ From the audit, not yet answered:
 4. Would artists take four to eight side-lit shots, or is one extra photo the limit? (T5)
 5. Is the output mainly for screens, prints or both? (T7)
 6. Each tool built: keep, tune (how) or remove? Glow, Bounce light, Room light from one side,
-   Colour filter, Light patterns (and the Edit pattern box), Even out the photo, the wall.
+   Colour filter, Light patterns (and the Edit pattern box), Even out the photo. (The wall: kept.)
 7. Grain at full is now about four times stronger (D-068): right, or a different top?
 8. A hard shadow in the photo (his panel, 11-17): worth a tool that lifts a shadow he paints or
    that is found from its edge? It would be a light multiplier from a mask, never a repaint.
