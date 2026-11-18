@@ -16,7 +16,7 @@ const lamp = (pos: [number, number, number], aim: [number, number], intensity: n
 export const LOOKS: readonly Look[] = [
   { id: 'original', label: 'Original', ambient: { level: 1, kelvin: 6500 }, lights: [] },
   { id: 'gallery', label: 'Gallery', ambient: { level: 0.6, kelvin: 6000 }, lights: [lamp([0.5, -0.35, 0.9], [0.5, 0.45], 0.45, 4600, 45, 0.9, 0.5, 0.05)] },
-  { id: 'spotlight', label: 'Spotlight', ambient: { level: 0.35, kelvin: 6000 }, lights: [lamp([0.5, -0.25, 1.1], [0.5, 0.5], 0.6, 4500, 32, 1, 0.6, 0.05)] },
+  { id: 'spotlight', label: 'Spotlight', ambient: { level: 0.28, kelvin: 6000 }, lights: [lamp([0.5, -0.25, 1.1], [0.5, 0.5], 0.68, 4500, 32, 1, 0.6, 0.05)] },
   { id: 'soft-window', label: 'Soft window', ambient: { level: 0.35, kelvin: 6000 }, lights: [lamp([-0.8, 0.35, 0.8], [0.5, 0.5], 0.7, 5200, 90, 0.6, 1, 0.4)] },
   { id: 'warm-evening', label: 'Warm evening', ambient: { level: 0.55, kelvin: 5500 }, lights: [lamp([-1.5, 0.2, 0.6], [0.5, 0.5], 0.4, 3800, 90, 0.6, 0.5, 0.15)] },
   { id: 'cool-daylight', label: 'Cool daylight', ambient: { level: 0.5, kelvin: 9000 }, lights: [lamp([0.5, -0.6, 1.2], [0.5, 0.5], 0.5, 8500, 90, 0.6, 0.5, 0.3)] },

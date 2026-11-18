@@ -80,3 +80,6 @@
 - The wall (expert): the piece on a wall of one colour, the light spilling past its edge and the piece's soft shadow; `renderWithWall` in `core`, tests and a golden (D-070).
 - The wall in the preview (parity within 1 level), in Export's expert list, in Fit and in the exported file (D-071).
 - Shadow softness on the wall; an export too large for the browser is saved at the largest width it can hold, and says so (D-072).
+
+## Phase 6a, item 2: look tuning
+- Spotlight retuned from review rounds `phase6a-1` and `phase6a-2`: room light 0.28, lamp 0.68; Dramatic kept (D-073 to D-075).

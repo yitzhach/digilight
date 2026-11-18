@@ -508,11 +508,11 @@ These numbers were rendered on Isaac's door and lintel photos with this section'
 keeps the photo's median brightness within 6%. They are a starting point; Phase 3's gate tunes
 them with him.
 
-| id | ambient (level, kelvin) | light: pos (u, v, z), aim, intensity, kelvin, cone, edge, falloff, size (retuned with Isaac, D-020, D-033) |
+| id | ambient (level, kelvin) | light: pos (u, v, z), aim, intensity, kelvin, cone, edge, falloff, size (retuned with Isaac, D-020, D-033, D-075) |
 |---|---|---|
 | original | 1, 6500 | none |
 | gallery | 0.6, 6000 | (0.5, −0.35, 0.9), (0.5, 0.45), 0.45, 4600, 45, 0.9, 0.5, 0.05 |
-| spotlight | 0.35, 6000 | (0.5, −0.25, 1.1), (0.5, 0.5), 0.6, 4500, 32, 1, 0.6, 0.05 |
+| spotlight | 0.28, 6000 | (0.5, −0.25, 1.1), (0.5, 0.5), 0.68, 4500, 32, 1, 0.6, 0.05 |
 | soft-window | 0.35, 6000 | (−0.8, 0.35, 0.8), (0.5, 0.5), 0.7, 5200, 90, 0.6, 1, 0.4 |
 | warm-evening | 0.55, 5500 | (−1.5, 0.2, 0.6), (0.5, 0.5), 0.4, 3800, 90, 0.6, 0.5, 0.15 |
 | cool-daylight | 0.5, 9000 | (0.5, −0.6, 1.2), (0.5, 0.5), 0.5, 8500, 90, 0.6, 0.5, 0.3 |
@@ -822,7 +822,7 @@ D-032, D-047.
 
 1. **Done 11-13 (D-057).** Finish (§5.9) in reference and shader; panel section 4. The curve is a setting only: agents
    and presets set it. An editor would be hand-built expert interface, which §8 rules out (Later).
-2. Look tuning from D-047 and Isaac's settings notes, by lights only: Dramatic more contrast
+2. **Done 11-18 (D-073 to D-075).** Look tuning from D-047 and Isaac's settings notes, by lights only: Dramatic more contrast
    (lower room light), Spotlight less flat on the lintel. A review round, then §6 and the goldens.
 3. **Done 11-13, ahead of the rest of this phase (D-055).** Zoom buttons (Isaac, after Phase 3): Zoom out, Fit, Zoom in on the picture (keys `-`, `0`,
    `=`), the same zoom as the wheel (§8). Fit fills the stage with the picture (5% margin);
