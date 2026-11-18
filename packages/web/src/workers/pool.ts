@@ -1,8 +1,8 @@
 // pool.ts — a few render workers. The photo goes to each once per photo: as shared memory when
 // the page is cross-origin isolated (all workers read one copy), else as one copy to one worker.
 
-import type { Blurred, Channels, Doc, GlowMaps, Height, HorizonInput, Image, MeasuredHeight } from 'core';
-import { BLURS, K, outputSize, reliefSize, thumbnail, wallSize } from 'core'; // wallSize: tool:wall
+import type { Blurred, Channels, Corners, Doc, GlowMaps, Height, HorizonInput, Image, MeasuredHeight } from 'core';
+import { BLURS, cropSize, K, outputSize, reliefSize, thumbnail, wallSize } from 'core'; // wallSize: tool:wall
 import type { Reply, Request } from './protocol.ts';
 
 /** The guard judges on a thumbnail of this long side (core guard.ts GUARD_SIZE, §5.7). */
@@ -38,6 +38,34 @@ function ask(w: Worker, m: Request, onThumb?: (r: Extract<Reply, { type: 'thumb'
     waiting.set((m as { id: number }).id, { resolve, reject, onThumb });
     w.postMessage(m);
   });
+}
+
+/** The image in shared memory when the page is cross-origin isolated (the same image if it is
+ *  already, or if not isolated): the workers then read it without a copy each. */
+export function sharedImage(p: Image): Image {
+  if (!shared || p.data.buffer instanceof SharedArrayBuffer) return p;
+  const data = new Uint8ClampedArray(new SharedArrayBuffer(p.data.length));
+  data.set(p.data);
+  return { ...p, data };
+}
+
+/** Crop and straighten (Phase 6b): the picture from the file's pixels, rows split across the
+ *  workers when they share memory (core's warpCrop, the same bytes). */
+export async function warpPicture(file: Image, corners: Corners): Promise<Image> {
+  const ws = start(), { width: W, height: H } = cropSize(corners);
+  if (shared) {
+    const src = sharedImage(file), out = new Uint8ClampedArray(new SharedArrayBuffer(W * H * 4));
+    await Promise.all(bands(H, ws.length).map(([y0, y1], i) => one(ws[i]!, { type: 'warp', src, corners, out, y0, y1 })));
+    return { data: out, width: W, height: H };
+  }
+  const src = { ...file, data: file.data.slice() };
+  const r = await new Promise<Reply>((resolve, reject) => {
+    const id = nextId++;
+    waiting.set(id, { resolve, reject });
+    ws[0]!.postMessage({ type: 'warp', id, src, corners, out: null, y0: 0, y1: H } satisfies Request, [src.data.buffer]);
+  });
+  if (r.type !== 'pixels') throw new Error('crop: unexpected reply');
+  return { data: r.data, width: W, height: H };
 }
 
 /** Gives every worker the photo (call once per photo); returns it in shared memory, if shared. */

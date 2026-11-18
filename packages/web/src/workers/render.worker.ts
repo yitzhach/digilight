@@ -3,7 +3,7 @@
 // maps (shared memory when the page is cross-origin isolated, a copy otherwise).
 
 import {
-  aoFromTable, channelRows, estimateHeight, gauss, guardKappa, measuredHHat, normalise, slopes, rawRows, resampleRegion, horizonInput, horizonLayer, horizonTmax, K, LOOKS, defaultDoc, render, renderWithWall, withLook,
+  aoFromTable, channelRows, cropSize, warpCrop, estimateHeight, gauss, guardKappa, measuredHHat, normalise, slopes, rawRows, resampleRegion, horizonInput, horizonLayer, horizonTmax, K, LOOKS, defaultDoc, render, renderWithWall, withLook,
   type Doc, type Height, type HorizonInput, type Image, type ReliefMaps,
 } from 'core';
 import type { Reply, Request } from './protocol.ts';
@@ -44,6 +44,12 @@ self.onmessage = (e: MessageEvent<Request>) => {
     if (m.type === 'relief-maps') {
       const n = height!.width * height!.height;
       maps = { ...height!, table: m.table ?? table!, ao: m.ao ?? aoFromTable(table!, n, m.tmax), tmax: m.tmax };
+      return;
+    }
+    if (m.type === 'warp') { // needs no photo: the file comes with it
+      const img = warpCrop(m.src, m.corners, m.y0, m.y1 - m.y0);
+      if (m.out) { m.out.set(img.data, m.y0 * cropSize(m.corners).width * 4); post({ type: 'done', id: m.id }); }
+      else post({ type: 'pixels', id: m.id, data: img.data }, [img.data.buffer]);
       return;
     }
     if (!photo) throw new Error('no photo');

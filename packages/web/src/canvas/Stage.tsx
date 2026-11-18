@@ -6,7 +6,8 @@ import { neutralDoc } from 'core';
 import { createPreview, type Preview } from 'gl';
 import { useEffect, useRef } from 'preact/hooks';
 import { gpuReady, reliefInput } from '../relief.ts';
-import { before, glow, kappa, live, photo, say, shown } from '../state.ts';
+import { before, busy, glow, kappa, live, photo, say, shown } from '../state.ts';
+import { Crop, cropping, startCrop } from './Crop.tsx';
 import { Handles } from './Handles.tsx';
 import { createScale, SETTLE_MS } from './scale.ts';
 import { clampPan, minZoom, previewZoom, type Geometry } from './view.ts';
@@ -119,7 +120,10 @@ export function Stage() {
   return (
     <div class="stage" ref={box}>
       <canvas ref={canvas} />
-      {photo.value ? <><Handles /><Zoom /></> : <Empty />}
+      {!photo.value ? <Empty /> : cropping.value ? <Crop /> : <>
+        <Handles /><Zoom />
+        <button class="crop-open" disabled={busy.value !== null} onClick={startCrop} title="Crop and straighten: put the four corners on the piece's corners">Crop</button>
+      </>}
     </div>
   );
 }

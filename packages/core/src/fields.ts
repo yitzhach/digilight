@@ -121,9 +121,12 @@ export interface Light {
   pattern: 'none' | 'window' | 'blinds' | 'leaves'; patternSize: number; patternSoft: number; patternTurn: number; // tool:pattern
   patternStretch: number; patternSkew: number; patternX: number; patternY: number; // tool:pattern
 }
+import type { Crop } from './warp.ts';
+
 export interface Doc {
   version: 2;
-  photo: { width: number; height: number; space: 'srgb' | 'display-p3'; sha256: string; widthMm?: number };
+  /** width, height: the picture (after the crop, if any); sha256 and crop.source: the file's. */
+  photo: { width: number; height: number; space: 'srgb' | 'display-p3'; sha256: string; widthMm?: number; crop?: Crop };
   ambient: { level: number; kelvin: number };
   lights: Light[];
   relief: {

@@ -5,7 +5,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import { estimateHeight, neutralDoc, packHeight, parseDoc, render, withLook, type MeasuredHeight } from 'core';
+import { createCommands, cropSize, estimateHeight, neutralDoc, packHeight, parseDoc, render, warpCrop, withLook, type Corners, type MeasuredHeight } from 'core';
 import { loadFixture } from '../../core/scripts/jpeg.ts';
 import { encodePng } from '../../../e2e/png.ts';
 import { PROJECT_APP, packProject, unpackProject } from '../src/io/project.ts';
@@ -67,4 +67,31 @@ test('a project packs and unpacks; a wrong photo, a newer version and other file
   const newer = writeZip([...files].map(([name, data]) => ({ name, data: name === 'project.json' ? new TextEncoder().encode(JSON.stringify({ ...man, version: 99 })) : data })));
   await expect(unpackProject(await bytes(newer))).rejects.toThrow(/newer DigiLight/);
   await expect(unpackProject(await bytes(writeZip([{ name: 'x', data: new Uint8Array(1) }])))).rejects.toThrow(/not a DigiLight project/);
+});
+
+// Crop and straighten (Phase 6b item 1): a project with a crop, committed so that it too opens in
+// every later update, and makes the same picture.
+const CROPPED = new URL('../../../fixtures/projects/cropped-lintel.digilight', import.meta.url);
+const LINTEL_CROP: Corners = [[12.5, 20], [290, 9.5], [296.5, 380], [6, 372]];
+function makeCropped() {
+  const src = loadFixture('lintel-flat.jpg');
+  const small = render(src, neutralDoc({ width: src.width, height: src.height, space: 'srgb', sha256: src.sha256 }), { width: 300 });
+  const png = new Uint8Array(encodePng(small)), sha = createHash('sha256').update(png).digest('hex');
+  const base = neutralDoc({ width: small.width, height: small.height, space: 'srgb', sha256: sha });
+  const doc = parseDoc({ ...withLook(base, 'spotlight'), photo: { ...base.photo, ...cropSize(LINTEL_CROP), crop: { corners: LINTEL_CROP, source: [small.width, small.height] } } });
+  return packProject({ doc, photo: { name: 'lintel.png', bytes: png }, height: null }, '2026-11-18T00:00:00.000Z');
+}
+
+test('the cropped project committed in Phase 6b opens and makes the same picture', async () => {
+  if (process.env.UPDATE_FIXTURES || !existsSync(CROPPED)) writeFileSync(CROPPED, await bytes(makeCropped()));
+  const p = await unpackProject(new Uint8Array(readFileSync(CROPPED)));
+  expect(p.doc.photo.crop).toEqual({ corners: LINTEL_CROP, source: [300, expect.any(Number)] });
+  const src = loadFixture('lintel-flat.jpg');
+  const small = render(src, neutralDoc({ width: src.width, height: src.height, space: 'srgb', sha256: src.sha256 }), { width: 300 });
+  const c = createCommands();
+  c.open({ ...small, sha256: p.doc.photo.sha256 });
+  c.load(p.doc);
+  const { image } = c.render();
+  expect([image.width, image.height]).toEqual([p.doc.photo.width, p.doc.photo.height]);
+  expect(createHash('sha256').update(image.data).digest('hex')).toBe(createHash('sha256').update(render(warpCrop(small, LINTEL_CROP), p.doc).data).digest('hex'));
 });

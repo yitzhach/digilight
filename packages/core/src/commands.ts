@@ -10,10 +10,11 @@ import { metrics, type Metrics } from './metrics.ts';
 import { measuredRelief, measureFromPhotos, reliefSize, type MeasuredHeight, type SidePhoto, type TrueRelief } from './relief/index.ts';
 import { render as renderImage, type Image, type Region } from './render.ts';
 import { settingsOf, withSettings, type Settings } from './settings.ts';
+import { cropProblem, cropSize, isWholeFrame, warpCrop, type Corners } from './warp.ts';
 import { describe as describeDoc, neutralDoc, parseDoc, RELIEF, type Doc, type Light, type Setting } from './schema.ts';
 
 export interface PhotoInput extends Image { space?: Space; sha256: string; widthMm?: number }
-export interface Info { width: number; height: number; space: Space; sha256: string; looks: string[] }
+export interface Info { width: number; height: number; space: Space; sha256: string; looks: string[]; crop?: Corners }
 
 /** Texture's settings when first switched on (§10 Phase 4, step 5). */
 export const RELIEF_START = { depth: 0.003, shadows: 0.4 } as const;
@@ -53,26 +54,43 @@ function setIn(doc: Json, keys: string[], value: Json, path: string): Json {
   return out;
 }
 
+/** The file's size, whatever the crop. */
+const sourceSize = (p: Doc['photo']): [number, number] => p.crop ? p.crop.source : [p.width, p.height];
+const cropKey = (p: Doc['photo']): string => JSON.stringify(p.crop?.corners ?? null);
+
 export function createCommands() {
-  let photo: Image | null = null;
+  /** The photo file's pixels, and the picture made from them for one crop (the last asked). */
+  let source: Image | null = null;
+  let picture: { key: string; image: Image } | null = null;
   let doc: Doc | null = null;
   let past: Doc[] = [], future: Doc[] = [];
-  /** True Relief's height for this photo, once measured (beside the document, §6). */
-  let measured: MeasuredHeight | null = null;
+  /** True Relief's height, once measured (beside the document, §6), for the crop it was measured
+   *  on: another crop has none (undo back to that crop finds it again). */
+  let measured: { height: MeasuredHeight; key: string } | null = null;
+  const heightFor = (d: Doc): MeasuredHeight | null => (measured && measured.key === cropKey(d.photo) ? measured.height : null);
+  /** The picture a document lights: the file, or its crop (made once per crop). */
+  const pictureFor = (d: Doc): Image => {
+    const key = cropKey(d.photo);
+    if (picture?.key !== key) picture = { key, image: d.photo.crop ? warpCrop(source!, d.photo.crop.corners) : source! };
+    return picture.image;
+  };
 
   const current = (): Doc => {
     if (!doc) throw new Error('open a photo first');
     return doc;
   };
-  const check = (next: Json, against: Doc['photo'], height: MeasuredHeight | null): Doc => {
-    const d = parseDoc(next);
-    if (d.photo.width !== against.width || d.photo.height !== against.height || d.photo.sha256 !== against.sha256 || d.photo.space !== against.space)
+  const check = (next: Json, against: Doc['photo'], height?: MeasuredHeight | null): Doc => {
+    const d = parseDoc(next), [w, h] = sourceSize(d.photo), [W, H] = sourceSize(against);
+    if (w !== W || h !== H || d.photo.sha256 !== against.sha256 || d.photo.space !== against.space)
       throw new Error('the document is for a different photo');
-    if (d.relief.mode === 'measured' && !height) throw new Error(MEASURED_FIRST);
+    if (d.relief.mode === 'measured' && !(height === undefined ? heightFor(d) : height)) throw new Error(MEASURED_FIRST);
     return d;
   };
+  /** A document from history whose measured height is gone (measured again on another crop)
+   *  comes back with Texture off. */
+  const restored = (d: Doc): Doc => (d.relief.mode === 'measured' && !heightFor(d) ? { ...d, relief: { ...d.relief, mode: 'off' } } : d);
   const commit = (next: Json): Doc => {
-    const cur = current(), d = check(next, cur.photo, measured);
+    const cur = current(), d = check(next, cur.photo);
     if (same(d, cur)) return cur;
     past.push(cur);
     if (past.length > HISTORY) past.shift();
@@ -92,7 +110,7 @@ export function createCommands() {
     const d = current(), size = reliefSize(d.photo);
     if (height.width !== size.width || height.height !== size.height || height.data.length !== size.width * size.height)
       throw new Error(`the measured height must be ${size.width} x ${size.height} for this photo`);
-    measured = height;
+    measured = { height, key: cropKey(d.photo) };
     const dep = depth === undefined ? d.relief.depth : Math.min(RELIEF.depth.max, Math.max(0, Math.round(depth * 1e5) / 1e5));
     return clone(commit({ ...d, relief: { ...d.relief, mode: 'measured', depth: dep } }));
   };
@@ -102,7 +120,7 @@ export function createCommands() {
     open(p: PhotoInput): Info {
       if (!(p.data instanceof Uint8ClampedArray) || p.data.length !== p.width * p.height * 4) throw new Error('photo must be RGBA8: width * height * 4 bytes');
       const d = neutralDoc({ width: p.width, height: p.height, space: p.space ?? 'srgb', sha256: p.sha256, ...(p.widthMm ? { widthMm: p.widthMm } : {}) });
-      photo = { data: p.data, width: p.width, height: p.height };
+      source = { data: p.data, width: p.width, height: p.height }; picture = null;
       doc = d; past = []; future = []; measured = null;
       return { width: d.photo.width, height: d.photo.height, space: d.photo.space, sha256: d.photo.sha256, looks: LOOKS.map((l) => l.id) };
     },
@@ -111,11 +129,10 @@ export function createCommands() {
      *  step and a fresh history. Throws, changing nothing, if the schema refuses it, it is for
      *  another photo, or it says measured with no height. */
     load(d: Doc, height: MeasuredHeight | null = null): Doc {
-      const cur = current(), size = reliefSize(cur.photo);
+      const next = check(d, current().photo, height), size = reliefSize(next.photo);
       if (height && (height.width !== size.width || height.height !== size.height || height.data.length !== size.width * size.height))
         throw new Error(`the measured height must be ${size.width} x ${size.height} for this photo`);
-      const next = check(d, cur.photo, height);
-      doc = next; measured = height; past = []; future = [];
+      doc = next; measured = height ? { height, key: cropKey(next.photo) } : null; past = []; future = [];
       return clone(next);
     },
     setDoc: (d: Doc): Doc => clone(commit(d)),
@@ -132,7 +149,7 @@ export function createCommands() {
     getSettings: (opts?: { relief?: boolean }): Settings => settingsOf(current(), opts),
     /** Settings (or a document, or their JSON) onto this photo, one step; Texture comes on only
      *  where this photo has its own measured height (Paste settings, a preset). */
-    applySettings: (input: unknown): Doc => clone(commit(withSettings(current(), input, measured !== null))),
+    applySettings: (input: unknown): Doc => clone(commit(withSettings(current(), input, heightFor(current()) !== null))),
     looks: () => LOOKS.map((l) => ({ id: l.id, label: l.label })),
     applyLook: (id: string, opts?: LookOptions): Doc => clone(commit(withLook(current(), id, opts))),
     addLight(partial: Partial<Omit<Light, 'id'>> = {}): Doc {
@@ -161,11 +178,30 @@ export function createCommands() {
      *  came from (0 right, 90 top); left out, the axis read from the pair, upper end. */
     measureRelief(opts: { photos: SidePhoto[]; widthCm?: number; onProgress?: (text: string) => void }): TrueRelief & { doc: Doc } {
       const mm = current().photo.widthMm, widthCm = opts.widthCm ?? (mm ? mm / 10 : undefined);
-      const t = measureFromPhotos(photo!, opts.photos, { ...(widthCm ? { widthCm } : {}), ...(opts.onProgress ? { onProgress: opts.onProgress } : {}) });
+      const t = measureFromPhotos(pictureFor(current()), opts.photos, { ...(widthCm ? { widthCm } : {}), ...(opts.onProgress ? { onProgress: opts.onProgress } : {}) });
       return { ...t, doc: setMeasured(t.height, t.depth) };
     },
     setMeasured,
-    getMeasured: (): MeasuredHeight | null => measured,
+    getMeasured: (): MeasuredHeight | null => heightFor(current()),
+    /** Crop and straighten (Phase 6b): four corners on the photo file (top left, top right,
+     *  bottom right, bottom left, in its pixels), or null for the whole photo. The lights keep
+     *  their places on the picture; a measured texture belongs to the old crop, so Texture goes
+     *  off (the app says so first). One undo step. */
+    crop(corners: Corners | null): Doc {
+      const d = current(), [w, h] = sourceSize(d.photo), info = { ...d.photo };
+      delete info.crop;
+      if (corners && !isWholeFrame(corners, w, h)) {
+        const why = cropProblem(corners, w, h);
+        if (why) throw new Error(`Cannot crop: ${why}`);
+        const c = corners.map(([x, y]) => [x, y]) as Corners, s = cropSize(c);
+        Object.assign(info, { width: s.width, height: s.height, crop: { corners: c, source: [w, h] } });
+      } else Object.assign(info, { width: w, height: h });
+      const next = { ...d, photo: info };
+      if (cropKey(info) !== cropKey(d.photo) && d.relief.mode === 'measured') next.relief = { ...d.relief, mode: 'off' };
+      return clone(commit(next));
+    },
+    /** The picture the document lights: the photo, or its crop. */
+    picture: (): Image => pictureFor(current()),
     removeLight(id: string): Doc {
       const i = lightIndex(id), d = current();
       return clone(commit({ ...d, lights: d.lights.filter((_, j) => j !== i) }));
@@ -173,19 +209,20 @@ export function createCommands() {
     /** A picture from the reference renderer, with its metrics against the photo. */
     render(opts: { width?: number; region?: Region } = {}): { image: Image; metrics: Metrics } {
       const d = current();
-      const kappa = guardKappa(photo!, d);
-      const image = renderImage(photo!, d, { ...opts, kappa, ...(d.relief.mode === 'measured' && measured ? { relief: measuredRelief(measured) } : {}) });
-      const base = renderImage(photo!, neutralDoc(d.photo), opts);
+      const photo = pictureFor(d), height = heightFor(d);
+      const kappa = guardKappa(photo, d);
+      const image = renderImage(photo, d, { ...opts, kappa, ...(d.relief.mode === 'measured' && height ? { relief: measuredRelief(height) } : {}) });
+      const base = renderImage(photo, neutralDoc(d.photo), opts);
       return { image, metrics: metrics(image, base, kappa) };
     },
     undo(): Doc {
       const prev = past.pop();
-      if (prev) { future.push(current()); doc = prev; }
+      if (prev) { future.push(current()); doc = restored(prev); }
       return clone(current());
     },
     redo(): Doc {
       const next = future.pop();
-      if (next) { past.push(current()); doc = next; }
+      if (next) { past.push(current()); doc = restored(next); }
       return clone(current());
     },
     reset: (): Doc => clone(commit(neutralDoc(current().photo))),

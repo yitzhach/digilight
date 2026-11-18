@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import { installApi } from './api.ts';
 import { Stage } from './canvas/Stage.tsx';
 import { zoomFit, zoomStep } from './canvas/Zoom.tsx';
+import { cropping } from './canvas/Crop.tsx';
 import { exportNow, ReadyLine } from './panel/ExportPanel.tsx';
 import { openAny } from './projects.ts';
 import { SettingsWindow } from './panel/Settings.tsx';
@@ -23,7 +24,7 @@ function App() {
     const key = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
       // Cmd or Ctrl only with Z (undo / redo, as Z alone); other shortcuts stay the browser's.
-      if (editable(e.target) || e.altKey || !photo.value || ((e.metaKey || e.ctrlKey) && k !== 'z')) return;
+      if (editable(e.target) || e.altKey || !photo.value || cropping.value || ((e.metaKey || e.ctrlKey) && k !== 'z')) return;
       if (k === 'b') { if (e.type === 'keydown') before.value = true; else before.value = false; return; }
       if (e.type !== 'keydown') return;
       if (k === 'z') run(() => (e.shiftKey ? cmd.redo() : cmd.undo()));

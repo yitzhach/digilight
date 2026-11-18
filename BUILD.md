@@ -464,7 +464,8 @@ beside it, not in it. Tier S = simple, E = expert.
 ```
 Doc {
   version: 2
-  photo:   { width, height, space: 'srgb' | 'display-p3', sha256, widthMm?: number }
+  photo:   { width, height, space: 'srgb' | 'display-p3', sha256, widthMm?: number,
+             crop?: { corners: [[x, y] x 4], source: [w, h] } }   // Phase 6b, D-076
   ambient: { level: 0..2 = 1 (S "Room light"),  kelvin: 1500..12000 = 6500 (E) }
   lights:  Light[]                         // 0..8; the simple interface offers up to 4
   relief:  { mode: 'off' | 'estimated' | 'measured' = 'off' (S),
@@ -489,6 +490,10 @@ Light {
   size: 0..1 = 0.05 (E "Softness"; picture widths for a lamp, radians for a sun)
 }
 ```
+
+With a crop, `width` and `height` are the picture's (each side the mean of its two opposite
+edges), `corners` (top left, top right, bottom right, bottom left) and `source` are in the file's
+pixels, and `sha256` stays the file's.
 
 A new document is neutral: `ambient.level 1`, no lights, relief off, finish neutral.
 Simple sliders map as: light Brightness 0 to 200% = intensity 0 to 2; Warmth = kelvin 9000 down to
@@ -547,6 +552,7 @@ line map to them one to one.
 | `measureRelief({photos: [{src, from?, elevation?}]})` | True Relief (Phase 5; in `core` a photo is `image`, D-043); `setMeasured`, `getMeasured` carry the height |
 | `render({width, region})` | a picture from the reference renderer, with `metrics` |
 | `export({width, format, quality})` | the full-size picture and its record (document, photo and picture SHA-256) |
+| `crop(corners \| null)`, `picture()` | Crop and straighten (Phase 6b): four corners on the file, or the whole photo; the picture the document lights |
 | `undo()`, `redo()`, `reset()` | history |
 
 Every command refuses `relief.mode: 'measured'` while there is no measured height, and a width
@@ -846,7 +852,7 @@ iPhone.
 
 Read §6, §7, §8. Decisions that apply: D-042, D-043, D-048.
 
-1. Crop and straighten: four corner handles, starting at the frame's corners (v1 has no corner
+1. **Done 11-18 (D-076).** Crop and straighten: four corner handles, starting at the frame's corners (v1 has no corner
    finder to port; a suggested quadrilateral is Later). The corners go in the document
    (`photo.crop`, in the file's pixels) and `photo.sha256` stays the file's, so the command
    line makes the same picture from the same file. The warp (bicubic) is in `core`, with

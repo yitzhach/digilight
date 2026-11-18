@@ -3,11 +3,11 @@
 
 import { batch, computed, effect, signal } from '@preact/signals';
 import { createCommands, glowKey, lookOf, type Doc, type GlowMaps, type LookMatch, type MeasuredHeight } from 'core';
-import { decodePhoto, type Photo } from './io/open.ts';
+import { cropKey, decodePhoto, type Photo } from './io/open.ts';
 import { loadSaved, saveDoc, saveMeasured, savePhoto } from './io/store.ts';
 import { resetRelief, startRelief } from './relief.ts';
 import { resetTrueRelief } from './truerelief.ts';
-import { glowFor, kappaFor, setGuardPhoto, setPoolPhoto } from './workers/pool.ts';
+import { glowFor, kappaFor, setGuardPhoto, setPoolPhoto, sharedImage, warpPicture } from './workers/pool.ts';
 
 export const cmd = createCommands();
 
@@ -54,13 +54,52 @@ effect(() => {
   });
 });
 
+/** The picture for a document's crop: the file, or its crop made by the workers. */
+async function pictureFor(p: Photo, d: Doc): Promise<Photo> {
+  const key = cropKey(d);
+  if (key === p.crop) return p;
+  const c = d.photo.crop;
+  return { ...p, image: c ? await warpPicture(p.file, c.corners) : p.file, crop: key };
+}
+/** A new picture of the same photo (a crop, or undoing one), given to the workers and waiting
+ *  for sync to show it with its document. */
+let pending: Photo | null = null;
+function givePicture(p: Photo): void {
+  resetRelief(); resetTrueRelief();
+  setGuardPhoto(p.image, setPoolPhoto(p.image));
+  pending = p;
+}
+let straightening = false, straightened: Promise<void> = Promise.resolve();
+/** Resolves once the picture matches the document (after a crop, or undoing one). */
+export const pictureReady = (): Promise<void> => straightened;
+/** The document's crop changed: make its picture, then show the document (the picture and the
+ *  document always go to the screen together). A failed crop is undone. */
+function repicture(): void {
+  if (!straightening) straightened = makePicture();
+}
+async function makePicture(): Promise<void> {
+  straightening = true; busy.value = 'Straightening the photo…';
+  try {
+    for (let p = pending ?? photo.peek(); p && cropKey(cmd.getDoc()) !== p.crop; p = pending ?? photo.peek()) givePicture(await pictureFor(p, cmd.getDoc()));
+  } catch (e) {
+    cmd.undo();
+    say(`The photo could not be cropped (${errorText(e)}), so the crop is undone.`, true);
+  } finally {
+    straightening = false; busy.value = null;
+  }
+  sync();
+}
+
 let saveTimer = 0;
 function sync(): void {
-  const d = cmd.getDoc();
+  const d = cmd.getDoc(), p = pending ?? photo.peek();
+  if (straightening) return; // repicture syncs when its picture is ready
+  if (p && cropKey(d) !== p.crop) { repicture(); return; }
   // The picture is drawn at once with the last factor; the guard's new one follows (D-025).
   void kappaFor(d).then((k) => { if (doc.peek() === d) kappa.value = k; });
   if (d.relief.mode !== 'off') startRelief(d.relief.mode === 'measured' ? cmd.getMeasured() : null, (e) => say(`Texture could not be prepared: ${errorText(e)}`, true));
   batch(() => {
+    if (pending) { photo.value = pending; kappa.value = 1; glow.value = null; pending = null; }
     doc.value = d; shown.value = d; live.value = false;
     if (!d.lights.some((l) => l.id === selected.value)) selected.value = d.lights[0]?.id ?? null;
   });
@@ -102,8 +141,13 @@ export async function openFile(blob: Blob, name?: string, saved?: Doc | null, me
         lost = `Your last settings for this photo could not be reopened (${errorText(e)}), so it starts as photographed.`;
       }
     }
-    setGuardPhoto(p.image, setPoolPhoto(p.image));
-    batch(() => { photo.value = p; kappa.value = 1; glow.value = null; lastTap.value = { id: 'original', strength: 1, flip: false }; notice.value = lost ? { text: lost, error: true } : null; });
+    // The file in shared memory once, for the workers; a saved crop is made before the first picture.
+    const file = sharedImage(p.image);
+    straightening = true; // no sync until this photo's picture is on screen
+    let ph: Photo;
+    try { ph = await pictureFor({ ...p, image: file, file }, cmd.getDoc()); } finally { straightening = false; }
+    setGuardPhoto(ph.image, setPoolPhoto(ph.image));
+    batch(() => { photo.value = ph; kappa.value = 1; glow.value = null; lastTap.value = { id: 'original', strength: 1, flip: false }; notice.value = lost ? { text: lost, error: true } : null; });
     sync();
     if (keep) void savePhoto(blob, p.name).then(() => { if (measured) return saveMeasured(measured); }).catch(() => {});
   } catch (e) {

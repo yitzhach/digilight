@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import { AMBIENT, FINISH, LIGHT, PREPARE, RELIEF, TONE, WALL, type Doc, type Field, type PhotoInfo, type Spec, type Tier, type Track, type TupleField } from './fields.ts';
 import { dropRetired } from './tools/index.ts';
+import { cropProblem, cropSize } from './warp.ts';
 
 export * from './fields.ts';
 
@@ -26,6 +27,7 @@ function group<S extends Spec>(spec: S) {
   return z.strictObject(Object.fromEntries(Object.entries(spec).map(([k, f]) => [k, zodOf(f)])));
 }
 
+const point = z.tuple([z.number(), z.number()]);
 const lightSchema = group(LIGHT).extend({ id: z.string().regex(/^[\w-]{1,32}$/, 'a light id is 1 to 32 letters, digits, - or _') });
 
 export const docSchema = z.strictObject({
@@ -36,6 +38,10 @@ export const docSchema = z.strictObject({
     space: z.enum(['srgb', 'display-p3']),
     sha256: z.string().regex(/^[0-9a-f]{64}$/, 'the SHA-256 of the photo file, 64 hex digits'),
     widthMm: z.number().positive().optional(),
+    crop: z.strictObject({ // Phase 6b: corners on the file, in its pixels; source: the file's size
+      corners: z.tuple([point, point, point, point]),
+      source: z.tuple([z.number().int().positive(), z.number().int().positive()]),
+    }).optional(),
   }),
   ambient: group(AMBIENT).prefault({}),
   lights: z.array(lightSchema).max(8).default([]),
@@ -45,6 +51,13 @@ export const docSchema = z.strictObject({
   prepare: group(PREPARE).prefault({}), // tool:even
   wall: group(WALL).prefault({}), // tool:wall
 }).superRefine((d, ctx) => {
+  const c = d.photo.crop;
+  if (c) {
+    const why = cropProblem(c.corners, c.source[0], c.source[1]), size = cropSize(c.corners);
+    if (why) ctx.addIssue({ code: 'custom', path: ['photo', 'crop'], message: why });
+    else if (size.width !== d.photo.width || size.height !== d.photo.height)
+      ctx.addIssue({ code: 'custom', path: ['photo'], message: `a crop with these corners is ${size.width} x ${size.height}` });
+  }
   const ids = d.lights.map((l) => l.id);
   if (new Set(ids).size !== ids.length) ctx.addIssue({ code: 'custom', path: ['lights'], message: 'light ids must be different' });
 });

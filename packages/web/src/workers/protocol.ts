@@ -1,10 +1,13 @@
 // protocol.ts — messages between the app and the render workers.
-import type { Blurred, Channels, Doc, Height, HorizonInput, Image, MeasuredHeight, Region } from 'core';
+import type { Blurred, Channels, Corners, Doc, Height, HorizonInput, Image, MeasuredHeight, Region } from 'core';
 
 export type Request =
   | { type: 'photo'; data: Uint8ClampedArray; width: number; height: number }
   | { type: 'render'; id: number; doc: Doc; width: number; region: Region; kappa: number }
   | { type: 'thumbs'; id: number; doc: Doc; width: number; flip: boolean }
+  // Crop and straighten (Phase 6b): rows [y0, y1) of the picture from the file's pixels, into
+  // `out` (shared memory) or sent back.
+  | { type: 'warp'; id: number; src: Image; corners: Corners; out: Uint8ClampedArray | null; y0: number; y1: number }
   // Texture (relief/*.ts in core): the height, then Tmax and the table split by direction.
   // The estimate in stages across the workers (shared memory): rows of the photo at relief size,
   // rows of the channels, one blur each, rows of the raw height; then hHat and the pyramid.

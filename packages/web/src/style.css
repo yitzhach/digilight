@@ -125,3 +125,27 @@ main { flex: 1; display: flex; min-height: 0; }
 .window input[type=text] { font-size: 16px; } /* under 16 px an iPhone zooms in on focus */
 .window .said { margin: 8px 0; padding: 6px 8px; border-radius: 6px; background: #1b1b1d; }
 .window .said.error { color: var(--error); }
+/* Crop and straighten (Phase 6b) */
+.crop-open { position: absolute; left: 8px; bottom: 8px; background: rgba(36, 36, 39, 0.9); }
+@media (pointer: coarse) { .crop-open { min-height: 40px; } }
+.crop { position: absolute; inset: 0; display: flex; flex-direction: column; background: #111113; touch-action: none; }
+.crop-area { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.crop-photo { position: absolute; }
+.crop-marks { position: absolute; inset: 0; }
+.crop-marks .shade { fill: rgba(0, 0, 0, 0.55); }
+.crop-marks polygon { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+.crop-marks polygon.bad { stroke: var(--error); stroke-dasharray: 6 4; }
+.crop-corner { cursor: grab; }
+.crop-corner circle { fill: rgba(27, 27, 29, 0.6); stroke: var(--accent); stroke-width: 2; }
+.crop-corner circle.hit { fill: transparent; stroke: none; }
+.loupe { position: absolute; top: 10px; left: 10px; width: 192px; height: 192px; border: 2px solid var(--accent); border-radius: 6px; overflow: hidden; pointer-events: none; }
+.loupe canvas { width: 100%; height: 100%; image-rendering: pixelated; display: block; }
+.loupe::before, .loupe::after { content: ''; position: absolute; background: var(--accent); opacity: 0.8; }
+.loupe::before { left: calc(50% - 1px); top: 0; bottom: 0; width: 2px; }
+.loupe::after { top: calc(50% - 1px); left: 0; right: 0; height: 2px; }
+.loupe.right { left: auto; right: 10px; }
+.crop-bar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; background: var(--panel); border-top: 1px solid var(--line); }
+.crop-bar span { flex: 1 1 200px; color: var(--dim); }
+.crop-bar button { flex: none; }
+.crop-bar .primary { width: auto; margin: 0; padding: 5px 16px; }
+.crop-bar span.error { color: var(--error); }

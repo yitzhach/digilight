@@ -83,3 +83,6 @@
 
 ## Phase 6a, item 2: look tuning
 - Spotlight retuned from review rounds `phase6a-1` and `phase6a-2`: room light 0.28, lamp 0.68; Dramatic kept (D-073 to D-075).
+
+## Phase 6b, item 1: crop and straighten
+- Crop and straighten: four corners on the photo, a bicubic perspective warp in `core` (`warp.ts`), `photo.crop` in the document, `crop` command; the Crop screen with a loupe; projects and autosave keep it; a committed cropped project (D-076).

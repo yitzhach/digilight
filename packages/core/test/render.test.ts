@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import { LOOKS, neutralDoc, parseDoc, render, withLook, type Doc, type Image } from '../src/index.ts';
+import { LOOKS, neutralDoc, parseDoc, render, warpCrop, withLook, type Doc, type Image } from '../src/index.ts';
 import { loadFixture, sha256 } from '../scripts/jpeg.ts';
 
 /** A 256 x 192 test picture: ramps, a checker, pure white and black patches. */
@@ -43,6 +43,8 @@ test('each look on the procedural photo matches its golden SHA-256', () => {
   for (const look of LOOKS) got[look.id] = hash(render(photo, withLook(docFor(photo), look.id)));
   got['gallery-flip-half'] = hash(render(photo, withLook(docFor(photo), 'gallery', { strength: 0.5, flip: true })));
   for (const [name, finish] of Object.entries(FINISHES)) got[`finish-${name}`] = hash(render(photo, parseDoc({ ...withLook(docFor(photo), 'gallery'), finish })));
+  const cropped = warpCrop(photo, [[20.5, 8], [240, 14.25], [231, 180], [12, 170.5]]); // Phase 6b: crop and straighten
+  got['crop-skew-gallery'] = hash(render(cropped, withLook(docFor(cropped), 'gallery')));
   if (process.env.UPDATE_GOLDENS) writeFileSync(file, `${JSON.stringify(got, null, 2)}\n`);
   expect(got).toEqual(JSON.parse(readFileSync(file, 'utf8')));
 });

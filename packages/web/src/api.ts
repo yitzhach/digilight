@@ -5,7 +5,7 @@
 import type { ExportOptions } from './io/export.ts';
 import { exportPicture } from './io/export.ts';
 import { exportNow } from './panel/ExportPanel.tsx';
-import { cmd, doc, openFile, photo, run } from './state.ts';
+import { cmd, doc, openFile, photo, pictureReady, run } from './state.ts';
 import { lastMeasure, measureFromSources } from './truerelief.ts';
 import { isProject } from './io/project.ts';
 import { openProject, projectFile } from './projects.ts';
@@ -53,6 +53,13 @@ export function installApi(): void {
     updateLight: wrap(cmd.updateLight),
     removeLight: wrap(cmd.removeLight),
     setRelief: wrap(cmd.setRelief),
+    /** Crop and straighten (Phase 6b): crop([[x, y] top left, top right, bottom right, bottom
+     *  left]) in the file's pixels, or crop(null); resolves with the document once the picture is made. */
+    async crop(corners: Parameters<typeof cmd.crop>[0]) {
+      wrap(cmd.crop)(corners);
+      await pictureReady();
+      return cmd.getDoc();
+    },
     /** True Relief (§7, D-043): measureRelief({photos: [{src, from?, elevation?, lamp?}], widthCm?}),
      *  src a File, Blob or URL. Measures in a worker and switches Texture to the measurement. */
     async measureRelief(opts: { photos: SideSource[]; widthCm?: number }) {

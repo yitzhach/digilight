@@ -5,7 +5,12 @@
 import type { Image, Space } from 'core';
 import { canvas2d, decodeHeif, isHeif, spaceOf } from './colour.ts';
 
-export interface Photo { image: Image; space: Space; sha256: string; name: string; blob: Blob }
+/** `image`: the picture the document lights; `file`: the file's own pixels (the same image until
+ *  a crop, Phase 6b); `crop`: which crop `image` is (cropKey). */
+export interface Photo { image: Image; file: Image; crop: string; space: Space; sha256: string; name: string; blob: Blob }
+
+/** Which crop a document's picture is, comparable with Photo.crop. */
+export const cropKey = (d: { photo: { crop?: { corners: unknown } } }): string => JSON.stringify(d.photo.crop?.corners ?? null);
 
 const hex = (b: ArrayBuffer) => Array.from(new Uint8Array(b), (x) => x.toString(16).padStart(2, '0')).join('');
 export const sha256 = async (bytes: BufferSource): Promise<string> => hex(await crypto.subtle.digest('SHA-256', bytes));
@@ -36,5 +41,6 @@ export async function decodePhoto(blob: Blob, name = (blob as File).name ?? 'pho
   let blank = true;
   for (let p = 0; p < data.length; p += 4) { data[p + 3] = 255; if (blank && (data[p]! | data[p + 1]! | data[p + 2]!)) blank = false; }
   if (blank) throw new Error(`"${name}" came out empty: this photo is too large for this phone. Export a smaller copy (under 16 megapixels) and open that.`);
-  return { image: { data, width, height }, space, sha256: await digest, name, blob };
+  const image = { data, width, height };
+  return { image, file: image, crop: cropKey({ photo: {} }), space, sha256: await digest, name, blob };
 }
