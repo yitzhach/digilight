@@ -465,7 +465,7 @@ beside it, not in it. Tier S = simple, E = expert.
 Doc {
   version: 2
   photo:   { width, height, space: 'srgb' | 'display-p3', sha256, widthMm?: number,
-             crop?: { corners: [[x, y] x 4], source: [w, h] } }   // Phase 6b, D-076
+             crop?: { corners: [[x, y] x 4], source: [w, h] } }   // Phase 6b, D-077
   ambient: { level: 0..2 = 1 (S "Room light"),  kelvin: 1500..12000 = 6500 (E) }
   lights:  Light[]                         // 0..8; the simple interface offers up to 4
   relief:  { mode: 'off' | 'estimated' | 'measured' = 'off' (S),
@@ -513,7 +513,7 @@ These numbers were rendered on Isaac's door and lintel photos with this section'
 keeps the photo's median brightness within 6%. They are a starting point; Phase 3's gate tunes
 them with him.
 
-| id | ambient (level, kelvin) | light: pos (u, v, z), aim, intensity, kelvin, cone, edge, falloff, size (retuned with Isaac, D-020, D-033, D-075) |
+| id | ambient (level, kelvin) | light: pos (u, v, z), aim, intensity, kelvin, cone, edge, falloff, size (retuned with Isaac, D-020, D-033, D-076) |
 |---|---|---|
 | original | 1, 6500 | none |
 | gallery | 0.6, 6000 | (0.5, −0.35, 0.9), (0.5, 0.45), 0.45, 4600, 45, 0.9, 0.5, 0.05 |
@@ -828,7 +828,7 @@ D-032, D-047.
 
 1. **Done 11-13 (D-057).** Finish (§5.9) in reference and shader; panel section 4. The curve is a setting only: agents
    and presets set it. An editor would be hand-built expert interface, which §8 rules out (Later).
-2. **Done 11-18 (D-073 to D-075).** Look tuning from D-047 and Isaac's settings notes, by lights only: Dramatic more contrast
+2. **Done 11-18 (D-074 to D-076).** Look tuning from D-047 and Isaac's settings notes, by lights only: Dramatic more contrast
    (lower room light), Spotlight less flat on the lintel. A review round, then §6 and the goldens.
 3. **Done 11-13, ahead of the rest of this phase (D-055).** Zoom buttons (Isaac, after Phase 3): Zoom out, Fit, Zoom in on the picture (keys `-`, `0`,
    `=`), the same zoom as the wheel (§8). Fit fills the stage with the picture (5% margin);
@@ -852,7 +852,7 @@ iPhone.
 
 Read §6, §7, §8. Decisions that apply: D-042, D-043, D-048.
 
-1. **Done 11-18 (D-076).** Crop and straighten: four corner handles, starting at the frame's corners (v1 has no corner
+1. **Done 11-18 (D-077).** Crop and straighten: four corner handles, starting at the frame's corners (v1 has no corner
    finder to port; a suggested quadrilateral is Later). The corners go in the document
    (`photo.crop`, in the file's pixels) and `photo.sha256` stays the file's, so the command
    line makes the same picture from the same file. The warp (bicubic) is in `core`, with

@@ -1,6 +1,6 @@
 # Status
-**Phase:** 6a items done (looks 11-18, D-075); its gate waits on Isaac. 6b items 1, 3 to 6 done
-(crop 11-18, D-076); left: item 2 (versions), the gate. Beside the phases: light tools (11-17).
+**Phase:** 6a items done (looks 11-18, D-076); its gate waits on Isaac. 6b items 1, 3 to 6 done
+(crop 11-18, D-077); left: item 2 (versions), the gate. Beside the phases: light tools (11-17).
 **Live:** https://studio-digilight.bobdylan2000.workers.dev (from `main`; `?bench` for the bench).
 The foot of the page says which update it is; quote that line when something looks wrong.
 
@@ -16,14 +16,14 @@ The foot of the page says which update it is; quote that line when something loo
 ## Waiting on Isaac
 - **Light tools (11-17):** Expert controls on. Texture measured, a raking lamp, Shadows high:
   Bounce light, Room light from one side. Finish, with Spotlight: Glow, Glow spread, Glow
-  warmth. Colour filter; Pattern and Edit pattern; Even out (Lights). Grain at full. Wall
-  (Export). Each: keep, tune or remove; 10 questions: `docs/light-tools.md` section 6.
-- **Crop (11-18, D-076):** Crop (bottom left of the picture): drag the corners onto a piece photographed
+  warmth. Colour filter; Pattern and Edit pattern; Even out (Lights). Grain at full (the wall:
+  kept, D-073). Each: keep, tune or remove; 10 questions: `docs/light-tools.md` section 6.
+- **Crop (11-18, D-077):** Crop (bottom left of the picture): drag the corners onto a piece photographed
   at an angle, Done; Export; save the project and open it again.
 - **Projects (11-14, D-061):** Settings…: Save project, open it again, the recent list; Choose
   photos… under Apply to more photos (ten on the iMac is 6b's gate).
 - **Settings window (11-13, D-060):** copy and paste between photos, a preset in one tap, presets
-  to a file and back. **6a's gate:** five pieces alike in under 2 minutes (new Spotlight, D-075).
+  to a file and back. **6a's gate:** five pieces alike in under 2 minutes (new Spotlight, D-076).
 - **Zoom and version (11-13):** on the iMac and the iPhone. **Phase 5 gate:** on the phone, a
   new piece: flat photo, Texture, a handheld side-lit photo. The HEIC file; the bench; notes.
 **Run:** `pnpm typecheck && pnpm test`, `pnpm e2e`, `pnpm build && pnpm --filter web size`,
