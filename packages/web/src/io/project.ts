@@ -1,6 +1,8 @@
 // project.ts — `.digilight` project files (BUILD.md Phase 6b item 3, D-042): a stored zip of
 // `project.json` (what is inside), `doc.json` (the document), the photo file as opened, and True
-// Relief's measured height as a 16-bit PNG with its lo and hi. The file is the keeping place.
+// Relief's measured height as a 16-bit PNG with its lo and hi, and the kept versions (Phase 6b
+// item 2: `versions.json`, each a document and a thumbnail PNG; added, so no new project version).
+// The file is the keeping place.
 // pack/unpack are pure (bytes in, bytes out) so a test in Node opens a committed project.
 
 import { migrate, type Doc } from 'core';
@@ -9,7 +11,9 @@ import { readZip, writeZip, type Entry } from './zip.ts';
 export const PROJECT_APP = 'DigiLight project';
 export const PROJECT_VERSION = 1;
 export interface ProjectHeight { png: Uint8Array; width: number; height: number; lo: number; hi: number }
-export interface Project { doc: Doc; photo: { name: string; bytes: Uint8Array }; height: ProjectHeight | null }
+/** A kept version: its document and its thumbnail (a PNG of the photo's own values). */
+export interface ProjectVersion { doc: Doc; png: Uint8Array; width: number; height: number }
+export interface Project { doc: Doc; photo: { name: string; bytes: Uint8Array }; height: ProjectHeight | null; versions?: ProjectVersion[] }
 interface Manifest {
   app: typeof PROJECT_APP; version: number; saved?: string;
   photo: { name: string; file: string };
@@ -37,6 +41,10 @@ export function packProject(p: Project, saved = new Date().toISOString()): Blob 
     m.height = { file: 'height.png', ...h };
     entries.push({ name: 'height.png', data: png });
   }
+  if (p.versions?.length) {
+    const list = p.versions.map((v, i) => ({ doc: v.doc, thumb: `versions/${i + 1}.png`, width: v.width, height: v.height }));
+    entries.push({ name: 'versions.json', data: json(list) }, ...p.versions.map((v, i) => ({ name: list[i]!.thumb, data: v.png })));
+  }
   return writeZip([{ name: 'project.json', data: json(m) }, ...entries]);
 }
 
@@ -58,5 +66,19 @@ export async function unpackProject(bytes: Uint8Array): Promise<Project> {
     if (!png) throw new Error('That project has lost its measured texture.');
     height = { png, width: m.height.width, height: m.height.height, lo: m.height.lo, hi: m.height.hi };
   }
-  return { doc, photo: { name: m.photo.name, bytes: photo }, height };
+  return { doc, photo: { name: m.photo.name, bytes: photo }, height, versions: versionsOf(read, doc) };
+}
+
+/** The kept versions, each brought up to date; one that is damaged or for another photo is left out. */
+function versionsOf(read: (n: string) => Uint8Array | undefined, doc: Doc): ProjectVersion[] {
+  const f = read('versions.json');
+  if (!f) return [];
+  const out: ProjectVersion[] = [];
+  for (const v of JSON.parse(dec.decode(f)) as { doc: unknown; thumb: string; width: number; height: number }[]) {
+    try {
+      const d = migrate(v.doc), png = read(v.thumb);
+      if (png && d.photo.sha256 === doc.photo.sha256) out.push({ doc: d, png, width: v.width, height: v.height });
+    } catch { /* left out */ }
+  }
+  return out;
 }

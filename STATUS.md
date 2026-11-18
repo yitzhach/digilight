@@ -1,6 +1,6 @@
 # Status
-**Phase:** 6a items done (looks 11-18, D-076); its gate waits on Isaac. 6b items 1, 3 to 6 done
-(crop 11-18, D-077); left: item 2 (versions), the gate. Beside the phases: light tools (11-17).
+**Phase:** 6a items done (looks 11-18, D-076); its gate waits on Isaac. 6b items all done (crop
+D-077, versions D-078, 11-18); its gate waits on Isaac. Beside the phases: light tools (11-17).
 **Live:** https://studio-digilight.bobdylan2000.workers.dev (from `main`; `?bench` for the bench).
 The foot of the page says which update it is; quote that line when something looks wrong.
 
@@ -8,16 +8,17 @@ The foot of the page says which update it is; quote that line when something loo
 - Phases 0 to 4: workspace, engine, preview, app, Texture (estimated); deployed. Phase 5 (D-040 to D-048): True Relief measured from side-lit photos, in core and in the app;
   `pnpm gate:relief`: door 0.78 / 0.87, lintel 0.68 / 0.85, lamps 0.80 to 0.87.
 - Review round 4 (D-047), audit (D-049, D-050), Phase 5b (D-051 to D-054), Phase 6a (D-055 to
-  D-060), Phase 6b items 3 to 6 (D-061): see CHANGELOG.md.
+  D-060), Phase 6b items 3 to 6 (D-061), crop (D-077), versions (D-078): see CHANGELOG.md.
 - Light tools (D-062 to D-072): `docs/light-tools.md` (rules, a spec for each). Built, expert,
   off by default: softer shadows, Glow, colour filter, light patterns with Edit pattern, even
-  out the photo, the wall (D-072). 157 unit, 46 e2e tests; 195.2 of 250 KB.
+  out the photo, the wall (D-072). 158 unit, 48 e2e tests; 196.6 of 250 KB.
 
 ## Waiting on Isaac
 - **Light tools (11-17):** Expert controls on. Texture measured, a raking lamp, Shadows high:
   Bounce light, Room light from one side. Finish, with Spotlight: Glow, Glow spread, Glow
   warmth. Colour filter; Pattern and Edit pattern; Even out (Lights). Grain at full (the wall:
   kept, D-073). Each: keep, tune or remove; 10 questions: `docs/light-tools.md` section 6.
+- **Versions (11-18, D-078):** under the picture: Keep this version, change, keep; tap, hold, ×.
 - **Crop (11-18, D-077):** Crop (bottom left of the picture): drag the corners onto a piece photographed
   at an angle, Done; Export; save the project and open it again.
 - **Projects (11-14, D-061):** Settings…: Save project, open it again, the recent list; Choose
@@ -30,7 +31,7 @@ The foot of the page says which update it is; quote that line when something loo
 `pnpm gate:relief` (3 min), `pnpm dev`. Never run `playwright install`. Review notes: ArtifactData.
 
 ## Next: new chats on Opus 5.5, repository `yitzhach/digilight` only, one at a time
-1. Phase 6b item 2, Versions (**medium**), then 6b's gate.
+1. Once 6b's gate passes (Isaac: ten photos on the iMac, Crop and Versions): Phase 7 (**medium**).
 2. Light tools: the rest wait on Isaac (T1, T5 photos; T7, T9 his word). Prompt: light-tools.md.
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do chat

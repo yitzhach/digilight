@@ -27,7 +27,7 @@ effect(() => {
   });
 });
 
-function Thumb({ img }: { img?: Image }) {
+export function Thumb({ img }: { img?: Image }) {
   const c = useRef<HTMLCanvasElement>(null);
   const space = photo.value?.space ?? 'srgb';
   useEffect(() => {

@@ -14,6 +14,8 @@ import { SettingsWindow } from './panel/Settings.tsx';
 import { Panel } from './panel/Panel.tsx';
 import { before, busy, cmd, notice, photo, progress, restore, run, say, selected } from './state.ts';
 import { versionLabel } from './version.ts';
+import { setVersions } from './versions.ts';
+import { Versions } from './canvas/Versions.tsx';
 import './style.css';
 
 const editable = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName) && (t as HTMLInputElement).type !== 'range' && (t as HTMLInputElement).type !== 'checkbox');
@@ -71,7 +73,7 @@ function App() {
       <ReadyLine />
       {n && <div class={`notice${n.error ? ' error' : ''}`} role={n.error ? 'alert' : 'status'} onClick={() => (notice.value = null)} title="Tap to close">{n.text}</div>}
       <main>
-        <Stage />
+        <div class="picture"><Stage /><Versions /></div>
         <Panel />
       </main>
       <SettingsWindow />
@@ -86,4 +88,4 @@ window.addEventListener('unhandledrejection', (e) => say(`Something went wrong: 
 installApi();
 render(<App />, document.getElementById('app')!);
 if (new URLSearchParams(location.search).has('bench')) void import('./bench.ts').then((b) => b.mountBench());
-void restore();
+void restore().then((s) => { if (s) setVersions(s.versions); });

@@ -1,7 +1,8 @@
-// store.ts — autosave: the photo file, the document and True Relief's measured height (a PNG,
-// 16 bits over red and green, with lo and hi; BUILD.md Phase 5) in IndexedDB, reopened on load.
+// store.ts — autosave: the photo file, the document, True Relief's measured height (a PNG,
+// 16 bits over red and green, with lo and hi; BUILD.md Phase 5) and the kept versions (Phase 6b)
+// in IndexedDB, reopened on load.
 
-import { packHeight, unpackHeight, type Doc, type MeasuredHeight, type Settings } from 'core';
+import { packHeight, unpackHeight, type Doc, type Image, type MeasuredHeight, type Settings } from 'core';
 
 const DB = 'digilight', STORE = 'autosave';
 
@@ -23,26 +24,35 @@ async function tx<T>(mode: IDBTransactionMode, f: (s: IDBObjectStore) => IDBRequ
   });
 }
 
-export interface Saved { photo: Blob; name: string; doc: Doc | null; measured: MeasuredHeight | null }
+/** A kept version (Phase 6b item 2): its document and its thumbnail (the photo's own values). */
+export interface Version { doc: Doc; thumb: Image }
+export interface Saved { photo: Blob; name: string; doc: Doc | null; measured: MeasuredHeight | null; versions: Version[] }
 interface SavedHeight { png: Blob; width: number; height: number; lo: number; hi: number }
 
 export const savePhoto = (photo: Blob, name: string) =>
-  tx('readwrite', (s) => { s.put({ photo, name }, 'photo'); s.delete('doc'); s.delete('measured'); });
+  tx('readwrite', (s) => { s.put({ photo, name }, 'photo'); s.delete('doc'); s.delete('measured'); s.delete('versions'); });
 
 export const saveDoc = (doc: Doc) => tx('readwrite', (s) => s.put(doc, 'doc'));
+export const saveVersions = (list: Version[]) => tx('readwrite', (s) => s.put(list, 'versions'));
 
-/** The measured height as a PNG (packHeight): the same 16 bits come back (heightFromPng). */
-export async function heightPng(m: MeasuredHeight): Promise<Blob> {
-  const c = new OffscreenCanvas(m.width, m.height), g = c.getContext('2d')!;
-  g.putImageData(new ImageData(packHeight(m) as Uint8ClampedArray<ArrayBuffer>, m.width, m.height), 0, 0);
+/** Stored values to a PNG and back, unchanged (no colour conversion either way). */
+export async function pngOf(img: Image): Promise<Blob> {
+  const c = new OffscreenCanvas(img.width, img.height), g = c.getContext('2d')!;
+  g.putImageData(new ImageData(img.data as Uint8ClampedArray<ArrayBuffer>, img.width, img.height), 0, 0);
   return c.convertToBlob({ type: 'image/png' });
 }
-export async function heightFromPng(s: SavedHeight): Promise<MeasuredHeight> {
-  const bmp = await createImageBitmap(s.png, { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
+export async function pixelsOfPng(png: Blob, width: number, height: number): Promise<Image> {
+  const bmp = await createImageBitmap(png, { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
   const c = new OffscreenCanvas(bmp.width, bmp.height), g = c.getContext('2d', { willReadFrequently: true })!;
   g.drawImage(bmp, 0, 0);
   bmp.close();
-  return unpackHeight(g.getImageData(0, 0, s.width, s.height).data, s.width, s.height, s.lo, s.hi);
+  return { data: g.getImageData(0, 0, width, height).data, width, height };
+}
+
+/** The measured height as a PNG (packHeight): the same 16 bits come back (heightFromPng). */
+export const heightPng = (m: MeasuredHeight): Promise<Blob> => pngOf({ data: packHeight(m), width: m.width, height: m.height });
+export async function heightFromPng(s: SavedHeight): Promise<MeasuredHeight> {
+  return unpackHeight((await pixelsOfPng(s.png, s.width, s.height)).data, s.width, s.height, s.lo, s.hi);
 }
 
 export async function saveMeasured(m: MeasuredHeight): Promise<void> {
@@ -57,7 +67,8 @@ export async function loadSaved(): Promise<Saved | null> {
     const doc = (await tx<Doc | undefined>('readonly', (s) => s.get('doc'))) ?? null;
     const h = await tx<SavedHeight | undefined>('readonly', (s) => s.get('measured'));
     const measured = h ? await heightFromPng(h).catch(() => null) : null;
-    return { ...p, doc, measured };
+    const versions = (await tx<Version[] | undefined>('readonly', (s) => s.get('versions')).catch(() => undefined)) ?? [];
+    return { ...p, doc, measured, versions };
   } catch { return null; } // private windows can refuse IndexedDB: start empty
 }
 

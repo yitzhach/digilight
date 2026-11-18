@@ -4,7 +4,7 @@
 import { batch, computed, effect, signal } from '@preact/signals';
 import { createCommands, glowKey, lookOf, type Doc, type GlowMaps, type LookMatch, type MeasuredHeight } from 'core';
 import { cropKey, decodePhoto, type Photo } from './io/open.ts';
-import { loadSaved, saveDoc, saveMeasured, savePhoto } from './io/store.ts';
+import { loadSaved, saveDoc, saveMeasured, savePhoto, type Saved } from './io/store.ts';
 import { resetRelief, startRelief } from './relief.ts';
 import { resetTrueRelief } from './truerelief.ts';
 import { glowFor, kappaFor, setGuardPhoto, setPoolPhoto, sharedImage, warpPicture } from './workers/pool.ts';
@@ -157,8 +157,9 @@ export async function openFile(blob: Blob, name?: string, saved?: Doc | null, me
   }
 }
 
-/** Reopens the autosaved photo and document, if any. */
-export async function restore(): Promise<void> {
+/** Reopens the autosaved photo and document, if any; returns what was saved (its versions). */
+export async function restore(): Promise<Saved | null> {
   const s = await loadSaved();
   if (s) await openFile(s.photo, s.name, s.doc, s.measured);
+  return s;
 }

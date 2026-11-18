@@ -12,20 +12,22 @@ let photo: Image | null = null;
 let height: Height | null = null, inp: HorizonInput | null = null, table: Uint8Array | null = null, maps: ReliefMaps | null = null;
 const post = (m: Reply, transfer: Transferable[] = []) => self.postMessage(m, { transfer });
 
+/** The photo at a thumbnail's width. Resizing first and lighting the small picture gives exactly
+ *  render(photo, doc, {width}): the renderer resamples first, and lighting depends only on where
+ *  a pixel sits (§5.1). Thumbnails show the Light layer only (Texture's maps are made for the
+ *  full photo). */
+function smallOf(doc: Doc, width: number): Image {
+  return render(photo!, defaultDoc(doc.photo), { width: Math.min(width, photo!.width) });
+}
+function lightOnly(small: Image, d: Doc): Image {
+  const kappa = guardKappa(photo!, d);
+  return render(small, { ...d, photo: { ...d.photo, width: small.width, height: small.height }, relief: { ...d.relief, mode: 'off' } }, { kappa });
+}
+const sendThumb = (id: number, look: string, img: Image) => post({ type: 'thumb', id, look, data: img.data, width: img.width, height: img.height }, [img.data.buffer]);
+
 function thumbs(id: number, doc: Doc, width: number, flip: boolean): void {
-  const p = photo!;
-  const w = Math.min(width, p.width);
-  // Resizing first and lighting the small picture gives exactly render(photo, look, {width}):
-  // the renderer resamples first, and lighting depends only on where a pixel sits (§5.1).
-  // Thumbnails show the Light layer only (Texture's maps are made for the full photo).
-  const small = render(p, defaultDoc(doc.photo), { width: w });
-  const smallPhoto = { ...doc.photo, width: small.width, height: small.height };
-  for (const look of LOOKS) {
-    const d = withLook(doc, look.id, { flip });
-    const kappa = guardKappa(p, d);
-    const img = render(small, { ...d, photo: smallPhoto, relief: { ...d.relief, mode: 'off' } }, { kappa });
-    post({ type: 'thumb', id, look: look.id, data: img.data, width: img.width, height: img.height }, [img.data.buffer]);
-  }
+  const small = smallOf(doc, width);
+  for (const look of LOOKS) sendThumb(id, look.id, lightOnly(small, withLook(doc, look.id, { flip })));
   post({ type: 'done', id });
 }
 
@@ -62,6 +64,7 @@ self.onmessage = (e: MessageEvent<Request>) => {
         break;
       }
       case 'thumbs': thumbs(m.id, m.doc, m.width, m.flip); break;
+      case 'thumb-doc': sendThumb(m.id, '', lightOnly(smallOf(m.doc, m.width), m.doc)); post({ type: 'done', id: m.id }); break;
       case 'relief-thumb': {
         const img = resampleRegion(photo, m.width, m.height, 0, m.y0, m.width, m.y1 - m.y0);
         m.out.set(img.data, m.y0 * m.width * 4);
