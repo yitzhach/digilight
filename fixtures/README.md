@@ -27,3 +27,13 @@ photo is what tools/realref/score.py and measure_sun.cjs take; the app also take
 photo and lines it up itself (src/lineup.js, tests/lineup.cjs). manifest.json `sunToFlat`:
 register.py's homography from the raw sun photo to the flat crop, to check that against. The door and the lintel panel
 are different pieces (checked: 6–7 feature matches between them against 174–491 within a pair).
+
+## Reference photos (Isaac, 11-18): real light to compare against, not inputs
+
+No flat partner, so not for True Relief, T1 or T5. Use them to judge how a render should look.
+
+| file | what |
+|---|---|
+| reference/window-on-piece.jpg | a textured grey piece in a window's light: a sharp-edged patch of sun across the lower half, soft fall-off and scatter around it (T3b patterns, Glow) |
+| reference/window-on-wall.jpg | a large white and dark-blue panel hung on a white wall, window light across it and the wall; the frame's shadow on the wall, a warm lamp at right (T2, the wall) |
+| reference/raking-ledge-shadow.jpg | outdoor raking sun on stacked plaster slabs: a hard cast shadow off a 1 inch ledge, small grains each casting a shadow (shadow length and sharpness for Shadows, §5.6) |
