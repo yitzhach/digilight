@@ -5,10 +5,10 @@
 import type { ExportOptions } from './io/export.ts';
 import { exportPicture } from './io/export.ts';
 import { exportNow } from './panel/ExportPanel.tsx';
-import { cmd, doc, openFile, photo, pictureReady, run } from './state.ts';
+import { cmd, doc, photo, pictureReady, run } from './state.ts';
 import { lastMeasure, measureFromSources } from './truerelief.ts';
-import { isProject } from './io/project.ts';
-import { openProject, projectFile } from './projects.ts';
+import { openAny, projectFile } from './projects.ts';
+import { keepVersion, removeVersion, useVersion, versions } from './versions.ts';
 import { applyToMore } from './batch.ts';
 
 type Fn = (...a: never[]) => unknown;
@@ -34,8 +34,7 @@ export function installApi(): void {
   const api = {
     async open(src: Blob | string, name?: string) {
       src = await blobOf(src, name);
-      if (await isProject(src as Blob & { name?: string })) await openProject(src, name);
-      else await openFile(src, name);
+      await openAny(src, name);
       const p = photo.value;
       if (!p) throw new Error('the photo did not open (see the message on screen)');
       return { width: p.image.width, height: p.image.height, space: p.space, sha256: p.sha256, looks: cmd.looks().map((l) => l.id) };
@@ -85,6 +84,12 @@ export function installApi(): void {
     /** Lights and finish of the open photo onto other photos; a zip of the pictures (Phase 6b). */
     applyToMore: (srcs: (Blob | string)[], opts?: { format?: 'jpeg' | 'png' }) =>
       Promise.all(srcs.map((s) => blobOf(s))).then((files) => applyToMore(files, opts)),
+    /** Versions (Phase 6b): keep the document as it is now (returns its place in the strip),
+     *  the kept documents, switch to one (one undo step), remove one. */
+    keepVersion: () => keepVersion(),
+    versions: () => versions.peek().map((v) => v.doc),
+    async useVersion(i: number) { useVersion(i); await pictureReady(); return cmd.getDoc(); },
+    removeVersion: (i: number) => removeVersion(i),
     undo: wrap(cmd.undo),
     redo: wrap(cmd.redo),
     reset: wrap(cmd.reset),

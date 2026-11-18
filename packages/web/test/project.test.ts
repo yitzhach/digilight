@@ -95,3 +95,30 @@ test('the cropped project committed in Phase 6b opens and makes the same picture
   expect([image.width, image.height]).toEqual([p.doc.photo.width, p.doc.photo.height]);
   expect(createHash('sha256').update(image.data).digest('hex')).toBe(createHash('sha256').update(render(warpCrop(small, LINTEL_CROP), p.doc).data).digest('hex'));
 });
+
+// Versions (Phase 6b item 2): kept versions travel in the project, each a document and a
+// thumbnail; a project with versions is committed so that it opens in every later update.
+const VERSIONED = new URL('../../../fixtures/projects/versions-door.digilight', import.meta.url);
+async function makeVersioned() {
+  const p = await unpackProject(new Uint8Array(readFileSync(FILE)));
+  const base = { ...p.doc, relief: { ...p.doc.relief, mode: 'off' as const } };
+  const docs = [parseDoc(withLook(base, 'spotlight')), parseDoc({ ...withLook(base, 'warm-evening'), finish: { ...base.finish, vignette: 0.3 } })];
+  const src = loadFixture('door-flat-crop.jpg'); // the committed project's photo is this at 320 px
+  const photo = render(src, neutralDoc({ width: src.width, height: src.height, space: 'srgb', sha256: src.sha256 }), { width: 160 });
+  const versions = docs.map((doc) => { const t = render(photo, { ...doc, photo: { ...doc.photo, width: photo.width, height: photo.height } }); return { doc, png: new Uint8Array(encodePng(t)), width: t.width, height: t.height }; });
+  return packProject({ ...p, doc: docs[1]!, height: null, versions }, '2026-11-18T00:00:00.000Z');
+}
+
+test('a project keeps its versions; one for another photo is left out; old projects have none', async () => {
+  if (process.env.UPDATE_FIXTURES || !existsSync(VERSIONED)) writeFileSync(VERSIONED, await bytes(await makeVersioned()));
+  const p = await unpackProject(new Uint8Array(readFileSync(VERSIONED)));
+  expect(p.versions!.map((v) => v.doc.lights.length)).toEqual([1, 1]);
+  expect(p.versions![1]!.doc).toEqual(p.doc);
+  expect(p.versions![0]).toMatchObject({ width: 160 });
+  const again = await unpackProject(await bytes(packProject(p)));
+  expect(again.versions!.map((v) => v.doc)).toEqual(p.versions!.map((v) => v.doc));
+  expect(Array.from(again.versions![0]!.png)).toEqual(Array.from(p.versions![0]!.png));
+  const stranger = { ...p.versions![0]!, doc: { ...p.versions![0]!.doc, photo: { ...p.versions![0]!.doc.photo, sha256: '0'.repeat(64) } } };
+  expect((await unpackProject(await bytes(packProject({ ...p, versions: [stranger, p.versions![1]!] })))).versions!.length).toBe(1);
+  expect((await unpackProject(new Uint8Array(readFileSync(FILE)))).versions).toEqual([]);
+});

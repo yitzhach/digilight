@@ -5,6 +5,8 @@ export type Request =
   | { type: 'photo'; data: Uint8ClampedArray; width: number; height: number }
   | { type: 'render'; id: number; doc: Doc; width: number; region: Region; kappa: number }
   | { type: 'thumbs'; id: number; doc: Doc; width: number; flip: boolean }
+  // Versions (Phase 6b item 2): one document's thumbnail, the Light layer, as the looks'.
+  | { type: 'thumb-doc'; id: number; doc: Doc; width: number }
   // Crop and straighten (Phase 6b): rows [y0, y1) of the picture from the file's pixels, into
   // `out` (shared memory) or sent back.
   | { type: 'warp'; id: number; src: Image; corners: Corners; out: Uint8ClampedArray | null; y0: number; y1: number }

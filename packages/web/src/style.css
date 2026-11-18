@@ -149,3 +149,17 @@ main { flex: 1; display: flex; min-height: 0; }
 .crop-bar button { flex: none; }
 .crop-bar .primary { width: auto; margin: 0; padding: 5px 16px; }
 .crop-bar span.error { color: var(--error); }
+/* Versions (Phase 6b): a strip under the picture, never over the art. */
+.picture { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.picture .stage { min-height: 0; }
+.versions { flex: none; box-sizing: border-box; height: 56px; display: flex; align-items: center; gap: 6px; padding: 4px 8px; overflow-x: auto; background: var(--panel); border-top: 1px solid var(--line); }
+.versions .hint { color: var(--dim); font-size: 12px; white-space: nowrap; }
+.version-keep { flex: none; }
+.version-item { position: relative; flex: none; }
+.version-thumb { padding: 2px; display: block; touch-action: pan-x; }
+.version-thumb canvas { display: block; height: 40px; width: 53px; object-fit: contain; background: #111; border-radius: 3px; }
+.version-thumb span { position: absolute; left: 5px; bottom: 4px; font-size: 10px; background: rgba(0, 0, 0, 0.6); padding: 0 3px; border-radius: 3px; }
+.version-item.current .version-thumb { outline: 2px solid var(--accent); }
+.version-item.held .version-thumb { outline: 2px dashed var(--accent); }
+.version-remove { position: absolute; top: -2px; right: -2px; padding: 0 5px; font-size: 12px; line-height: 16px; border-radius: 8px; background: rgba(36, 36, 39, 0.95); }
+@media (pointer: coarse) { .version-keep { min-height: 44px; } .version-remove { line-height: 22px; padding: 0 8px; border-radius: 11px; } }

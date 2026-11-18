@@ -194,6 +194,13 @@ export function lookThumbs(doc: Doc, width: number, flip: boolean, onThumb: (loo
   return ask(start()[0]!, { type: 'thumbs', id, doc, width, flip }, (r) => onThumb(r.look, { data: r.data, width: r.width, height: r.height }));
 }
 
+/** One document's thumbnail on the picture the workers hold (Versions, Phase 6b item 2). */
+export async function docThumb(doc: Doc, width: number): Promise<Image> {
+  let img: Image | null = null;
+  await ask(start()[0]!, { type: 'thumb-doc', id: nextId++, doc, width }, (r) => { img = { data: r.data, width: r.width, height: r.height }; });
+  return img!;
+}
+
 // ---------------------------------------------------------------- the guard's own worker
 
 let guard: Worker | null = null, guardId = 0;

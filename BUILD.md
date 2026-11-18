@@ -858,7 +858,7 @@ Read §6, §7, §8. Decisions that apply: D-042, D-043, D-048.
    line makes the same picture from the same file. The warp (bicubic) is in `core`, with
    `dmath`. It comes before True Relief: changing the crop afterwards drops the measured
    height, and the app says so first. Side-lit photos line up to the cropped photo.
-2. Versions: "Keep this version" snapshots in a strip; tap to switch, hold to compare (replaces
+2. **Done 11-18 (D-078).** Versions: "Keep this version" snapshots in a strip; tap to switch, hold to compare (replaces
    v1's batch viewer).
 3. **Done 11-14 (D-061).** Projects: save and open `.digilight`: a zip, stored without compression (one small writer in
    `web/io`, no dependency), of `doc.json`, the photo file as opened and the height PNG with
