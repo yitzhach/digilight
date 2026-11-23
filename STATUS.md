@@ -30,7 +30,7 @@ The foot of the page says which update it is; quote that line when something loo
 `pnpm gate:relief` (3 min), `pnpm dev`. Never run `playwright install`. Review notes: ArtifactData.
 MCP: `claude mcp add digilight -- node <repo>/packages/mcp/src/server.ts`; `node packages/mcp/src/cli.ts`.
 ## Next: new chats on Opus 5.5, repository `yitzhach/digilight` only, one at a time
-1. 6a's and 6b's gates (Isaac); Phase 8 needs his new Worker, secret and cost (§12) first.
+1. Phase 8 (**medium**): its plan, `docs/phase-8.md`, only; stop for Isaac's OK (Worker, key, cost).
 2. Light tools: the rest wait on Isaac (T1, T5 photos; T7, T9 his word). Prompt: light-tools.md.
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do chat
