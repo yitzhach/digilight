@@ -1,7 +1,7 @@
 // store.ts — autosave: the photo file, the document and True Relief's measured height (a PNG,
 // 16 bits over red and green, with lo and hi; BUILD.md Phase 5) in IndexedDB, reopened on load.
 
-import { packHeight, unpackHeight, type Doc, type MeasuredHeight, type Settings } from 'core';
+import { migrate, packHeight, unpackHeight, type Doc, type MeasuredHeight, type Settings } from 'core';
 
 const DB = 'digilight', STORE = 'autosave';
 
@@ -23,13 +23,15 @@ async function tx<T>(mode: IDBTransactionMode, f: (s: IDBObjectStore) => IDBRequ
   });
 }
 
-export interface Saved { photo: Blob; name: string; doc: Doc | null; measured: MeasuredHeight | null }
+export interface Saved { photo: Blob; name: string; doc: Doc | null; measured: MeasuredHeight | null; versions: Doc[] }
 interface SavedHeight { png: Blob; width: number; height: number; lo: number; hi: number }
 
 export const savePhoto = (photo: Blob, name: string) =>
-  tx('readwrite', (s) => { s.put({ photo, name }, 'photo'); s.delete('doc'); s.delete('measured'); });
+  tx('readwrite', (s) => { s.put({ photo, name }, 'photo'); s.delete('doc'); s.delete('measured'); s.delete('versions'); });
 
 export const saveDoc = (doc: Doc) => tx('readwrite', (s) => s.put(doc, 'doc'));
+/** The kept versions of the photo (Phase 6b item 2), whole documents. */
+export const saveVersions = (list: Doc[]) => tx('readwrite', (s) => s.put(list, 'versions'));
 
 /** The measured height as a PNG (packHeight): the same 16 bits come back (heightFromPng). */
 export async function heightPng(m: MeasuredHeight): Promise<Blob> {
@@ -57,7 +59,8 @@ export async function loadSaved(): Promise<Saved | null> {
     const doc = (await tx<Doc | undefined>('readonly', (s) => s.get('doc'))) ?? null;
     const h = await tx<SavedHeight | undefined>('readonly', (s) => s.get('measured'));
     const measured = h ? await heightFromPng(h).catch(() => null) : null;
-    return { ...p, doc, measured };
+    const versions = (await tx<Doc[] | undefined>('readonly', (s) => s.get('versions')).catch(() => undefined)) ?? [];
+    return { ...p, doc, measured, versions: versions.flatMap((v) => { try { return [migrate(v)]; } catch { return []; } }) };
   } catch { return null; } // private windows can refuse IndexedDB: start empty
 }
 

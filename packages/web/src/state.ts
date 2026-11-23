@@ -4,7 +4,7 @@
 import { batch, computed, effect, signal } from '@preact/signals';
 import { createCommands, glowKey, lookOf, type Doc, type GlowMaps, type LookMatch, type MeasuredHeight } from 'core';
 import { cropKey, decodePhoto, type Photo } from './io/open.ts';
-import { loadSaved, saveDoc, saveMeasured, savePhoto } from './io/store.ts';
+import { loadSaved, saveDoc, saveMeasured, savePhoto, saveVersions } from './io/store.ts';
 import { resetRelief, startRelief } from './relief.ts';
 import { resetTrueRelief } from './truerelief.ts';
 import { glowFor, kappaFor, setGuardPhoto, setPoolPhoto, sharedImage, warpPicture } from './workers/pool.ts';
@@ -28,6 +28,14 @@ export const busy = signal<string | null>(null);
 /** How far a long job (an export) has got, 0 to 1; null when none runs. */
 export const progress = signal<number | null>(null);
 export const notice = signal<{ text: string; error: boolean } | null>(null);
+/** Versions of this photo (Phase 6b item 2, versions.ts): kept documents, oldest first. */
+export interface Version { id: string; doc: Doc }
+export const versions = signal<Version[]>([]);
+let versionId = 0;
+export const newVersion = (d: Doc): Version => ({ id: `v${++versionId}`, doc: d });
+/** A version held down in the strip: shown on the picture instead of the document, with its own
+ *  guard factor; nothing changes. */
+export const comparing = signal<{ id: string; doc: Doc; kappa: number } | null>(null);
 /** The last look tapped: only breaks ties where the document matches several (lookOf). */
 export const lastTap = signal<LookMatch>({ id: 'original', strength: 1, flip: false });
 /** The look the committed document matches, or null (lights changed by hand): read from the
@@ -43,7 +51,7 @@ let glowBusy = false, glowFailed = '';
 const glowTick = signal(0);
 effect(() => {
   void glowTick.value;
-  const d = shown.value, k = kappa.value, ph = photo.value, cur = glow.peek();
+  const c = comparing.value, d = c ? c.doc : shown.value, k = c ? c.kappa : kappa.value, ph = photo.value, cur = glow.peek();
   if (!d || !ph || !(d.finish.glow > 0)) { if (cur) glow.value = null; return; }
   const key = glowKey(d, k);
   if (glowBusy || cur?.key === key || glowFailed === key) return;
@@ -122,9 +130,10 @@ export function run<T>(f: () => T): T | undefined {
 /** Shows `d` without committing it (while a handle or slider is held). */
 export function preview(d: Doc): void { batch(() => { shown.value = d; live.value = true; }); }
 
-/** Opens a photo file: a neutral document, or `saved` (and its measured height) if it belongs to
- *  this photo. `keep`: autosave the photo (a new photo or a project; not the autosave itself). */
-export async function openFile(blob: Blob, name?: string, saved?: Doc | null, measured?: MeasuredHeight | null, keep = !saved): Promise<void> {
+/** Opens a photo file: a neutral document, or `saved` (and its measured height and versions) if
+ *  it belongs to this photo. `keep`: autosave the photo (a new photo or a project; not the
+ *  autosave itself). */
+export async function openFile(blob: Blob, name?: string, saved?: Doc | null, measured?: MeasuredHeight | null, keep = !saved, kept: Doc[] = []): Promise<void> {
   busy.value = 'Opening the photo…';
   try {
     const p = await decodePhoto(blob, name);
@@ -147,9 +156,13 @@ export async function openFile(blob: Blob, name?: string, saved?: Doc | null, me
     let ph: Photo;
     try { ph = await pictureFor({ ...p, image: file, file }, cmd.getDoc()); } finally { straightening = false; }
     setGuardPhoto(ph.image, setPoolPhoto(ph.image));
-    batch(() => { photo.value = ph; kappa.value = 1; glow.value = null; lastTap.value = { id: 'original', strength: 1, flip: false }; notice.value = lost ? { text: lost, error: true } : null; });
+    const mine = kept.filter((v) => v.photo.sha256 === p.sha256).map(newVersion);
+    batch(() => {
+      photo.value = ph; kappa.value = 1; glow.value = null; lastTap.value = { id: 'original', strength: 1, flip: false };
+      notice.value = lost ? { text: lost, error: true } : null; versions.value = mine; comparing.value = null;
+    });
     sync();
-    if (keep) void savePhoto(blob, p.name).then(() => { if (measured) return saveMeasured(measured); }).catch(() => {});
+    if (keep) void savePhoto(blob, p.name).then(async () => { if (measured) await saveMeasured(measured); if (mine.length) await saveVersions(mine.map((v) => v.doc)); }).catch(() => {});
   } catch (e) {
     say(errorText(e), true);
   } finally {
@@ -160,5 +173,5 @@ export async function openFile(blob: Blob, name?: string, saved?: Doc | null, me
 /** Reopens the autosaved photo and document, if any. */
 export async function restore(): Promise<void> {
   const s = await loadSaved();
-  if (s) await openFile(s.photo, s.name, s.doc, s.measured);
+  if (s) await openFile(s.photo, s.name, s.doc, s.measured, false, s.versions);
 }

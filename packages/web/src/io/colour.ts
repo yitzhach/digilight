@@ -1,5 +1,5 @@
 // colour.ts — the photo's colour space, kept from the file to the export. Ported from v1
-// src/colour.js (`spaceOf`, `iccWide`, `decodeHeif`, `canvas2d`, `imageData`).
+// src/colour.js (`spaceOf`, `decodeHeif`, `canvas2d`, `imageData`; `iccWide` is in core, Phase 7).
 //
 // Phones save in Display P3 and many cameras in Adobe RGB. A photo whose profile is wider than
 // sRGB is worked in Display P3 (its canvases, the WebGL textures and drawing buffer, the export,
@@ -9,7 +9,7 @@
 // HEIC: Safari opens it; elsewhere libheif (vendor/libheif, WebAssembly, ~1.5 MB) decodes it,
 // loaded only then.
 
-import type { Space } from 'core';
+import { iccWide, type Space } from 'core';
 
 type Ctx2D = CanvasRenderingContext2D;
 
@@ -80,20 +80,6 @@ async function profileOf(u: Uint8Array): Promise<Profile | null> {
     }
   }
   return null;
-}
-
-/** Whether an ICC profile's primaries reach past sRGB's (Display P3, Adobe RGB, ProPhoto...). */
-export function iccWide(icc: Uint8Array): boolean {
-  const v = new DataView(icc.buffer, icc.byteOffset, icc.byteLength), sig = (i: number) => String.fromCharCode(...icc.subarray(i, i + 4));
-  const xyz: Record<string, number[]> = {};
-  for (let k = 0, n = v.getUint32(128); k < n; k++) {
-    const t = 132 + k * 12, name = sig(t), at = v.getUint32(t + 4);
-    if ((name === 'rXYZ' || name === 'gXYZ') && sig(at) === 'XYZ ') xyz[name] = [0, 1, 2].map((j) => v.getInt32(at + 8 + 4 * j) / 65536);
-  }
-  const x = (c?: number[]) => (c ? c[0]! / (c[0]! + c[1]! + c[2]!) : NaN);
-  // Chromaticity x of the primaries, adapted to D50 as ICC stores them: sRGB red 0.648, green
-  // 0.321; Display P3 0.683, 0.284; Adobe RGB 0.648, 0.215.
-  return x(xyz.rXYZ) > 0.66 || x(xyz.gXYZ) < 0.30;
 }
 
 const concat = (parts: Uint8Array[]) => {

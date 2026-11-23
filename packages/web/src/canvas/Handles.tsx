@@ -41,6 +41,8 @@ export function Handles() {
   const pointers = useRef(new Map<number, [number, number]>());
   const pinch = useRef(0);
   const wheelTimer = useRef(0);
+  /** The light under the last press: a double-click goes to the svg, which holds the pointer. */
+  const pressed = useRef<string | null>(null);
   const d = shown.value!, g = geo.value;
   const local = (e: { clientX: number; clientY: number }): [number, number] => {
     const r = svg.current!.getBoundingClientRect();
@@ -49,6 +51,7 @@ export function Handles() {
 
   function down(e: PointerEvent) {
     const t = (e.target as Element).closest('[data-light]');
+    pressed.current = t?.getAttribute('data-light') ?? null;
     svg.current!.setPointerCapture(e.pointerId);
     const [x, y] = local(e);
     pointers.current.set(e.pointerId, [x, y]);
@@ -134,9 +137,10 @@ export function Handles() {
   }
 
   function dbl(e: MouseEvent) {
-    const t = (e.target as Element).closest('[data-light]');
-    if (!t) return;
-    const id = t.getAttribute('data-light')!, l = shown.value!.lights.find((k) => k.id === id);
+    // With the pointer captured (down), browsers send the click to the svg, not the handle.
+    const id = (e.target as Element).closest('[data-light]')?.getAttribute('data-light') ?? pressed.current;
+    if (!id) return;
+    const l = shown.value!.lights.find((k) => k.id === id);
     if (l) run(() => cmd.updateLight(id, { on: !l.on }));
   }
 

@@ -12,19 +12,33 @@ let photo: Image | null = null;
 let height: Height | null = null, inp: HorizonInput | null = null, table: Uint8Array | null = null, maps: ReliefMaps | null = null;
 const post = (m: Reply, transfer: Transferable[] = []) => self.postMessage(m, { transfer });
 
+/** The photo at thumbnail width, for lighting small: resizing first and lighting the small
+ *  picture gives exactly render(photo, doc, {width}) (the renderer resamples first, and lighting
+ *  depends only on where a pixel sits, §5.1). Thumbnails show the Light layer and Finish only
+ *  (Texture's maps are made for the full photo). */
+function smallLit(p: Image, docPhoto: Doc['photo'], width: number): (d: Doc) => Image {
+  const small = render(p, defaultDoc(docPhoto), { width: Math.min(width, p.width) });
+  const smallPhoto = { ...docPhoto, width: small.width, height: small.height };
+  return (d) => render(small, { ...d, photo: smallPhoto, relief: { ...d.relief, mode: 'off' } }, { kappa: guardKappa(p, d) });
+}
+
 function thumbs(id: number, doc: Doc, width: number, flip: boolean): void {
-  const p = photo!;
-  const w = Math.min(width, p.width);
-  // Resizing first and lighting the small picture gives exactly render(photo, look, {width}):
-  // the renderer resamples first, and lighting depends only on where a pixel sits (§5.1).
-  // Thumbnails show the Light layer only (Texture's maps are made for the full photo).
-  const small = render(p, defaultDoc(doc.photo), { width: w });
-  const smallPhoto = { ...doc.photo, width: small.width, height: small.height };
+  const lit = smallLit(photo!, doc.photo, width);
   for (const look of LOOKS) {
-    const d = withLook(doc, look.id, { flip });
-    const kappa = guardKappa(p, d);
-    const img = render(small, { ...d, photo: smallPhoto, relief: { ...d.relief, mode: 'off' } }, { kappa });
+    const img = lit(withLook(doc, look.id, { flip }));
     post({ type: 'thumb', id, look: look.id, data: img.data, width: img.width, height: img.height }, [img.data.buffer]);
+  }
+  post({ type: 'done', id });
+}
+
+/** Versions (Phase 6b item 2): a thumbnail of each document, sent back under its key. */
+function docThumbs(id: number, docs: { key: string; doc: Doc }[], width: number): void {
+  if (docs.length) {
+    const lit = smallLit(photo!, docs[0]!.doc.photo, width);
+    for (const { key, doc } of docs) {
+      const img = lit(doc);
+      post({ type: 'thumb', id, look: key, data: img.data, width: img.width, height: img.height }, [img.data.buffer]);
+    }
   }
   post({ type: 'done', id });
 }
@@ -62,6 +76,7 @@ self.onmessage = (e: MessageEvent<Request>) => {
         break;
       }
       case 'thumbs': thumbs(m.id, m.doc, m.width, m.flip); break;
+      case 'doc-thumbs': docThumbs(m.id, m.docs, m.width); break;
       case 'relief-thumb': {
         const img = resampleRegion(photo, m.width, m.height, 0, m.y0, m.width, m.y1 - m.y0);
         m.out.set(img.data, m.y0 * m.width * 4);

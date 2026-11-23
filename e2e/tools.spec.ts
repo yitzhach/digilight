@@ -165,7 +165,9 @@ test('app: a pattern\'s box on the picture moves it', async ({ page }) => {
   const dl = <T>(f: string, ...a: unknown[]) => page.evaluate(([n, args]) => (window as any).digilight[n as string](...(args as unknown[])), [f, a] as const) as Promise<T>;
   await page.locator('[data-look="soft-window"]').click();
   await page.getByRole('checkbox', { name: 'Expert controls' }).check();
-  await page.locator('label.select', { hasText: 'Pattern' }).locator('select').selectOption('window');
+  const patterns = page.locator('label.select', { hasText: 'Pattern' }).locator('select');
+  await expect(patterns.locator('option')).toHaveText(['None', 'Window', 'Blinds', 'Leaves']); // words, not values
+  await patterns.selectOption('window');
   await expect(page.locator('.pattern-box')).toHaveCount(0);
   await page.getByRole('button', { name: 'Edit pattern' }).click();
   const box = await page.locator('.pattern-box polygon').boundingBox();

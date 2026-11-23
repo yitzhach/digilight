@@ -48,3 +48,24 @@ test('anything else is refused with a plain message, and nothing changes', () =>
   expect(() => c.applySettings({ ambient: { level: 9 } })).toThrow(/ambient.level/);
   expect(c.getDoc()).toEqual(d);
 });
+
+test('a version (keepTexture) keeps Texture\'s mode; measured only where the height is', () => {
+  const base = defaultDoc({ width: 40, height: 30, space: 'srgb', sha256: 'c'.repeat(64) });
+  const est = { ...base, relief: { ...base.relief, mode: 'estimated' as const, depth: 0.005 } };
+  const meas = { ...base, relief: { ...base.relief, mode: 'measured' as const } };
+  expect(withSettings(base, est, false, true).relief).toMatchObject({ mode: 'estimated', depth: 0.005 });
+  expect(withSettings(base, est, true, true).relief.mode).toBe('estimated');
+  expect(withSettings(base, meas, true, true).relief.mode).toBe('measured');
+  expect(withSettings(base, meas, false, true).relief.mode).toBe('off');
+  expect(withSettings(est, base, false, true).relief.mode).toBe('off');
+  // As a command: one undo step, the photo (and its crop) as it is now.
+  const c = createCommands();
+  c.open(photo('a'));
+  c.crop([[1, 1], [38, 2], [39, 29], [0, 28]]);
+  const now = c.getDoc();
+  const after = c.applySettings({ ...est, lights: [], finish: { ...base.finish, contrast: 0.3 } }, { keepTexture: true });
+  expect(after.photo).toEqual(now.photo);
+  expect(after.relief.mode).toBe('estimated');
+  expect(after.finish.contrast).toBe(0.3);
+  expect(c.undo()).toEqual(now);
+});

@@ -5,6 +5,7 @@ import { describe } from 'core';
 import { expert, shown } from '../state.ts';
 import { Select, Slider, Switch } from './controls.tsx';
 
+// A choice's word on screen: these, else the value with a capital (window: Window).
 const WORDS: Record<string, string> = { lamp: 'Lamp', sun: 'Sunlight', off: 'Off', estimated: 'Estimated', measured: 'Measured' };
 
 // Settings that mean nothing for a light of the other kind (§6: azimuth and elevation are sun only).
