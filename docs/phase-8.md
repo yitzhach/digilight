@@ -30,17 +30,25 @@ is Isaac's (step 2 below).
   JSON-RPC as Phase 7: no MCP library.
 - Photo by URL: https only, up to 25 MB, 10 s timeout, JPEG or PNG by its bytes.
 
-## 4. Size and memory (128 MB per Worker)
-- Largest render: **2048 px on the long side**. Files up to 25 MB, photos up to 40 MP.
-- A large photo is never held at full size. JPEG decodes straight to 1/2, 1/4 or 1/8 size (the
-  smallest at or above the target), PNG row by row into a reduced copy; then `core`'s
-  `resample.ts` gives the exact size, as the app's smaller export does.
-- Budget at 2048 × 1536: photo 12.6 MB, renderer buffers about 40 MB, Texture maps and horizon
-  table measured in the build. A Node test asserts the peak stays under 100 MB with Texture on;
-  if it does not, Texture's largest width drops to 1600 and the docs say so.
+## 4. Size and memory (128 MB per Worker; measured 11-23, see section 7)
+- Largest render: **2048 px on the long side with the Light layer; 1024 px with Texture.**
+  Files up to 25 MB, photos up to 40 MP.
+- Why Texture is smaller: its shadow table is 32 bytes a pixel (`horizon.ts`, K = 32
+  directions), so 100 MB at 2048 px (3.1 MP) before anything else; 25 MB at 1024 px. Node's peak
+  grew by 365 MB for estimated Texture at 2048 px, 104 MB at 1024.
+- The light at 2048 px: Node's peak grew by 146 MB, but that counts garbage not yet collected
+  and sharp's own buffers; the buffers a render holds at once come to about 50 MB (photo,
+  picture, the photo's own numbers). The build measures it in the Worker; if it does not fit,
+  the light's limit drops to 1600 px and this plan says so.
+- A large photo is never held at full size (24 MP is 96 MB as pixels). JPEG decodes straight to
+  1/2, 1/4 or 1/8 size (the smallest at or above the target), PNG row by row into a reduced
+  copy. Then `core`'s `resampleRegion` makes the working copy in strips of rows: its
+  intermediate is source rows x output width x 24 bytes (about 200 MB for a 24 MP photo to
+  2048 px in one go), and a strip has exactly the pixels a whole resample has there.
 - Promise 5: a photo up to 2048 px gives the app's pixels (PNG exactly, JPEG within a level,
-  D-029). A larger JPEG is reduced in the decoder, so its `pixelsSha256` differs from the app's
-  and `verify` says "decoder difference", not "renderer difference".
+  D-029). A larger photo is worked from the reduced copy, so its picture is close to the app's,
+  not identical (Texture most of all: its maps come from that copy); the record names the copy's
+  size and `verify` reports it as such.
 
 ## 5. JPEG and PNG without sharp
 - **JPEG:** libjpeg-turbo compiled to WASM (about 250 KB), using its built-in 1/2 to 1/8 scaling;
@@ -62,18 +70,39 @@ fails closed). Changing the secret revokes the old key. Sign-in replaces it in P
 - Needs **Workers Paid** ($5 a month; Free allows 10 ms of CPU a request). Included: 10 million
   requests and 30 million CPU ms a month; beyond, $0.30 per million requests and $0.02 per
   million CPU ms. `limits.cpu_ms: 60000` in the config (default 30 s, maximum 5 min).
-- Estimates, measured in the build and written here: Light layer at 2048, 0.5 to 1 s; Texture
-  estimated 2 to 4 s (maps at 3 MP instead of 24); measured 10 to 40 s.
-- Cost beyond the included amount: 1 s = $0.00002, 16 s = $0.00032, 60 s = $0.0012. The included
-  30 million ms is about 30,000 light renders or 2,000 Texture renders a month. If the account is
-  already on Workers Paid (Studio Platform), there is no new monthly cost.
+- Measured 11-23 in Node 22 (Phase 7's session, `painting.jpg` and the door), a whole request:
+  decode, a look, render, PNG. A Worker's CPU is about as fast per request; the build measures it
+  again on the deployed Worker and writes it here.
+
+| Request | CPU | Beyond the included amount |
+|---|---|---|
+| Light, 1024 px | 0.3 s | $0.000006 |
+| Light, 2048 px | 1.3 s | $0.000026 |
+| Texture estimated, 1024 px | 5.1 s | $0.0001 |
+| Texture estimated, 2048 px (does not fit in memory) | 20 s | |
+| Texture measured, one side-lit photo, 1024 px | 15.9 s | $0.00032 |
+| Texture measured, 1805 px (does not fit in memory) | 36.6 s | |
+
+- The included 30 million ms is about 23,000 light renders at 2048 px, 5,900 estimated Texture
+  renders or 1,900 measured ones a month. If the account is already on Workers Paid (Studio
+  Platform), there is no new monthly cost. (The plan's first estimate, 2 to 4 s for Texture at
+  2048 px, was wrong: building the maps grows with the pixels, 5 s at 0.8 MP, 20 s at 3.1 MP.)
 
 ## 8. Texture
-- **Estimated:** works. Stateless, so its maps are built on every call (2 to 4 s at 2048); the
-  reply says how long, and the server instructions tell agents to adjust at 1024 px.
-- **Measured:** the side-lit photos (1 to 3) come with each call that uses it, and are measured
-  again each time, inside the 60 s limit. Over it, the error says: smaller width, or the local
-  MCP server (Phase 7), which keeps its maps.
+- **Estimated:** works, up to 1024 px. Stateless, so its maps are built on every call (about
+  5 s); the reply says so, and the server instructions tell agents to adjust with the light
+  alone, then add Texture. Wider, the error says: 1024 px, or the local MCP server (Phase 7),
+  which keeps its maps and works at full size.
+- **Measured:** the side-lit photos (1 to 3) come with each call that uses it, reduced like the
+  flat photo, and are measured again each time (about 16 s for one at 1024 px). The build checks
+  that `gate:relief`'s scores hold at 1024 px; if they drop, measured Texture stays local only.
+
+## Open questions (the defaults are what gets built)
+1. Texture hosted up to 1024 px only. Default: yes. (Keeping maps between calls would allow more,
+   but needs storage: a Durable Object or R2, another resource.)
+2. Photos over 2048 px: a close picture, not the app's exact one, and the record says so.
+   Default: yes.
+3. Stateless, nothing stored. Default: yes.
 
 ## 9. Gate
 `e2e/api.spec.ts` against `wrangler dev`: a PNG fixture renders with the same pixel SHA-256 as the
