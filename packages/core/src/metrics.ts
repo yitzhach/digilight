@@ -32,9 +32,10 @@ export function pictureStats(img: Image): PictureStats {
   return { blown: r4(hi / n), crushed: r4(lo / n), at255: r4(top / n), p05: r2(pct(y, 5)), p50: r2(pct(y, 50)), p95: r2(pct(y, 95)) };
 }
 
-/** A render's numbers against the photo at the same size and region. */
-export function metrics(render: Image, photo: Image, kappa: number): Metrics {
-  const R = pictureStats(render), P = pictureStats(photo);
+/** A render's numbers against the photo at the same size and region (or the photo's numbers,
+ *  when kept from an earlier call: the MCP server's previews, Phase 7). */
+export function metrics(render: Image, photo: Image | PictureStats, kappa: number): Metrics {
+  const R = pictureStats(render), P = 'data' in photo ? pictureStats(photo) : photo;
   const newBlown = r4(R.blown - P.blown), newCrushed = r4(R.crushed - P.crushed);
   const pc = (v: number) => `${(v * 100).toFixed(2)}%`;
   const warnings: string[] = [];

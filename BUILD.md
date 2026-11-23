@@ -94,7 +94,7 @@ digilight/
       test/
     gl/     WebGL2 preview:  context.ts  preview.ts  horizon-gpu.ts  shaders/*.glsl.ts
     web/    the app:  main.tsx  state.ts  canvas/*  panel/*  io/*  workers/*
-    mcp/    Node:  server.ts  cli.ts  image-io.ts        (Phase 7)
+    mcp/    Node:  server.ts  tools.ts  session.ts  picture.ts  image-io.ts  cli.ts   (Phase 7, D-080)
   docs/     bakeoff.md  light-tools.md (the light tools: rules, state, a build spec for each)
   fixtures/ photos copied from v1 (testdata/photos, samples) + README
   bench/    relief-score.ts (v1 tools/realref/score.py in TypeScript), bakeoff/ (python, Phase 10)
@@ -551,7 +551,7 @@ line map to them one to one.
 | `setRelief({mode, depth, shadows})` | builds the maps on first use of a mode |
 | `measureRelief({photos: [{src, from?, elevation?}]})` | True Relief (Phase 5; in `core` a photo is `image`, D-043); `setMeasured`, `getMeasured` carry the height |
 | `render({width, region})` | a picture from the reference renderer, with `metrics` |
-| `export({width, format, quality})` | the full-size picture and its record (document, photo and picture SHA-256) |
+| `export({width, format, quality})` | the full-size picture and its record (document; SHA-256 of the photo file, its decoded pixels (Phase 7), the picture's pixels and its file) |
 | `crop(corners \| null)`, `picture()` | Crop and straighten (Phase 6b): four corners on the file, or the whole photo; the picture the document lights |
 | `undo()`, `redo()`, `reset()` | history |
 
@@ -876,7 +876,7 @@ more photos" on the iMac.
 
 ### Phase 7 — AI access, local (Opus 5.5, medium effort)
 
-Read v1 `tools/digilight-mcp.cjs` for the tool design only. Build `mcp`: pure Node on the
+**Done 11-23 (D-080).** Read v1 `tools/digilight-mcp.cjs` for the tool design only. Build `mcp`: pure Node on the
 reference renderer (no browser), `sharp` for decoding and encoding.
 
 - MCP tools (stdio): `open_image`, `list_looks`, `apply_look`, `describe_settings`,

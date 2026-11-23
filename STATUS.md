@@ -1,6 +1,6 @@
 # Status
-**Phase:** 6a items done (looks 11-18, D-076); its gate waits on Isaac. 6b items all done (crop
-11-18, D-077; versions 11-23, D-078); its gate waits on Isaac. Beside the phases: light tools (11-17).
+**Phase:** 6a and 6b built; their gates wait on Isaac. Phase 7 (AI access on this computer) done
+11-23 (D-080; its gate is automated). Beside the phases: light tools (11-17).
 **Live:** https://studio-digilight.bobdylan2000.workers.dev (from `main`; `?bench` for the bench).
 The foot of the page says which update it is; quote that line when something looks wrong.
 
@@ -8,9 +8,8 @@ The foot of the page says which update it is; quote that line when something loo
 - Phases 0 to 5; True Relief's `pnpm gate:relief`: door 0.78 / 0.87, lintel 0.68 / 0.85, lamps 0.80+.
 - Review round 4, audit, Phase 5b, Phase 6a, Phase 6b (D-047 to D-078): see CHANGELOG.md. 11-23:
   every item below driven in Chromium, desktop and phone: all work; 3 fixes (D-079).
-- Light tools (D-062 to D-072): `docs/light-tools.md` (rules, a spec for each). Built, expert,
-  off by default: softer shadows, Glow, colour filter, light patterns with Edit pattern, even
-  out the photo, the wall (D-072). 159 unit, 50 e2e tests; 196.6 of 250 KB.
+- Light tools (D-062 to D-072, `docs/light-tools.md`), expert, off by default: softer shadows, Glow,
+  colour filter, patterns, even out, the wall. 162 unit, 51 e2e tests; 196.7 of 250 KB.
 
 ## Waiting on Isaac
 - **Light tools (11-17):** Expert controls on. Texture measured, a raking lamp, Shadows high:
@@ -29,8 +28,9 @@ The foot of the page says which update it is; quote that line when something loo
   photo, Texture, a handheld side-lit photo. The HEIC file; the bench; notes.
 **Run:** `pnpm typecheck && pnpm test`, `pnpm e2e`, `pnpm build && pnpm --filter web size`,
 `pnpm gate:relief` (3 min), `pnpm dev`. Never run `playwright install`. Review notes: ArtifactData.
+MCP: `claude mcp add digilight -- node <repo>/packages/mcp/src/server.ts`; `node packages/mcp/src/cli.ts`.
 ## Next: new chats on Opus 5.5, repository `yitzhach/digilight` only, one at a time
-1. 6a's and 6b's gates (Isaac); then Phase 7, AI access, local (**medium**).
+1. 6a's and 6b's gates (Isaac); Phase 8 needs his new Worker, secret and cost (§12) first.
 2. Light tools: the rest wait on Isaac (T1, T5 photos; T7, T9 his word). Prompt: light-tools.md.
 ```
 Read CLAUDE.md and STATUS.md in yitzhach/digilight, then BUILD.md sections 1 to 4, and do chat

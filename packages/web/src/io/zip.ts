@@ -39,7 +39,7 @@ export function writeZip(entries: Entry[]): Blob {
   const cdSize = central.reduce((s, c) => s + c.length, 0), end = new DataView(new ArrayBuffer(22));
   end.setUint32(0, 0x06054b50, true); end.setUint16(8, entries.length, true); end.setUint16(10, entries.length, true);
   end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
-  return new Blob([...parts, ...central, new Uint8Array(end.buffer)] as BlobPart[], { type: 'application/zip' });
+  return new Blob([...parts, ...central, new Uint8Array(end.buffer)] as ConstructorParameters<typeof Blob>[0] /* BlobPart[] in the browser; also read by Node (mcp) */, { type: 'application/zip' });
 }
 
 /** The entries of a zip this app wrote (stored, CRC checked); a plain message for anything else. */

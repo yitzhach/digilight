@@ -1,7 +1,8 @@
 // export.ts — the picture at full size (or a chosen width) from the reference renderer, rows
 // split across the worker pool, encoded by canvas.toBlob from a canvas in the photo's colour
 // space (a Display P3 photo keeps its profile), with a .json record beside it: the document and
-// the SHA-256 of the photo file, of the picture's RGBA pixels and of the encoded file.
+// the SHA-256 of the photo file and of its decoded pixels (Phase 7: a decoder's difference shows
+// apart from a renderer's), of the picture's RGBA pixels and of the encoded file.
 
 import { outputSize, wallSize, type Doc, type Image, type Space } from 'core';
 import { reliefForExport } from '../relief.ts';
@@ -14,7 +15,7 @@ import { sha256 } from './open.ts';
 export interface ExportOptions { width?: number; format?: 'jpeg' | 'png'; quality?: number }
 export interface ExportRecord {
   app: 'DigiLight 2'; exported: string; document: Doc;
-  photo: { name: string; sha256: string; width: number; height: number; space: string };
+  photo: { name: string; sha256: string; pixelsSha256: string; width: number; height: number; space: string };
   picture: { width: number; height: number; format: 'jpeg' | 'png'; quality?: number; pixelsSha256: string; fileSha256: string };
 }
 export interface Exported { blob: Blob; record: ExportRecord; name: string; /** The width asked for, when the browser could only save a smaller one. */ reduced?: number }
@@ -27,6 +28,19 @@ export async function encodePicture(img: Image, space: Space, format: 'jpeg' | '
   const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error('The browser could not encode the picture; try a smaller size.'))), type, quality));
   canvas.width = canvas.height = 0; // free its memory now
   return blob;
+}
+
+const decoded = new WeakMap<object, Promise<string>>();
+/** SHA-256 of the photo file's decoded RGBA pixels, once per photo (a copy first if they are in
+ *  shared memory, which the digest does not take). */
+function filePixelsSha256(file: Image): Promise<string> {
+  let h = decoded.get(file.data);
+  if (!h) {
+    const d = file.data;
+    h = sha256((d.buffer instanceof ArrayBuffer ? d : d.slice()) as Uint8ClampedArray<ArrayBuffer>);
+    decoded.set(file.data, h);
+  }
+  return h;
 }
 
 /** Lets the page draw (a message, a bar) before the next step; a hidden tab draws no frames, so
@@ -55,14 +69,14 @@ export async function exportPicture(photo: Photo, doc: Doc, opts: ExportOptions 
   await frame();
   const blob = await encodePicture(img, photo.space, format, quality);
   onProgress(0.95);
-  const [pixelsSha256, fileSha256] = await Promise.all([sha256(img.data as Uint8ClampedArray<ArrayBuffer>), sha256(await blob.arrayBuffer())]);
+  const [pixelsSha256, fileSha256, photoPixels] = await Promise.all([sha256(img.data as Uint8ClampedArray<ArrayBuffer>), sha256(await blob.arrayBuffer()), filePixelsSha256(photo.file)]);
   const base = photo.name.replace(/\.[^.]*$/, '') || 'picture';
   return {
     ...(width < asked ? { reduced: asked } : {}),
     blob, name: `${base}-digilight.${format === 'png' ? 'png' : 'jpg'}`,
     record: {
       app: 'DigiLight 2', exported: new Date().toISOString(), document: doc,
-      photo: { name: photo.name, sha256: photo.sha256, width: photo.image.width, height: photo.image.height, space: photo.space },
+      photo: { name: photo.name, sha256: photo.sha256, pixelsSha256: photoPixels, width: photo.image.width, height: photo.image.height, space: photo.space },
       picture: { width: img.width, height: img.height, format, ...(format === 'jpeg' ? { quality } : {}), pixelsSha256, fileSha256 },
     },
   };

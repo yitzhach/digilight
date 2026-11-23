@@ -12,6 +12,7 @@ export { isNeutral, outputSize, reliefFor, render, type Image, type Region, type
 export { cropProblem, cropSize, isWholeFrame, MIN_CROP, warpCrop, type Corners, type Crop } from './warp.ts';
 export { DOC_LATEST, migrate } from './migrate.ts';
 export { readSettings, settingsOf, SETTINGS_APP, withSettings, type Settings } from './settings.ts';
+export { iccKind, iccWide } from './icc.ts';
 export { describe, neutralDoc, parseDoc, docSchema, type Setting } from './schema.ts';
 export { defaultDoc, defaultLight, type Doc, type Light, type PhotoInfo } from './fields.ts';
 // Light tools (§5.12): trials, each removable in one commit.
