@@ -5,12 +5,12 @@
 The foot of the page says which update it is; quote that line when something looks wrong.
 
 ## Done
-- Phases 0 to 4; Phase 5 (D-040 to D-048), True Relief: `pnpm gate:relief` door 0.78 / 0.87,
-  lintel 0.68 / 0.85, lamps 0.80 to 0.87.
-- Review round 4, audit, Phase 5b, Phase 6a, Phase 6b (D-047 to D-078): see CHANGELOG.md.
+- Phases 0 to 5; True Relief's `pnpm gate:relief`: door 0.78 / 0.87, lintel 0.68 / 0.85, lamps 0.80+.
+- Review round 4, audit, Phase 5b, Phase 6a, Phase 6b (D-047 to D-078): see CHANGELOG.md. 11-23:
+  every item below driven in Chromium, desktop and phone: all work; 3 fixes (D-079).
 - Light tools (D-062 to D-072): `docs/light-tools.md` (rules, a spec for each). Built, expert,
   off by default: softer shadows, Glow, colour filter, light patterns with Edit pattern, even
-  out the photo, the wall (D-072). 159 unit, 48 e2e tests; 196.5 of 250 KB.
+  out the photo, the wall (D-072). 159 unit, 50 e2e tests; 196.6 of 250 KB.
 
 ## Waiting on Isaac
 - **Light tools (11-17):** Expert controls on. Texture measured, a raking lamp, Shadows high:

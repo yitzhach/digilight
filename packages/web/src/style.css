@@ -162,3 +162,14 @@ main { flex: 1; display: flex; min-height: 0; }
 .version-item.current .version-thumb { outline: 2px solid var(--accent); }
 .version-remove { padding: 2px 7px; }
 @media (pointer: coarse) { .versions .keep, .version-remove { min-height: 40px; } }
+/* Little room (a phone): a lower strip. Upright, its height comes out of the sheet, not the
+   picture: the picture keeps its 55% (D-055, D-078). */
+@media (max-width: 700px), (max-height: 600px) {
+  .versions { height: 56px; padding: 4px 8px; }
+  .version-thumb canvas { height: 40px; max-width: 80px; }
+  .versions .hint { line-height: 1.3; }
+}
+@media (max-width: 700px) {
+  .view { flex: none; height: calc(55% + 56px); }
+  .panel { flex: 1; height: auto; min-height: 0; }
+}

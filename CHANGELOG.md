@@ -89,3 +89,4 @@
 
 ## Phase 6b, item 2: versions
 - Versions: Keep this version, a strip of thumbnails under the picture; tap to go back (one undo step), hold to compare; kept with the autosave and in projects (`versions.json`); a committed project with versions (D-078).
+- A browser check of everything waiting on Isaac (D-079): double-click on a lamp switches it off and on (it did nothing in current Chrome), the Pattern list shows words, and on a phone the versions strip no longer shrinks the picture.

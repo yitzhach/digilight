@@ -64,7 +64,7 @@ export function Select({ path, label, help, options, names = {} }: { path: strin
     <label class="control select" title={help}>
       <span>{label}</span>
       <select value={v} onChange={(e) => run(() => cmd.set(path, (e.target as HTMLSelectElement).value))}>
-        {options.map((o) => <option key={o} value={o}>{names[o] ?? o}</option>)}
+        {options.map((o) => <option key={o} value={o}>{names[o] ?? o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
       </select>
     </label>
   );

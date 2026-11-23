@@ -88,3 +88,23 @@ test('a project opens with its versions; a new photo starts with none', async ({
   await waitPhoto(page, was);
   await expect(thumbs(page)).toHaveCount(0);
 });
+
+test('on a phone the strip is lower and its height comes out of the sheet, not the picture', async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1 });
+  const page = await ctx.newPage();
+  await page.goto(APP);
+  await page.locator('header input[type=file]').setInputFiles(FIX + 'door-flat-crop.jpg');
+  await waitPhoto(page, null);
+  await page.locator('[data-look="spotlight"]').tap();
+  await keep(page).tap();
+  await expect(thumbs(page)).toHaveCount(1);
+  const box = async (sel: string) => (await page.locator(sel).boundingBox())!;
+  const main = await box('main'), stage = await box('.stage'), strip = await box('.versions'), panel = await box('.panel');
+  expect(Math.abs(stage.height - 0.55 * main.height)).toBeLessThanOrEqual(2); // as before the strip (D-055)
+  expect(strip.height).toBeLessThanOrEqual(56);
+  expect(Math.abs(strip.y - (stage.y + stage.height))).toBeLessThanOrEqual(1);
+  expect(Math.abs(panel.y - (strip.y + strip.height))).toBeLessThanOrEqual(1);
+  const t = (await thumbs(page).first().boundingBox())!;
+  expect(t.height).toBeGreaterThanOrEqual(44); // a finger's target
+  await ctx.close();
+});
