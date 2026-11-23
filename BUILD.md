@@ -545,7 +545,7 @@ line map to them one to one.
 | `getDoc()`, `setDoc(doc)` | the whole document |
 | `get(path)`, `set(path, value)`, `set({path: value, ...})` | one or more settings by path, e.g. `lights.0.kelvin` |
 | `describe()` | `[{path, label, tier, min, max, step, default, value}]` for every setting: the expert panel and an AI's menu |
-| `getSettings({relief})`, `applySettings(settings)` | everything but the photo, and onto this photo in one step: Texture comes on only as this photo's own measured height (Phase 6a; Copy and Paste settings, presets) |
+| `getSettings({relief})`, `applySettings(settings, {keepTexture})` | everything but the photo, and onto this photo in one step: Texture comes on only as this photo's own measured height (Phase 6a; Copy and Paste settings, presets); `keepTexture` keeps Texture's mode (a version, Phase 6b, D-078) |
 | `looks()`, `applyLook(id, {strength, flip})` | the looks |
 | `addLight(partial)`, `updateLight(id, partial)`, `removeLight(id)` | lights |
 | `setRelief({mode, depth, shadows})` | builds the maps on first use of a mode |
@@ -858,7 +858,7 @@ Read §6, §7, §8. Decisions that apply: D-042, D-043, D-048.
    line makes the same picture from the same file. The warp (bicubic) is in `core`, with
    `dmath`. It comes before True Relief: changing the crop afterwards drops the measured
    height, and the app says so first. Side-lit photos line up to the cropped photo.
-2. Versions: "Keep this version" snapshots in a strip; tap to switch, hold to compare (replaces
+2. **Done 11-23 (D-078).** Versions: "Keep this version" snapshots in a strip; tap to switch, hold to compare (replaces
    v1's batch viewer).
 3. **Done 11-14 (D-061).** Projects: save and open `.digilight`: a zip, stored without compression (one small writer in
    `web/io`, no dependency), of `doc.json`, the photo file as opened and the height PNG with

@@ -18,10 +18,11 @@ async function open(page: Page) {
   await expect(page.locator('[data-look="gallery"]')).toBeVisible();
 }
 
-/** The picture's box on the stage, in CSS pixels from the stage's corner, and the stage's size. */
+/** The picture's box on the stage, in CSS pixels from the stage's corner, and the stage's size
+ *  (its own: a screenshot takes in the whole of any pixel the stage covers part of). */
 async function drawn(page: Page) {
-  const shot = await page.locator('.stage').screenshot();
-  return page.evaluate(async (b64) => {
+  const shot = await page.locator('.stage').screenshot(), box = (await page.locator('.stage').boundingBox())!;
+  const r = await page.evaluate(async (b64) => {
     const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
     const bmp = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
     const c = new OffscreenCanvas(bmp.width, bmp.height), g = c.getContext('2d')!;
@@ -38,6 +39,7 @@ async function drawn(page: Page) {
     }
     return { left, right, top, bottom, w, h, width: right - left, height: bottom - top };
   }, shot.toString('base64'));
+  return { ...r, w: box.width, h: box.height };
 }
 
 const fitWidth = (w: number, h: number) => 0.9 * Math.min(w, h / aspect);

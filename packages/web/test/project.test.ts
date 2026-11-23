@@ -95,3 +95,31 @@ test('the cropped project committed in Phase 6b opens and makes the same picture
   expect([image.width, image.height]).toEqual([p.doc.photo.width, p.doc.photo.height]);
   expect(createHash('sha256').update(image.data).digest('hex')).toBe(createHash('sha256').update(render(warpCrop(small, LINTEL_CROP), p.doc).data).digest('hex'));
 });
+
+// Versions (Phase 6b item 2): kept documents travel in the project as `versions.json`; a project
+// committed with versions opens in every later update, and an older project has none.
+const VERSIONS = new URL('../../../fixtures/projects/versions-lintel.digilight', import.meta.url);
+function makeVersions() {
+  const src = loadFixture('lintel-flat-crop.jpg');
+  const small = render(src, neutralDoc({ width: src.width, height: src.height, space: 'srgb', sha256: src.sha256 }), { width: 200 });
+  const png = new Uint8Array(encodePng(small)), sha = createHash('sha256').update(png).digest('hex');
+  const base = neutralDoc({ width: small.width, height: small.height, space: 'srgb', sha256: sha });
+  const v1 = withLook(base, 'gallery'), v2 = parseDoc({ ...withLook(base, 'spotlight'), finish: { ...base.finish, contrast: 0.3 } });
+  const v3 = parseDoc({ ...withLook(base, 'raking-left'), relief: { ...base.relief, mode: 'estimated', depth: 0.006 } });
+  return packProject({ doc: v2, photo: { name: 'lintel.png', bytes: png }, height: null, versions: [v1, v2, v3] }, '2026-11-23T00:00:00.000Z');
+}
+
+test('the project with versions committed in Phase 6b opens with its versions', async () => {
+  if (process.env.UPDATE_FIXTURES || !existsSync(VERSIONS)) writeFileSync(VERSIONS, await bytes(makeVersions()));
+  const p = await unpackProject(new Uint8Array(readFileSync(VERSIONS)));
+  expect(p.versions!.length).toBe(3);
+  expect(p.versions![1]).toEqual(p.doc);
+  expect(p.versions![0]!.lights[0]!.intensity).toBeCloseTo(0.45);
+  expect(p.versions![2]!.relief).toMatchObject({ mode: 'estimated', depth: 0.006 });
+  // Packed again they come back the same; a version for another photo, or one that does not
+  // read, is left out and the project still opens; the older projects have none.
+  const odd = { ...p.versions![0]!, photo: { ...p.doc.photo, sha256: 'f'.repeat(64) } };
+  const again = await unpackProject(await bytes(packProject({ ...p, versions: [...p.versions!, odd, { nonsense: 1 } as never] })));
+  expect(again.versions).toEqual(p.versions);
+  expect((await unpackProject(new Uint8Array(readFileSync(FILE)))).versions).toEqual([]);
+});

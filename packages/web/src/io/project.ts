@@ -1,6 +1,7 @@
 // project.ts — `.digilight` project files (BUILD.md Phase 6b item 3, D-042): a stored zip of
-// `project.json` (what is inside), `doc.json` (the document), the photo file as opened, and True
-// Relief's measured height as a 16-bit PNG with its lo and hi. The file is the keeping place.
+// `project.json` (what is inside), `doc.json` (the document), the photo file as opened, True
+// Relief's measured height as a 16-bit PNG with its lo and hi, and `versions.json`, the kept
+// versions (Phase 6b item 2: whole documents; an older project has none). The file is the keeping place.
 // pack/unpack are pure (bytes in, bytes out) so a test in Node opens a committed project.
 
 import { migrate, type Doc } from 'core';
@@ -9,11 +10,12 @@ import { readZip, writeZip, type Entry } from './zip.ts';
 export const PROJECT_APP = 'DigiLight project';
 export const PROJECT_VERSION = 1;
 export interface ProjectHeight { png: Uint8Array; width: number; height: number; lo: number; hi: number }
-export interface Project { doc: Doc; photo: { name: string; bytes: Uint8Array }; height: ProjectHeight | null }
+export interface Project { doc: Doc; photo: { name: string; bytes: Uint8Array }; height: ProjectHeight | null; versions?: Doc[] }
 interface Manifest {
   app: typeof PROJECT_APP; version: number; saved?: string;
   photo: { name: string; file: string };
   height?: { file: string; width: number; height: number; lo: number; hi: number };
+  versions?: string;
 }
 
 const enc = new TextEncoder(), dec = new TextDecoder();
@@ -37,6 +39,10 @@ export function packProject(p: Project, saved = new Date().toISOString()): Blob 
     m.height = { file: 'height.png', ...h };
     entries.push({ name: 'height.png', data: png });
   }
+  if (p.versions?.length) {
+    m.versions = 'versions.json';
+    entries.push({ name: m.versions, data: json(p.versions) });
+  }
   return writeZip([{ name: 'project.json', data: json(m) }, ...entries]);
 }
 
@@ -58,5 +64,10 @@ export async function unpackProject(bytes: Uint8Array): Promise<Project> {
     if (!png) throw new Error('That project has lost its measured texture.');
     height = { png, width: m.height.width, height: m.height.height, lo: m.height.lo, hi: m.height.hi };
   }
-  return { doc, photo: { name: m.photo.name, bytes: photo }, height };
+  // A version that no longer reads (or is for another photo) is left out; the project still opens.
+  const vf = m.versions ? read(m.versions) : undefined;
+  const versions = vf ? (JSON.parse(dec.decode(vf)) as unknown[]).flatMap((v) => {
+    try { const d = migrate(v); return d.photo.sha256 === doc.photo.sha256 ? [d] : []; } catch { return []; }
+  }) : [];
+  return { doc, photo: { name: m.photo.name, bytes: photo }, height, versions };
 }

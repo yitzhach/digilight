@@ -86,3 +86,6 @@
 
 ## Phase 6b, item 1: crop and straighten
 - Crop and straighten: four corners on the photo, a bicubic perspective warp in `core` (`warp.ts`), `photo.crop` in the document, `crop` command; the Crop screen with a loupe; projects and autosave keep it; a committed cropped project (D-077).
+
+## Phase 6b, item 2: versions
+- Versions: Keep this version, a strip of thumbnails under the picture; tap to go back (one undo step), hold to compare; kept with the autosave and in projects (`versions.json`); a committed project with versions (D-078).

@@ -38,6 +38,6 @@ No flat partner, so not for True Relief, T1 or T5. Use them to judge how a rende
 | reference/window-on-wall.jpg | a large white and dark-blue panel hung on a white wall, window light across it and the wall; the frame's shadow on the wall, a warm lamp at right (T2, the wall) |
 | reference/raking-ledge-shadow.jpg | outdoor raking sun on stacked plaster slabs: a hard cast shadow off a 1 inch ledge, small grains each casting a shadow (shadow length and sharpness for Shadows, §5.6) |
 
-Projects (`projects/`, Phase 6b): `v1-door.digilight` (a look, a finish, a measured height) and
-`cropped-lintel.digilight` (a crop, D-077). Each must open in every later update
-(`packages/web/test/project.test.ts`).
+Projects (`projects/`, Phase 6b): `v1-door.digilight` (a look, a finish, a measured height),
+`cropped-lintel.digilight` (a crop, D-077) and `versions-lintel.digilight` (three versions, D-078).
+Each must open in every later update (`packages/web/test/project.test.ts`).

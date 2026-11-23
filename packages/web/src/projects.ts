@@ -5,7 +5,7 @@ import { signal } from '@preact/signals';
 import { offerFile } from './io/offer.ts';
 import { isProject, packProject, unpackProject } from './io/project.ts';
 import { addRecent, heightFromPng, heightPng, loadRecent, type Recent } from './io/store.ts';
-import { busy, cmd, openFile, photo, say } from './state.ts';
+import { busy, cmd, openFile, photo, say, versions } from './state.ts';
 
 export const recent = signal<Recent[]>([]);
 void loadRecent().then((r) => { recent.value = r; });
@@ -19,7 +19,7 @@ export async function projectFile(): Promise<File> {
   if (!p) throw new Error('Open a photo first.');
   const m = cmd.getMeasured(), doc = cmd.getDoc();
   const height = m ? { png: new Uint8Array(await (await heightPng(m)).arrayBuffer()), width: m.width, height: m.height, lo: m.lo, hi: m.hi } : null;
-  const blob = packProject({ doc, photo: { name: p.name, bytes: new Uint8Array(await p.blob.arrayBuffer()) }, height });
+  const blob = packProject({ doc, photo: { name: p.name, bytes: new Uint8Array(await p.blob.arrayBuffer()) }, height, versions: versions.value.map((v) => v.doc) });
   const name = `${p.name.replace(/\.[^.]*$/, '') || 'picture'}.digilight`;
   return new File([blob], name, { type: 'application/zip' });
 }
@@ -40,7 +40,7 @@ export async function openProject(f: Blob, name = (f as File).name ?? 'project.d
   try {
     const pr = await unpackProject(new Uint8Array(await f.arrayBuffer()));
     const measured = pr.height ? await heightFromPng({ ...pr.height, png: new Blob([pr.height.png as Uint8Array<ArrayBuffer>], { type: 'image/png' }) }) : null;
-    await openFile(new File([pr.photo.bytes as Uint8Array<ArrayBuffer>], pr.photo.name), pr.photo.name, pr.doc, measured, true);
+    await openFile(new File([pr.photo.bytes as Uint8Array<ArrayBuffer>], pr.photo.name), pr.photo.name, pr.doc, measured, true, pr.versions);
     if (photo.value?.sha256 !== pr.doc.photo.sha256) return false; // openFile said why
     await remember(name, f);
     say(`Opened ${name}.`);

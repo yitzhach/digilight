@@ -148,8 +148,10 @@ export function createCommands() {
     /** Everything but the photo (Copy settings; `relief: false` for a preset). */
     getSettings: (opts?: { relief?: boolean }): Settings => settingsOf(current(), opts),
     /** Settings (or a document, or their JSON) onto this photo, one step; Texture comes on only
-     *  where this photo has its own measured height (Paste settings, a preset). */
-    applySettings: (input: unknown): Doc => clone(commit(withSettings(current(), input, heightFor(current()) !== null))),
+     *  where this photo has its own measured height (Paste settings, a preset). `keepTexture`: a
+     *  version of this photo, whose Texture keeps its mode (measured only if the height is here). */
+    applySettings: (input: unknown, opts?: { keepTexture?: boolean }): Doc =>
+      clone(commit(withSettings(current(), input, heightFor(current()) !== null, opts?.keepTexture === true))),
     looks: () => LOOKS.map((l) => ({ id: l.id, label: l.label })),
     applyLook: (id: string, opts?: LookOptions): Doc => clone(commit(withLook(current(), id, opts))),
     addLight(partial: Partial<Omit<Light, 'id'>> = {}): Doc {

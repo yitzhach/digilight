@@ -42,11 +42,16 @@ export function readSettings(input: unknown): Partial<Settings> {
 }
 
 /** `doc` with the settings put on: one valid document for the same photo. Settings left out stay
- *  as they are; Texture comes on only as `measured`, and only when `hasMeasured`. */
-export function withSettings(doc: Doc, input: unknown, hasMeasured: boolean): Doc {
+ *  as they are; Texture comes on only as `measured`, and only when `hasMeasured`. With
+ *  `keepTexture` (a version of this same photo, Phase 6b item 2) Texture keeps its mode, but
+ *  measured becomes off when `hasMeasured` is false. */
+export function withSettings(doc: Doc, input: unknown, hasMeasured: boolean, keepTexture = false): Doc {
   const s = readSettings(input);
   const next: Record<string, unknown> = { ...clone(doc) };
   for (const k of ['ambient', 'lights', 'tone', 'finish', 'wall'] as const) if (s[k] !== undefined) next[k] = s[k]; // wall: tool:wall
-  if (s.relief) next.relief = { ...s.relief, mode: hasMeasured && s.relief.mode !== 'off' ? 'measured' : 'off' };
+  if (s.relief) {
+    const m = s.relief.mode;
+    next.relief = { ...s.relief, mode: keepTexture ? (m === 'measured' && !hasMeasured ? 'off' : m) : hasMeasured && m !== 'off' ? 'measured' : 'off' };
+  }
   return parseDoc(next);
 }

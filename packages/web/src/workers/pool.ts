@@ -194,6 +194,12 @@ export function lookThumbs(doc: Doc, width: number, flip: boolean, onThumb: (loo
   return ask(start()[0]!, { type: 'thumbs', id, doc, width, flip }, (r) => onThumb(r.look, { data: r.data, width: r.width, height: r.height }));
 }
 
+/** Thumbnails of several documents of this photo (versions), `onThumb` with each one's key. */
+export function docThumbs(docs: { key: string; doc: Doc }[], width: number, onThumb: (key: string, img: Image) => void): Promise<unknown> {
+  const id = nextId++;
+  return ask(start()[0]!, { type: 'doc-thumbs', id, docs, width }, (r) => onThumb(r.look, { data: r.data, width: r.width, height: r.height }));
+}
+
 // ---------------------------------------------------------------- the guard's own worker
 
 let guard: Worker | null = null, guardId = 0;

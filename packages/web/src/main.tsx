@@ -1,4 +1,5 @@
-// main.tsx — the one screen (§8): top bar, the picture, the panel, the version. Open by drop,
+// main.tsx — the one screen (§8): top bar, the picture with the versions strip under it, the
+// panel, the version. Open by drop,
 // paste or picker; keys B (Before, held), Z / Shift+Z (undo / redo, also with Cmd or Ctrl),
 // Delete (remove the selected light), - 0 = (zoom out, fit, zoom in).
 
@@ -6,6 +7,7 @@ import { render } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { installApi } from './api.ts';
 import { Stage } from './canvas/Stage.tsx';
+import { Versions } from './canvas/Versions.tsx';
 import { zoomFit, zoomStep } from './canvas/Zoom.tsx';
 import { cropping } from './canvas/Crop.tsx';
 import { exportNow, ReadyLine } from './panel/ExportPanel.tsx';
@@ -71,7 +73,7 @@ function App() {
       <ReadyLine />
       {n && <div class={`notice${n.error ? ' error' : ''}`} role={n.error ? 'alert' : 'status'} onClick={() => (notice.value = null)} title="Tap to close">{n.text}</div>}
       <main>
-        <Stage />
+        <div class="view"><Stage /><Versions /></div>
         <Panel />
       </main>
       <SettingsWindow />

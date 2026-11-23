@@ -6,7 +6,7 @@ import { neutralDoc } from 'core';
 import { createPreview, type Preview } from 'gl';
 import { useEffect, useRef } from 'preact/hooks';
 import { gpuReady, reliefInput } from '../relief.ts';
-import { before, busy, glow, kappa, live, photo, say, shown } from '../state.ts';
+import { before, busy, comparing, glow, kappa, live, photo, say, shown } from '../state.ts';
 import { Crop, cropping, startCrop } from './Crop.tsx';
 import { Handles } from './Handles.tsx';
 import { createScale, SETTLE_MS } from './scale.ts';
@@ -32,9 +32,9 @@ export const stage = {
 let settling = false, settleTimer = 0;
 
 function apply(p: Preview, q: number): void {
-  const d = shown.value, g = geo.value;
+  const c = comparing.value, d = c?.doc ?? shown.value, g = geo.value; // a version held in the strip
   if (!d) return;
-  p.setDoc(before.value ? neutralDoc(d.photo) : d, { kappa: before.value ? 1 : kappa.value, glow: glow.value }); // glow: tool:glow
+  p.setDoc(before.value ? neutralDoc(d.photo) : d, { kappa: before.value ? 1 : c ? c.kappa : kappa.value, glow: glow.value }); // glow: tool:glow
   p.setView({ zoom: previewZoom(g), pan: g.pan });
   p.setScale(q);
 }
@@ -90,7 +90,7 @@ export function Stage() {
       const sd = shown.value, wm = sd && sd.wall.on ? sd.wall.margin : 0, g0 = geo.peek(); // tool:wall: Fit takes in the wall
       if ((g0.wall ?? 0) !== wm) { const g1 = { ...g0, wall: wm }; geo.value = clampPan({ ...g1, zoom: Math.max(g1.zoom, minZoom(g1)) }); }
       // Read every signal the picture depends on, so any change redraws it.
-      void shown.value; void before.value; void kappa.value; void geo.value; void glow.value;
+      void shown.value; void before.value; void kappa.value; void geo.value; void glow.value; void comparing.value;
       const isLive = live.value;
       if (wasLive && !isLive) {
         settling = true;
@@ -121,7 +121,7 @@ export function Stage() {
     <div class="stage" ref={box}>
       <canvas ref={canvas} />
       {!photo.value ? <Empty /> : cropping.value ? <Crop /> : <>
-        <Handles /><Zoom />
+        {!comparing.value && <Handles />}<Zoom />
         <button class="crop-open" disabled={busy.value !== null} onClick={startCrop} title="Crop and straighten: put the four corners on the piece's corners">Crop</button>
       </>}
     </div>
